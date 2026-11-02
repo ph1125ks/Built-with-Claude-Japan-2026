@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "敵の細菌の一覧。intrinsicResistance（自然耐性）は医学的な事実として作者が監修で確定する。",
+    "hp・speed・bladderDamage はゲームの調整値で、医学的な意味はない（速さだけは、プロテウスの遊走を表すために速くしている）。",
+    "look はグラム染色の見た目（陽性＝紫、陰性＝ピンク〜赤）。janis は JANIS の表の菌種名。"
+  ],
+  "bacteria": [
+    {
+      "id": "ecoli",
+      "name": "大腸菌",
+      "sciName": "Escherichia coli",
+      "janis": "Escherichia coli",
+      "gram": "negative",
+      "look": { "shape": "rod", "arrangement": "single", "size": 1.0, "capsule": false, "flagella": false },
+      "intrinsicResistance": [],
+      "hp": 100,
+      "speed": 45,
+      "bladderDamage": 10,
+      "review": { "status": "仮", "check": ["自然耐性（このカードの範囲ではなし）"] }
+    },
+    {
+      "id": "kpneumoniae",
+      "name": "肺炎桿菌",
+      "sciName": "Klebsiella pneumoniae",
+      "janis": "Klebsiella pneumoniae",
+      "gram": "negative",
+      "look": { "shape": "rod", "arrangement": "single", "size": 1.2, "capsule": true, "flagella": false },
+      "intrinsicResistance": ["ABPC"],
+      "hp": 130,
+      "speed": 40,
+      "bladderDamage": 12,
+      "review": { "status": "仮", "check": ["自然耐性（ABPC）"] }
+    },
+    {
+      "id": "pmirabilis",
+      "name": "プロテウス・ミラビリス",
+      "sciName": "Proteus mirabilis",
+      "janis": "Proteus mirabilis",
+      "gram": "negative",
+      "look": { "shape": "rod", "arrangement": "single", "size": 0.95, "capsule": false, "flagella": true },
+      "intrinsicResistance": [],
+      "hp": 90,
+      "speed": 60,
+      "bladderDamage": 10,
+      "review": { "status": "仮", "check": ["自然耐性（このカードの範囲ではなし）"] }
+    },
+    {
+      "id": "paeruginosa",
+      "name": "緑膿菌",
+      "sciName": "Pseudomonas aeruginosa",
+      "janis": "Pseudomonas aeruginosa",
+      "gram": "negative",
+      "look": { "shape": "slender-rod", "arrangement": "single", "size": 1.0, "capsule": false, "flagella": true },
+      "intrinsicResistance": ["ABPC", "CEZ", "CMZ", "CTRX", "CFDN_PO"],
+      "hp": 120,
+      "speed": 45,
+      "bladderDamage": 12,
+      "review": { "status": "仮", "check": ["自然耐性（ABPC、CEZ、CMZ、CTRX、経口第3世代セフェム）"] }
+    },
+    {
+      "id": "efaecalis",
+      "name": "腸球菌（フェカーリス）",
+      "sciName": "Enterococcus faecalis",
+      "janis": "Enterococcus faecalis",
+      "gram": "positive",
+      "look": { "shape": "coccus", "arrangement": "chain", "size": 0.9, "capsule": false, "flagella": false },
+      "intrinsicResistance": ["CEZ", "CMZ", "CTRX", "CFPM", "CFDN_PO", "AMK"],
+      "hp": 90,
+      "speed": 35,
+      "bladderDamage": 8,
+      "review": { "status": "仮", "check": ["自然耐性（セフェム系すべて、アミノグリコシド単剤）"] }
+    }
+  ]
+}

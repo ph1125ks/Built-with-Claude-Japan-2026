@@ -1,0 +1,140 @@
+// シミュレーション用のボット。教員モードで Claude がステージを検証するときと、バランスの比較に使う。
+// ボットは Observation（プレイヤーに見える情報）とアンチバイオグラムの知識だけで判断する。
+import { drugOf } from "./data.ts";
+import type { GameState } from "./game.ts";
+import type { ObservedBacterium, Observation } from "./observe.ts";
+import { createRng } from "./rng.ts";
+import { urineWeights } from "./susceptibility.ts";
+import type { Command, GameData } from "./types.ts";
+
+/** プレイヤーが知っていてよいこと（教科書の知識と、その地域のアンチバイオグラム） */
+export interface Knowledge {
+  data: GameData;
+  /** 菌 → 薬 → 効く確率（ステージ開始時の値） */
+  pSusceptible(species: string, drug: string): number;
+  /** 尿から分離される菌の重み */
+  speciesWeights: { species: string[]; weights: number[] };
+}
+
+export function knowledgeFor(state: GameState): Knowledge {
+  const table = state.startResistance;
+  return {
+    data: state.data,
+    pSusceptible: (species, drug) => 1 - (table[species]?.[drug] ?? 1),
+    speciesWeights: urineWeights(state.data, state.region),
+  };
+}
+
+export interface Bot {
+  name: string;
+  decide(obs: Observation, k: Knowledge): Command[];
+}
+
+/** 見えている情報から、この薬がこの個体に効く見込み */
+export function expectedEffect(k: Knowledge, b: ObservedBacterium, drug: string): number {
+  if (b.level === "susceptibility") return b.resistantInHand?.includes(drug) ? 0 : 1;
+  if (b.level === "species" && b.species) return k.pSusceptible(b.species, drug);
+  // グラム染色だけ：同じグラム染色性・形（球菌か桿菌か）の菌を、分離される割合で重み付けする
+  const isCoccus = b.shape === "coccus";
+  let sum = 0;
+  let wsum = 0;
+  k.speciesWeights.species.forEach((s, i) => {
+    const def = k.data.bacteriumById.get(s);
+    if (!def || def.gram !== b.gram || (def.look.shape === "coccus") !== isCoccus) return;
+    const w = k.speciesWeights.weights[i] ?? 0;
+    sum += w * k.pSusceptible(s, drug);
+    wsum += w;
+  });
+  return wsum > 0 ? sum / wsum : 0;
+}
+
+function lanesWithBacteria(obs: Observation): ObservedBacterium[][] {
+  const lanes: ObservedBacterium[][] = Array.from({ length: obs.lanes }, () => []);
+  for (const b of obs.bacteria) lanes[b.lane]?.push(b);
+  // 膀胱に近い順
+  for (const l of lanes) l.sort((a, b) => a.x - b.x);
+  return lanes;
+}
+
+const ACTIVE = 0.15;
+
+/** 適正ボット：見えている情報で効く見込みが基準以上の薬のうち、最も狭いものを選ぶ。分かったら切り替える */
+export function appropriateBot(threshold = 0.8): Bot {
+  return {
+    name: "適正",
+    decide(obs, k) {
+      const cmds: Command[] = [];
+      lanesWithBacteria(obs).forEach((bs, lane) => {
+        const target = bs[0];
+        if (!target) return;
+        const units = obs.units.filter((u) => u.lane === lane);
+        if (units.some((u) => u.hpFraction > ACTIVE && expectedEffect(k, target, u.drug) >= threshold)) return;
+        const scored = obs.hand
+          .filter((h) => h.usable[lane])
+          .map((h) => ({ h, p: expectedEffect(k, target, h.drug), rank: drugOf(k.data, h.drug).spectrumRank }));
+        const ok = scored.filter((s) => s.p >= threshold).sort((a, b) => a.rank - b.rank || a.h.cost - b.h.cost);
+        const pick = ok[0] ?? scored.filter((s) => s.p > 0).sort((a, b) => b.p - a.p || a.rank - b.rank)[0];
+        if (pick) cmds.push({ type: "summon", drug: pick.h.drug, lane });
+      });
+      return cmds;
+    },
+  };
+}
+
+/** 乱用ボット：菌がいるレーンには、いつも最も広域の薬を使う */
+export function broadBot(): Bot {
+  return {
+    name: "乱用",
+    decide(obs, k) {
+      const cmds: Command[] = [];
+      lanesWithBacteria(obs).forEach((bs, lane) => {
+        if (bs.length === 0) return;
+        if (obs.units.some((u) => u.lane === lane && u.hpFraction > ACTIVE)) return;
+        const pick = obs.hand
+          .filter((h) => h.usable[lane])
+          .sort((a, b) => drugOf(k.data, b.drug).spectrumRank - drugOf(k.data, a.drug).spectrumRank)[0];
+        if (pick) cmds.push({ type: "summon", drug: pick.drug, lane });
+      });
+      return cmds;
+    },
+  };
+}
+
+/** 偏りボット：一つの薬だけを使い続ける */
+export function singleDrugBot(drug: string): Bot {
+  return {
+    name: `偏り（${drug}）`,
+    decide(obs) {
+      const cmds: Command[] = [];
+      lanesWithBacteria(obs).forEach((bs, lane) => {
+        if (bs.length === 0) return;
+        if (obs.units.some((u) => u.lane === lane && u.drug === drug && u.hpFraction > ACTIVE)) return;
+        if (obs.hand.find((h) => h.drug === drug)?.usable[lane]) cmds.push({ type: "summon", drug, lane });
+      });
+      return cmds;
+    },
+  };
+}
+
+/** ランダムボット：手札からでたらめに選ぶ（基準として） */
+export function randomBot(seed: number): Bot {
+  const rng = createRng(seed);
+  return {
+    name: "ランダム",
+    decide(obs) {
+      const cmds: Command[] = [];
+      lanesWithBacteria(obs).forEach((bs, lane) => {
+        if (bs.length === 0) return;
+        if (obs.units.some((u) => u.lane === lane && u.hpFraction > ACTIVE)) return;
+        const usable = obs.hand.filter((h) => h.usable[lane]);
+        if (usable.length) cmds.push({ type: "summon", drug: rng.pick(usable).drug, lane });
+      });
+      return cmds;
+    },
+  };
+}
+
+/** 何もしないボット（基準として） */
+export function idleBot(): Bot {
+  return { name: "何もしない", decide: () => [] };
+}

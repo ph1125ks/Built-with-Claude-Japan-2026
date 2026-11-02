@@ -1,0 +1,29 @@
+{
+  "name": "sentakuatsu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "センタクアツ（仮）：抗菌薬の選び方が未来の耐性菌をつくることを体感する、教育用タワーディフェンス",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "data:fetch": "tsx scripts/data/fetch-raw.ts",
+    "data:build": "tsx scripts/data/build-data.ts",
+    "sim": "tsx scripts/sim.ts",
+    "data:verify": "tsx scripts/data/verify-data.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "exceljs": "^4.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
+  }
+}

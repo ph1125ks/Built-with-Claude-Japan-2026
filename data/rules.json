@@ -1,0 +1,60 @@
+{
+  "_comment": [
+    "ゲームのルールと変換の設定。コードを変えずにここで調整する。",
+    "review.status が「仮」のものは監修または試遊で確定する。"
+  ],
+  "time": {
+    "ticksPerSecond": 20,
+    "secondsPerGameDay": 24
+  },
+  "board": {
+    "lanes": 3,
+    "laneLength": 1000,
+    "revealSpeciesBelow": 0.6667,
+    "revealSusceptibilityBelow": 0.3333,
+    "maxUnitsPerLane": 3
+  },
+  "units": {
+    "fullHp": 100,
+    "power": 30,
+    "_comment": "召喚した抗菌薬は HP（体内の薬の量）が投与間隔の長さで直線的に0になる。内服は HP×吸収率で出る。毎秒のダメージ = power ×（HP / fullHp）× 尿中移行の係数。"
+  },
+  "susceptibility": {
+    "conversion": "S_ONLY",
+    "_conversionOptions": {
+      "S_ONLY": "効く確率 = S の株数 / 合計。I・R・SorI・IorR・判定不能は効かない扱い",
+      "S_PLUS_HALF_SORI": "効く確率 =（S + SorI の半分）/ 合計"
+    },
+    "proxies": [
+      { "bacteria": ["ecoli", "kpneumoniae", "pmirabilis"], "drug": "CFDN_PO", "useJanis": "CTX", "note": "経口第3世代セフェムの感受性を CTX で代用" },
+      { "bacteria": ["efaecalis"], "drug": "TAZPIPC", "useJanis": "ABPC", "note": "腸球菌の TAZ/PIPC を ABPC で代用" },
+      { "bacteria": ["efaecalis"], "drug": "MEPM", "fixedSusceptible": 0, "note": "JANIS に値がない。腸球菌にカルバペネムは頼れない扱い" }
+    ],
+    "missing": "NOT_EFFECTIVE",
+    "review": {
+      "status": "仮",
+      "check": ["変換ルール（S のみか、SorI をどう扱うか）", "代用の3件", "値がない組み合わせを効かない扱いにしてよいか"]
+    }
+  },
+  "cost": {
+    "mode": "yakka",
+    "representativePrice": "MIN",
+    "yakkaTiers": [
+      { "maxYenPerDay": 100, "tier": 1 },
+      { "maxYenPerDay": 1000, "tier": 2 },
+      { "maxYenPerDay": 2000, "tier": 3 },
+      { "maxYenPerDay": 3000, "tier": 4 },
+      { "maxYenPerDay": null, "tier": 5 }
+    ],
+    "costPerDayByTier": { "1": 10, "2": 25, "3": 45, "4": 70, "5": 100 },
+    "abstractCostPerDay": { "ABPC": 30, "CEZ": 30, "CMZ": 40, "CTRX": 40, "CFPM": 60, "TAZPIPC": 80, "MEPM": 100, "AMK": 50, "LVFX_PO": 40, "CFDN_PO": 30 },
+    "_comment": "1回の召喚のコスト = 1日あたりのコスト ÷ 1日の投与回数。代表の薬価は同じ規格の最小値（仮）。",
+    "review": { "status": "仮", "check": ["段階の区切り", "代表の薬価を最小値にするか先発品にするか"] }
+  },
+  "resistance": {
+    "model": "none",
+    "_modelOptions": ["none", "A", "B"],
+    "exaggeration": 1.0,
+    "_comment": "耐性モデル A（選択圧の再現）と B（耐性ゲージ）は 11/4 に実装し、11/5 に比べて決める。"
+  }
+}

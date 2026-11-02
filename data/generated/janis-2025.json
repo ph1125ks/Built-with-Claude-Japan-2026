@@ -1,0 +1,4915 @@
+{
+ "_comment": "JANIS 検査部門 公開情報 2025年年報から作成。感受性は株数（割合は使うときに計算する）。出典は data/README.md",
+ "sources": [
+  {
+   "file": "janis/ken_open_report_202500.xlsx",
+   "url": "https://www.e-stat.go.jp/stat-search/file-download?statInfId=000040494034&fileKind=0",
+   "title": "院内感染対策サーベイランス 検査部門 公開情報 2025年1月〜12月 年報（全集計対象医療機関）【入院検体・CLSI 2012 版】",
+   "page": "https://www.e-stat.go.jp/stat-search/files?stat_infid=000040494034",
+   "retrieved": "2026-11-02"
+  },
+  {
+   "file": "janis/ken_open_report_202500_kinki.xlsx",
+   "url": "https://www.e-stat.go.jp/stat-search/file-download?statInfId=000040494039&fileKind=0",
+   "title": "院内感染対策サーベイランス 検査部門 公開情報 2025年1月〜12月 年報（近畿）【入院検体・CLSI 2012 版】",
+   "page": "https://www.e-stat.go.jp/stat-search/files?stat_infid=000040494039",
+   "retrieved": "2026-11-02"
+  }
+ ],
+ "criteria": "CLSI 2012",
+ "specimen": "入院検体・すべての検査材料（感受性）／尿（分離菌の割合、重複処理後）",
+ "regions": [
+  "全国",
+  "福井県",
+  "滋賀県",
+  "京都府",
+  "大阪府",
+  "兵庫県",
+  "奈良県",
+  "和歌山県"
+ ],
+ "susceptibility": {
+  "全国": {
+   "efaecalis": {
+    "PCG": {
+     "total": 129246,
+     "S": 127416,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 913,
+     "NS": null,
+     "ND": 917
+    },
+    "ABPC": {
+     "total": 146550,
+     "S": 146355,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 194,
+     "NS": null,
+     "ND": 1
+    },
+    "EM": {
+     "total": 116096,
+     "S": 21715,
+     "SorI": 0,
+     "I": 41249,
+     "IorR": 155,
+     "R": 52976,
+     "NS": null,
+     "ND": 1
+    },
+    "LVFX": {
+     "total": 154791,
+     "S": 138696,
+     "SorI": 0,
+     "I": 1394,
+     "IorR": 11,
+     "R": 14675,
+     "NS": null,
+     "ND": 15
+    },
+    "MINO": {
+     "total": 160887,
+     "S": 55330,
+     "SorI": 0,
+     "I": 32006,
+     "IorR": 123,
+     "R": 73426,
+     "NS": null,
+     "ND": 2
+    },
+    "VCM": {
+     "total": 164677,
+     "S": 164649,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 0,
+     "R": 19,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 135602,
+     "S": 135579,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 20,
+     "NS": null,
+     "ND": 1
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 420137,
+     "S": 196824,
+     "SorI": 0,
+     "I": 4523,
+     "IorR": 234,
+     "R": 218550,
+     "NS": null,
+     "ND": 6
+    },
+    "PIPC": {
+     "total": 393475,
+     "S": 196016,
+     "SorI": 0,
+     "I": 13482,
+     "IorR": 450,
+     "R": 183526,
+     "NS": null,
+     "ND": 1
+    },
+    "TAZ/PIPC": {
+     "total": 413424,
+     "S": 394995,
+     "SorI": 100,
+     "I": 6746,
+     "IorR": 27,
+     "R": 11549,
+     "NS": null,
+     "ND": 7
+    },
+    "CEZ": {
+     "total": 456043,
+     "S": 196825,
+     "SorI": 58845,
+     "I": 19443,
+     "IorR": 2,
+     "R": 178407,
+     "NS": null,
+     "ND": 2521
+    },
+    "CMZ": {
+     "total": 474049,
+     "S": 465665,
+     "SorI": 3,
+     "I": 4215,
+     "IorR": 130,
+     "R": 4036,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 258541,
+     "S": 183872,
+     "SorI": 13,
+     "I": 1853,
+     "IorR": 153,
+     "R": 72611,
+     "NS": null,
+     "ND": 39
+    },
+    "CTRX": {
+     "total": 394006,
+     "S": 268199,
+     "SorI": 16,
+     "I": 1128,
+     "IorR": 95,
+     "R": 124528,
+     "NS": null,
+     "ND": 40
+    },
+    "CAZ": {
+     "total": 451216,
+     "S": 359478,
+     "SorI": 532,
+     "I": 24387,
+     "IorR": 40,
+     "R": 66617,
+     "NS": null,
+     "ND": 162
+    },
+    "CFPM": {
+     "total": 449520,
+     "S": 357873,
+     "SorI": 0,
+     "I": 10907,
+     "IorR": 7757,
+     "R": 72979,
+     "NS": null,
+     "ND": 4
+    },
+    "AZT": {
+     "total": 341724,
+     "S": 260038,
+     "SorI": 0,
+     "I": 12430,
+     "IorR": 57,
+     "R": 69100,
+     "NS": null,
+     "ND": 99
+    },
+    "IPM/CS": {
+     "total": 373219,
+     "S": 372214,
+     "SorI": 142,
+     "I": 599,
+     "IorR": 1,
+     "R": 261,
+     "NS": null,
+     "ND": 2
+    },
+    "MEPM": {
+     "total": 480572,
+     "S": 480020,
+     "SorI": 2,
+     "I": 105,
+     "IorR": 1,
+     "R": 444,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 467244,
+     "S": 465680,
+     "SorI": 0,
+     "I": 953,
+     "IorR": 0,
+     "R": 605,
+     "NS": null,
+     "ND": 6
+    },
+    "LVFX": {
+     "total": 471907,
+     "S": 265030,
+     "SorI": 2,
+     "I": 10064,
+     "IorR": 7225,
+     "R": 178093,
+     "NS": null,
+     "ND": 11493
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 223124,
+     "S": 9744,
+     "SorI": 0,
+     "I": 32489,
+     "IorR": 238,
+     "R": 180649,
+     "NS": null,
+     "ND": 4
+    },
+    "PIPC": {
+     "total": 207344,
+     "S": 109680,
+     "SorI": 0,
+     "I": 27659,
+     "IorR": 143,
+     "R": 69862,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 222455,
+     "S": 205493,
+     "SorI": 45,
+     "I": 6501,
+     "IorR": 32,
+     "R": 10382,
+     "NS": null,
+     "ND": 2
+    },
+    "CEZ": {
+     "total": 242515,
+     "S": 139773,
+     "SorI": 37347,
+     "I": 6354,
+     "IorR": 0,
+     "R": 57483,
+     "NS": null,
+     "ND": 1558
+    },
+    "CMZ": {
+     "total": 252082,
+     "S": 246807,
+     "SorI": 0,
+     "I": 1654,
+     "IorR": 52,
+     "R": 3569,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 136283,
+     "S": 113796,
+     "SorI": 11,
+     "I": 532,
+     "IorR": 30,
+     "R": 21890,
+     "NS": null,
+     "ND": 24
+    },
+    "CTRX": {
+     "total": 211597,
+     "S": 169091,
+     "SorI": 8,
+     "I": 497,
+     "IorR": 6,
+     "R": 41973,
+     "NS": null,
+     "ND": 22
+    },
+    "CAZ": {
+     "total": 239701,
+     "S": 200972,
+     "SorI": 385,
+     "I": 5112,
+     "IorR": 4,
+     "R": 33173,
+     "NS": null,
+     "ND": 55
+    },
+    "CFPM": {
+     "total": 239611,
+     "S": 205984,
+     "SorI": 0,
+     "I": 3420,
+     "IorR": 2428,
+     "R": 27778,
+     "NS": null,
+     "ND": 1
+    },
+    "AZT": {
+     "total": 181525,
+     "S": 153391,
+     "SorI": 1,
+     "I": 1719,
+     "IorR": 4,
+     "R": 26394,
+     "NS": null,
+     "ND": 16
+    },
+    "IPM/CS": {
+     "total": 197066,
+     "S": 195748,
+     "SorI": 32,
+     "I": 917,
+     "IorR": 0,
+     "R": 365,
+     "NS": null,
+     "ND": 4
+    },
+    "MEPM": {
+     "total": 255333,
+     "S": 254270,
+     "SorI": 1,
+     "I": 248,
+     "IorR": 0,
+     "R": 814,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 248203,
+     "S": 247899,
+     "SorI": 0,
+     "I": 170,
+     "IorR": 0,
+     "R": 134,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 249273,
+     "S": 226071,
+     "SorI": 0,
+     "I": 4446,
+     "IorR": 618,
+     "R": 16770,
+     "NS": null,
+     "ND": 1368
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 49175,
+     "S": 31682,
+     "SorI": 0,
+     "I": 401,
+     "IorR": 15,
+     "R": 17074,
+     "NS": null,
+     "ND": 3
+    },
+    "PIPC": {
+     "total": 53854,
+     "S": 33952,
+     "SorI": 0,
+     "I": 2518,
+     "IorR": 23,
+     "R": 17361,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 56209,
+     "S": 55519,
+     "SorI": 5,
+     "I": 256,
+     "IorR": 5,
+     "R": 424,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 58972,
+     "S": 22066,
+     "SorI": 7069,
+     "I": 6562,
+     "IorR": 0,
+     "R": 22747,
+     "NS": null,
+     "ND": 528
+    },
+    "CMZ": {
+     "total": 61648,
+     "S": 61290,
+     "SorI": 0,
+     "I": 112,
+     "IorR": 6,
+     "R": 240,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 28263,
+     "S": 22853,
+     "SorI": 0,
+     "I": 175,
+     "IorR": 4,
+     "R": 5227,
+     "NS": null,
+     "ND": 4
+    },
+    "CTRX": {
+     "total": 52575,
+     "S": 37294,
+     "SorI": 0,
+     "I": 251,
+     "IorR": 12,
+     "R": 15013,
+     "NS": null,
+     "ND": 5
+    },
+    "CAZ": {
+     "total": 57757,
+     "S": 54976,
+     "SorI": 48,
+     "I": 409,
+     "IorR": 0,
+     "R": 2321,
+     "NS": null,
+     "ND": 3
+    },
+    "CFPM": {
+     "total": 58007,
+     "S": 47664,
+     "SorI": 0,
+     "I": 1088,
+     "IorR": 424,
+     "R": 8831,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 39287,
+     "S": 35796,
+     "SorI": 0,
+     "I": 324,
+     "IorR": 1,
+     "R": 3166,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 29821,
+     "S": 16466,
+     "SorI": 11,
+     "I": 9299,
+     "IorR": 0,
+     "R": 4044,
+     "NS": null,
+     "ND": 1
+    },
+    "MEPM": {
+     "total": 62800,
+     "S": 62749,
+     "SorI": 0,
+     "I": 24,
+     "IorR": 0,
+     "R": 27,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 62009,
+     "S": 61756,
+     "SorI": 0,
+     "I": 110,
+     "IorR": 1,
+     "R": 141,
+     "NS": null,
+     "ND": 1
+    },
+    "LVFX": {
+     "total": 62725,
+     "S": 47492,
+     "SorI": 0,
+     "I": 5037,
+     "IorR": 618,
+     "R": 8936,
+     "NS": null,
+     "ND": 642
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 263940,
+     "S": 214327,
+     "SorI": 0,
+     "I": 23989,
+     "IorR": 61,
+     "R": 25562,
+     "NS": null,
+     "ND": 1
+    },
+    "TAZ/PIPC": {
+     "total": 259502,
+     "S": 219118,
+     "SorI": 36,
+     "I": 20081,
+     "IorR": 54,
+     "R": 20196,
+     "NS": null,
+     "ND": 17
+    },
+    "CAZ": {
+     "total": 267776,
+     "S": 232352,
+     "SorI": 0,
+     "I": 12730,
+     "IorR": 102,
+     "R": 22591,
+     "NS": null,
+     "ND": 1
+    },
+    "CFPM": {
+     "total": 266957,
+     "S": 235174,
+     "SorI": 0,
+     "I": 18683,
+     "IorR": 37,
+     "R": 13063,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 207255,
+     "S": 156514,
+     "SorI": 0,
+     "I": 25826,
+     "IorR": 131,
+     "R": 24533,
+     "NS": null,
+     "ND": 251
+    },
+    "IPM/CS": {
+     "total": 243008,
+     "S": 200467,
+     "SorI": 0,
+     "I": 11034,
+     "IorR": 61,
+     "R": 31444,
+     "NS": null,
+     "ND": 2
+    },
+    "MEPM": {
+     "total": 281255,
+     "S": 247188,
+     "SorI": 0,
+     "I": 11001,
+     "IorR": 45,
+     "R": 23020,
+     "NS": null,
+     "ND": 1
+    },
+    "GM": {
+     "total": 230921,
+     "S": 207536,
+     "SorI": 0,
+     "I": 18726,
+     "IorR": 5,
+     "R": 4654,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 279882,
+     "S": 275712,
+     "SorI": 0,
+     "I": 2767,
+     "IorR": 5,
+     "R": 1396,
+     "NS": null,
+     "ND": 2
+    },
+    "LVFX": {
+     "total": 269783,
+     "S": 237773,
+     "SorI": 0,
+     "I": 12840,
+     "IorR": 120,
+     "R": 19012,
+     "NS": null,
+     "ND": 38
+    }
+   }
+  },
+  "福井県": {
+   "efaecalis": {
+    "PCG": {
+     "total": 510,
+     "S": 502,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "ABPC": {
+     "total": 723,
+     "S": 717,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 6,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 387,
+     "S": 67,
+     "SorI": 0,
+     "I": 166,
+     "IorR": 0,
+     "R": 154,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 812,
+     "S": 740,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 67,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 774,
+     "S": 260,
+     "SorI": 0,
+     "I": 184,
+     "IorR": 0,
+     "R": 330,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 945,
+     "S": 945,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 827,
+     "S": 827,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 2482,
+     "S": 1246,
+     "SorI": 0,
+     "I": 26,
+     "IorR": 0,
+     "R": 1210,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 2748,
+     "S": 1488,
+     "SorI": 0,
+     "I": 92,
+     "IorR": 0,
+     "R": 1168,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 3021,
+     "S": 2904,
+     "SorI": 0,
+     "I": 52,
+     "IorR": 0,
+     "R": 65,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 3395,
+     "S": 1310,
+     "SorI": 647,
+     "I": 88,
+     "IorR": 0,
+     "R": 1190,
+     "NS": null,
+     "ND": 160
+    },
+    "CMZ": {
+     "total": 3154,
+     "S": 3097,
+     "SorI": 0,
+     "I": 27,
+     "IorR": 0,
+     "R": 30,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1848,
+     "S": 1400,
+     "SorI": 0,
+     "I": 12,
+     "IorR": 0,
+     "R": 436,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 2809,
+     "S": 2051,
+     "SorI": 0,
+     "I": 7,
+     "IorR": 0,
+     "R": 751,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 3196,
+     "S": 2655,
+     "SorI": 0,
+     "I": 182,
+     "IorR": 0,
+     "R": 359,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 3322,
+     "S": 2719,
+     "SorI": 0,
+     "I": 68,
+     "IorR": 59,
+     "R": 476,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1690,
+     "S": 1391,
+     "SorI": 0,
+     "I": 44,
+     "IorR": 0,
+     "R": 255,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 2085,
+     "S": 2081,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 3482,
+     "S": 3480,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 2881,
+     "S": 2878,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 3542,
+     "S": 2080,
+     "SorI": 0,
+     "I": 62,
+     "IorR": 43,
+     "R": 1262,
+     "NS": null,
+     "ND": 95
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 1038,
+     "S": 47,
+     "SorI": 0,
+     "I": 147,
+     "IorR": 0,
+     "R": 844,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 1179,
+     "S": 726,
+     "SorI": 0,
+     "I": 196,
+     "IorR": 0,
+     "R": 257,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1314,
+     "S": 1285,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 18,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 1467,
+     "S": 877,
+     "SorI": 366,
+     "I": 22,
+     "IorR": 0,
+     "R": 124,
+     "NS": null,
+     "ND": 78
+    },
+    "CMZ": {
+     "total": 1343,
+     "S": 1332,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 5,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 737,
+     "S": 694,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 42,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 1209,
+     "S": 1128,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 81,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 1315,
+     "S": 1259,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 51,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1444,
+     "S": 1372,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 12,
+     "R": 54,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 706,
+     "S": 678,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 27,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 972,
+     "S": 971,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 1464,
+     "S": 1462,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 1222,
+     "S": 1221,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1531,
+     "S": 1471,
+     "SorI": 0,
+     "I": 8,
+     "IorR": 4,
+     "R": 45,
+     "NS": null,
+     "ND": 3
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 355,
+     "S": 249,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 100,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 553,
+     "S": 398,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 144,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 630,
+     "S": 626,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 587,
+     "S": 248,
+     "SorI": 61,
+     "I": 57,
+     "IorR": 0,
+     "R": 167,
+     "NS": null,
+     "ND": 54
+    },
+    "CMZ": {
+     "total": 609,
+     "S": 609,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 203,
+     "S": 159,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 44,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 578,
+     "S": 447,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 130,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 525,
+     "S": 516,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 4,
+     "NS": null,
+     "ND": 1
+    },
+    "CFPM": {
+     "total": 608,
+     "S": 512,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 90,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 198,
+     "S": 180,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 348,
+     "S": 275,
+     "SorI": 0,
+     "I": 52,
+     "IorR": 0,
+     "R": 21,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 670,
+     "S": 670,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 554,
+     "S": 552,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 696,
+     "S": 433,
+     "SorI": 0,
+     "I": 28,
+     "IorR": 2,
+     "R": 227,
+     "NS": null,
+     "ND": 6
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 1806,
+     "S": 1412,
+     "SorI": 0,
+     "I": 186,
+     "IorR": 0,
+     "R": 208,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1785,
+     "S": 1473,
+     "SorI": 0,
+     "I": 146,
+     "IorR": 0,
+     "R": 166,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 1532,
+     "S": 1316,
+     "SorI": 0,
+     "I": 69,
+     "IorR": 1,
+     "R": 146,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1880,
+     "S": 1619,
+     "SorI": 0,
+     "I": 175,
+     "IorR": 1,
+     "R": 85,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 936,
+     "S": 716,
+     "SorI": 0,
+     "I": 109,
+     "IorR": 0,
+     "R": 111,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1735,
+     "S": 1306,
+     "SorI": 0,
+     "I": 69,
+     "IorR": 0,
+     "R": 360,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 1913,
+     "S": 1539,
+     "SorI": 0,
+     "I": 120,
+     "IorR": 2,
+     "R": 252,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 1254,
+     "S": 1090,
+     "SorI": 0,
+     "I": 138,
+     "IorR": 0,
+     "R": 26,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 1637,
+     "S": 1600,
+     "SorI": 0,
+     "I": 33,
+     "IorR": 0,
+     "R": 4,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1870,
+     "S": 1510,
+     "SorI": 0,
+     "I": 91,
+     "IorR": 0,
+     "R": 269,
+     "NS": null,
+     "ND": 0
+    }
+   }
+  },
+  "滋賀県": {
+   "efaecalis": {
+    "PCG": {
+     "total": 911,
+     "S": 899,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "ABPC": {
+     "total": 1280,
+     "S": 1272,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 1054,
+     "S": 196,
+     "SorI": 0,
+     "I": 381,
+     "IorR": 0,
+     "R": 477,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1392,
+     "S": 1297,
+     "SorI": 0,
+     "I": 13,
+     "IorR": 0,
+     "R": 82,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 1424,
+     "S": 437,
+     "SorI": 0,
+     "I": 299,
+     "IorR": 1,
+     "R": 687,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 1410,
+     "S": 1410,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 1371,
+     "S": 1371,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 3876,
+     "S": 1883,
+     "SorI": 0,
+     "I": 34,
+     "IorR": 0,
+     "R": 1959,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 2532,
+     "S": 1340,
+     "SorI": 0,
+     "I": 108,
+     "IorR": 159,
+     "R": 925,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 3858,
+     "S": 3725,
+     "SorI": 0,
+     "I": 54,
+     "IorR": 14,
+     "R": 65,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 4221,
+     "S": 2046,
+     "SorI": 308,
+     "I": 246,
+     "IorR": 0,
+     "R": 1621,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 4150,
+     "S": 4057,
+     "SorI": 0,
+     "I": 46,
+     "IorR": 0,
+     "R": 47,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 2093,
+     "S": 1538,
+     "SorI": 0,
+     "I": 10,
+     "IorR": 0,
+     "R": 545,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 2993,
+     "S": 2035,
+     "SorI": 0,
+     "I": 7,
+     "IorR": 0,
+     "R": 951,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 4516,
+     "S": 3632,
+     "SorI": 0,
+     "I": 234,
+     "IorR": 0,
+     "R": 649,
+     "NS": null,
+     "ND": 1
+    },
+    "CFPM": {
+     "total": 3945,
+     "S": 3186,
+     "SorI": 0,
+     "I": 97,
+     "IorR": 158,
+     "R": 504,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2987,
+     "S": 2316,
+     "SorI": 0,
+     "I": 136,
+     "IorR": 0,
+     "R": 535,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 3305,
+     "S": 3301,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 4475,
+     "S": 4473,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 4548,
+     "S": 4529,
+     "SorI": 0,
+     "I": 10,
+     "IorR": 0,
+     "R": 9,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 4488,
+     "S": 2587,
+     "SorI": 0,
+     "I": 62,
+     "IorR": 149,
+     "R": 1413,
+     "NS": null,
+     "ND": 277
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 1873,
+     "S": 98,
+     "SorI": 0,
+     "I": 273,
+     "IorR": 0,
+     "R": 1502,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 1229,
+     "S": 596,
+     "SorI": 0,
+     "I": 205,
+     "IorR": 40,
+     "R": 388,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1922,
+     "S": 1754,
+     "SorI": 0,
+     "I": 62,
+     "IorR": 9,
+     "R": 97,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 2127,
+     "S": 1279,
+     "SorI": 188,
+     "I": 68,
+     "IorR": 0,
+     "R": 592,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 1969,
+     "S": 1913,
+     "SorI": 0,
+     "I": 28,
+     "IorR": 0,
+     "R": 28,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 970,
+     "S": 773,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 193,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 1589,
+     "S": 1173,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 415,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 2242,
+     "S": 1789,
+     "SorI": 0,
+     "I": 52,
+     "IorR": 0,
+     "R": 399,
+     "NS": null,
+     "ND": 2
+    },
+    "CFPM": {
+     "total": 1874,
+     "S": 1586,
+     "SorI": 0,
+     "I": 20,
+     "IorR": 48,
+     "R": 220,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1454,
+     "S": 1232,
+     "SorI": 0,
+     "I": 15,
+     "IorR": 0,
+     "R": 207,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1561,
+     "S": 1556,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 2244,
+     "S": 2224,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 15,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 2267,
+     "S": 2259,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 2235,
+     "S": 1897,
+     "SorI": 0,
+     "I": 23,
+     "IorR": 22,
+     "R": 254,
+     "NS": null,
+     "ND": 39
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 382,
+     "S": 271,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 110,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 291,
+     "S": 213,
+     "SorI": 0,
+     "I": 20,
+     "IorR": 9,
+     "R": 49,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 494,
+     "S": 494,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 540,
+     "S": 192,
+     "SorI": 31,
+     "I": 108,
+     "IorR": 0,
+     "R": 209,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 413,
+     "S": 413,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 193,
+     "S": 160,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 33,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 435,
+     "S": 279,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 154,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 568,
+     "S": 489,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 76,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 473,
+     "S": 353,
+     "SorI": 0,
+     "I": 7,
+     "IorR": 15,
+     "R": 98,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 315,
+     "S": 295,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 17,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 354,
+     "S": 109,
+     "SorI": 0,
+     "I": 184,
+     "IorR": 0,
+     "R": 61,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 560,
+     "S": 560,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 576,
+     "S": 575,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 574,
+     "S": 448,
+     "SorI": 0,
+     "I": 57,
+     "IorR": 6,
+     "R": 44,
+     "NS": null,
+     "ND": 19
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 1631,
+     "S": 1329,
+     "SorI": 0,
+     "I": 137,
+     "IorR": 2,
+     "R": 163,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1948,
+     "S": 1644,
+     "SorI": 0,
+     "I": 131,
+     "IorR": 0,
+     "R": 173,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 2177,
+     "S": 1888,
+     "SorI": 0,
+     "I": 97,
+     "IorR": 0,
+     "R": 192,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1914,
+     "S": 1671,
+     "SorI": 0,
+     "I": 142,
+     "IorR": 1,
+     "R": 100,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1667,
+     "S": 1276,
+     "SorI": 0,
+     "I": 189,
+     "IorR": 1,
+     "R": 201,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1718,
+     "S": 1466,
+     "SorI": 0,
+     "I": 45,
+     "IorR": 0,
+     "R": 207,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 2208,
+     "S": 1892,
+     "SorI": 0,
+     "I": 92,
+     "IorR": 0,
+     "R": 224,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 1622,
+     "S": 1506,
+     "SorI": 0,
+     "I": 101,
+     "IorR": 1,
+     "R": 14,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 2219,
+     "S": 2163,
+     "SorI": 0,
+     "I": 33,
+     "IorR": 1,
+     "R": 22,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 2050,
+     "S": 1790,
+     "SorI": 0,
+     "I": 100,
+     "IorR": 0,
+     "R": 160,
+     "NS": null,
+     "ND": 0
+    }
+   }
+  },
+  "京都府": {
+   "efaecalis": {
+    "PCG": {
+     "total": 2870,
+     "S": 2845,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 25,
+     "NS": null,
+     "ND": 0
+    },
+    "ABPC": {
+     "total": 3185,
+     "S": 3182,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 2244,
+     "S": 438,
+     "SorI": 0,
+     "I": 633,
+     "IorR": 0,
+     "R": 1173,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 2941,
+     "S": 2637,
+     "SorI": 0,
+     "I": 29,
+     "IorR": 0,
+     "R": 275,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 3290,
+     "S": 1143,
+     "SorI": 0,
+     "I": 694,
+     "IorR": 0,
+     "R": 1453,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 3478,
+     "S": 3470,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 5,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 2540,
+     "S": 2537,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 9426,
+     "S": 3964,
+     "SorI": 0,
+     "I": 65,
+     "IorR": 0,
+     "R": 5397,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 7081,
+     "S": 3216,
+     "SorI": 0,
+     "I": 216,
+     "IorR": 0,
+     "R": 3649,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 9126,
+     "S": 8768,
+     "SorI": 0,
+     "I": 145,
+     "IorR": 0,
+     "R": 213,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 9288,
+     "S": 4461,
+     "SorI": 259,
+     "I": 404,
+     "IorR": 0,
+     "R": 4164,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 9931,
+     "S": 9805,
+     "SorI": 0,
+     "I": 62,
+     "IorR": 0,
+     "R": 64,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 6510,
+     "S": 4343,
+     "SorI": 0,
+     "I": 31,
+     "IorR": 79,
+     "R": 2057,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 8064,
+     "S": 5137,
+     "SorI": 0,
+     "I": 29,
+     "IorR": 0,
+     "R": 2898,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 9637,
+     "S": 7099,
+     "SorI": 0,
+     "I": 540,
+     "IorR": 0,
+     "R": 1998,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 9969,
+     "S": 7437,
+     "SorI": 0,
+     "I": 187,
+     "IorR": 269,
+     "R": 2076,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 5829,
+     "S": 4028,
+     "SorI": 0,
+     "I": 194,
+     "IorR": 0,
+     "R": 1607,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 7754,
+     "S": 7743,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 10290,
+     "S": 10287,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 10584,
+     "S": 10524,
+     "SorI": 0,
+     "I": 42,
+     "IorR": 0,
+     "R": 18,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 10126,
+     "S": 5548,
+     "SorI": 0,
+     "I": 226,
+     "IorR": 0,
+     "R": 3966,
+     "NS": null,
+     "ND": 386
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 5582,
+     "S": 162,
+     "SorI": 0,
+     "I": 512,
+     "IorR": 0,
+     "R": 4908,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 3999,
+     "S": 1270,
+     "SorI": 0,
+     "I": 719,
+     "IorR": 0,
+     "R": 2010,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 5486,
+     "S": 4743,
+     "SorI": 0,
+     "I": 365,
+     "IorR": 0,
+     "R": 378,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 5492,
+     "S": 2857,
+     "SorI": 201,
+     "I": 170,
+     "IorR": 0,
+     "R": 2264,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 5850,
+     "S": 5751,
+     "SorI": 0,
+     "I": 34,
+     "IorR": 0,
+     "R": 65,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 3681,
+     "S": 2501,
+     "SorI": 0,
+     "I": 7,
+     "IorR": 27,
+     "R": 1146,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 4579,
+     "S": 2914,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 0,
+     "R": 1656,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 5512,
+     "S": 3868,
+     "SorI": 0,
+     "I": 174,
+     "IorR": 0,
+     "R": 1470,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 5887,
+     "S": 4335,
+     "SorI": 0,
+     "I": 138,
+     "IorR": 221,
+     "R": 1193,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 3347,
+     "S": 2275,
+     "SorI": 0,
+     "I": 31,
+     "IorR": 0,
+     "R": 1041,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 4347,
+     "S": 4315,
+     "SorI": 0,
+     "I": 25,
+     "IorR": 0,
+     "R": 7,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 6070,
+     "S": 6032,
+     "SorI": 0,
+     "I": 10,
+     "IorR": 0,
+     "R": 28,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 6173,
+     "S": 6159,
+     "SorI": 0,
+     "I": 12,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 5759,
+     "S": 4756,
+     "SorI": 0,
+     "I": 141,
+     "IorR": 0,
+     "R": 759,
+     "NS": null,
+     "ND": 103
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 1260,
+     "S": 629,
+     "SorI": 0,
+     "I": 8,
+     "IorR": 0,
+     "R": 623,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 1032,
+     "S": 578,
+     "SorI": 0,
+     "I": 117,
+     "IorR": 0,
+     "R": 337,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1240,
+     "S": 1227,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 1302,
+     "S": 520,
+     "SorI": 40,
+     "I": 126,
+     "IorR": 0,
+     "R": 616,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 1353,
+     "S": 1333,
+     "SorI": 0,
+     "I": 13,
+     "IorR": 0,
+     "R": 7,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 672,
+     "S": 533,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 4,
+     "R": 126,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 1155,
+     "S": 730,
+     "SorI": 0,
+     "I": 31,
+     "IorR": 0,
+     "R": 394,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 1338,
+     "S": 1246,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 86,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1351,
+     "S": 1122,
+     "SorI": 0,
+     "I": 21,
+     "IorR": 65,
+     "R": 143,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 794,
+     "S": 713,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 77,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 742,
+     "S": 481,
+     "SorI": 0,
+     "I": 195,
+     "IorR": 0,
+     "R": 66,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 1326,
+     "S": 1325,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 1419,
+     "S": 1416,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1221,
+     "S": 831,
+     "SorI": 0,
+     "I": 147,
+     "IorR": 0,
+     "R": 143,
+     "NS": null,
+     "ND": 100
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 4538,
+     "S": 3621,
+     "SorI": 0,
+     "I": 478,
+     "IorR": 0,
+     "R": 439,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 4475,
+     "S": 3738,
+     "SorI": 0,
+     "I": 385,
+     "IorR": 0,
+     "R": 352,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 5098,
+     "S": 4396,
+     "SorI": 0,
+     "I": 250,
+     "IorR": 0,
+     "R": 452,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 4901,
+     "S": 4268,
+     "SorI": 0,
+     "I": 373,
+     "IorR": 0,
+     "R": 260,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 3506,
+     "S": 2622,
+     "SorI": 0,
+     "I": 386,
+     "IorR": 0,
+     "R": 498,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 4783,
+     "S": 3886,
+     "SorI": 0,
+     "I": 244,
+     "IorR": 0,
+     "R": 653,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 5038,
+     "S": 4369,
+     "SorI": 0,
+     "I": 248,
+     "IorR": 0,
+     "R": 421,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 4525,
+     "S": 4121,
+     "SorI": 0,
+     "I": 329,
+     "IorR": 0,
+     "R": 75,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 5205,
+     "S": 5103,
+     "SorI": 0,
+     "I": 67,
+     "IorR": 0,
+     "R": 35,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 4714,
+     "S": 4256,
+     "SorI": 0,
+     "I": 221,
+     "IorR": 0,
+     "R": 237,
+     "NS": null,
+     "ND": 0
+    }
+   }
+  },
+  "大阪府": {
+   "efaecalis": {
+    "PCG": {
+     "total": 10334,
+     "S": 10113,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 220,
+     "NS": null,
+     "ND": 1
+    },
+    "ABPC": {
+     "total": 10502,
+     "S": 10494,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 9242,
+     "S": 1427,
+     "SorI": 0,
+     "I": 3185,
+     "IorR": 3,
+     "R": 4627,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 13020,
+     "S": 11079,
+     "SorI": 0,
+     "I": 151,
+     "IorR": 0,
+     "R": 1790,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 13450,
+     "S": 3911,
+     "SorI": 0,
+     "I": 2096,
+     "IorR": 2,
+     "R": 7440,
+     "NS": null,
+     "ND": 1
+    },
+    "VCM": {
+     "total": 13530,
+     "S": 13527,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 11721,
+     "S": 11719,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 2,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 33896,
+     "S": 13472,
+     "SorI": 0,
+     "I": 407,
+     "IorR": 1,
+     "R": 20016,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 37028,
+     "S": 15190,
+     "SorI": 0,
+     "I": 871,
+     "IorR": 0,
+     "R": 20966,
+     "NS": null,
+     "ND": 1
+    },
+    "TAZ/PIPC": {
+     "total": 32620,
+     "S": 31063,
+     "SorI": 0,
+     "I": 635,
+     "IorR": 9,
+     "R": 913,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 38683,
+     "S": 12659,
+     "SorI": 6352,
+     "I": 1523,
+     "IorR": 0,
+     "R": 18149,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 41333,
+     "S": 40479,
+     "SorI": 0,
+     "I": 394,
+     "IorR": 0,
+     "R": 460,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 15339,
+     "S": 10425,
+     "SorI": 0,
+     "I": 124,
+     "IorR": 0,
+     "R": 4790,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 37136,
+     "S": 22114,
+     "SorI": 10,
+     "I": 88,
+     "IorR": 0,
+     "R": 14924,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 38966,
+     "S": 28836,
+     "SorI": 0,
+     "I": 1609,
+     "IorR": 0,
+     "R": 8521,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 38198,
+     "S": 28655,
+     "SorI": 0,
+     "I": 629,
+     "IorR": 587,
+     "R": 8327,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 28397,
+     "S": 20632,
+     "SorI": 0,
+     "I": 783,
+     "IorR": 0,
+     "R": 6982,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 26651,
+     "S": 26588,
+     "SorI": 1,
+     "I": 41,
+     "IorR": 0,
+     "R": 21,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 41705,
+     "S": 41657,
+     "SorI": 1,
+     "I": 5,
+     "IorR": 0,
+     "R": 42,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 40617,
+     "S": 40459,
+     "SorI": 0,
+     "I": 100,
+     "IorR": 0,
+     "R": 58,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 39724,
+     "S": 19344,
+     "SorI": 0,
+     "I": 750,
+     "IorR": 276,
+     "R": 18514,
+     "NS": null,
+     "ND": 840
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 18327,
+     "S": 772,
+     "SorI": 0,
+     "I": 2912,
+     "IorR": 1,
+     "R": 14642,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 20341,
+     "S": 7293,
+     "SorI": 0,
+     "I": 3294,
+     "IorR": 2,
+     "R": 9752,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 18070,
+     "S": 15387,
+     "SorI": 0,
+     "I": 907,
+     "IorR": 19,
+     "R": 1757,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 21394,
+     "S": 8808,
+     "SorI": 4042,
+     "I": 545,
+     "IorR": 0,
+     "R": 7999,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 22805,
+     "S": 22306,
+     "SorI": 0,
+     "I": 165,
+     "IorR": 0,
+     "R": 334,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 8147,
+     "S": 6113,
+     "SorI": 1,
+     "I": 27,
+     "IorR": 0,
+     "R": 2006,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 20741,
+     "S": 13655,
+     "SorI": 6,
+     "I": 18,
+     "IorR": 0,
+     "R": 7062,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 21339,
+     "S": 15204,
+     "SorI": 0,
+     "I": 502,
+     "IorR": 0,
+     "R": 5633,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 21009,
+     "S": 16150,
+     "SorI": 0,
+     "I": 207,
+     "IorR": 183,
+     "R": 4469,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 15035,
+     "S": 10916,
+     "SorI": 0,
+     "I": 117,
+     "IorR": 0,
+     "R": 4002,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 14444,
+     "S": 14304,
+     "SorI": 0,
+     "I": 94,
+     "IorR": 0,
+     "R": 46,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 23093,
+     "S": 22947,
+     "SorI": 0,
+     "I": 29,
+     "IorR": 0,
+     "R": 117,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 22253,
+     "S": 22224,
+     "SorI": 0,
+     "I": 17,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 21827,
+     "S": 18654,
+     "SorI": 0,
+     "I": 752,
+     "IorR": 39,
+     "R": 2300,
+     "NS": null,
+     "ND": 82
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 3437,
+     "S": 1768,
+     "SorI": 0,
+     "I": 22,
+     "IorR": 0,
+     "R": 1647,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 5673,
+     "S": 2583,
+     "SorI": 0,
+     "I": 163,
+     "IorR": 0,
+     "R": 2927,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 5335,
+     "S": 5325,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 5,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 5577,
+     "S": 1571,
+     "SorI": 650,
+     "I": 398,
+     "IorR": 0,
+     "R": 2958,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 6147,
+     "S": 6128,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 13,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1288,
+     "S": 928,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 356,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 5520,
+     "S": 3150,
+     "SorI": 0,
+     "I": 48,
+     "IorR": 0,
+     "R": 2322,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 5143,
+     "S": 4048,
+     "SorI": 0,
+     "I": 22,
+     "IorR": 0,
+     "R": 1073,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 5032,
+     "S": 3523,
+     "SorI": 0,
+     "I": 52,
+     "IorR": 29,
+     "R": 1428,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2965,
+     "S": 2535,
+     "SorI": 0,
+     "I": 22,
+     "IorR": 0,
+     "R": 408,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 2374,
+     "S": 727,
+     "SorI": 0,
+     "I": 1260,
+     "IorR": 0,
+     "R": 387,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 6246,
+     "S": 6240,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 6,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 5956,
+     "S": 5950,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 5863,
+     "S": 4090,
+     "SorI": 0,
+     "I": 917,
+     "IorR": 10,
+     "R": 806,
+     "NS": null,
+     "ND": 40
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 22544,
+     "S": 18162,
+     "SorI": 0,
+     "I": 2134,
+     "IorR": 0,
+     "R": 2248,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 22426,
+     "S": 18767,
+     "SorI": 0,
+     "I": 1835,
+     "IorR": 20,
+     "R": 1804,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 22347,
+     "S": 19336,
+     "SorI": 0,
+     "I": 1137,
+     "IorR": 27,
+     "R": 1847,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 22238,
+     "S": 19464,
+     "SorI": 0,
+     "I": 1625,
+     "IorR": 10,
+     "R": 1139,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 17353,
+     "S": 12497,
+     "SorI": 0,
+     "I": 2534,
+     "IorR": 14,
+     "R": 2308,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 18890,
+     "S": 15173,
+     "SorI": 0,
+     "I": 809,
+     "IorR": 10,
+     "R": 2898,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 24365,
+     "S": 20998,
+     "SorI": 0,
+     "I": 962,
+     "IorR": 7,
+     "R": 2398,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 17757,
+     "S": 16037,
+     "SorI": 0,
+     "I": 1346,
+     "IorR": 0,
+     "R": 374,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 23958,
+     "S": 23444,
+     "SorI": 0,
+     "I": 252,
+     "IorR": 0,
+     "R": 262,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 23139,
+     "S": 20039,
+     "SorI": 0,
+     "I": 1357,
+     "IorR": 0,
+     "R": 1735,
+     "NS": null,
+     "ND": 8
+    }
+   }
+  },
+  "兵庫県": {
+   "efaecalis": {
+    "PCG": {
+     "total": 4967,
+     "S": 4775,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 55,
+     "NS": null,
+     "ND": 137
+    },
+    "ABPC": {
+     "total": 6074,
+     "S": 6062,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 4189,
+     "S": 764,
+     "SorI": 0,
+     "I": 1445,
+     "IorR": 1,
+     "R": 1979,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 7028,
+     "S": 6122,
+     "SorI": 0,
+     "I": 74,
+     "IorR": 0,
+     "R": 832,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 7402,
+     "S": 2154,
+     "SorI": 0,
+     "I": 1337,
+     "IorR": 2,
+     "R": 3909,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 7317,
+     "S": 7316,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 6021,
+     "S": 6020,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 20013,
+     "S": 8648,
+     "SorI": 0,
+     "I": 208,
+     "IorR": 1,
+     "R": 11156,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 19950,
+     "S": 9251,
+     "SorI": 0,
+     "I": 491,
+     "IorR": 0,
+     "R": 10208,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 21814,
+     "S": 21049,
+     "SorI": 0,
+     "I": 350,
+     "IorR": 0,
+     "R": 415,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 22947,
+     "S": 8441,
+     "SorI": 3344,
+     "I": 814,
+     "IorR": 0,
+     "R": 10275,
+     "NS": null,
+     "ND": 73
+    },
+    "CMZ": {
+     "total": 23500,
+     "S": 23066,
+     "SorI": 0,
+     "I": 182,
+     "IorR": 0,
+     "R": 252,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 11731,
+     "S": 7866,
+     "SorI": 0,
+     "I": 82,
+     "IorR": 0,
+     "R": 3783,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 21074,
+     "S": 13580,
+     "SorI": 0,
+     "I": 46,
+     "IorR": 0,
+     "R": 7448,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 21842,
+     "S": 16464,
+     "SorI": 0,
+     "I": 1316,
+     "IorR": 0,
+     "R": 4062,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 21895,
+     "S": 16243,
+     "SorI": 0,
+     "I": 463,
+     "IorR": 485,
+     "R": 4703,
+     "NS": null,
+     "ND": 1
+    },
+    "AZT": {
+     "total": 17206,
+     "S": 12430,
+     "SorI": 0,
+     "I": 753,
+     "IorR": 0,
+     "R": 4023,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 18598,
+     "S": 18546,
+     "SorI": 0,
+     "I": 38,
+     "IorR": 0,
+     "R": 14,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 23793,
+     "S": 23768,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 20,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 23064,
+     "S": 22968,
+     "SorI": 0,
+     "I": 62,
+     "IorR": 0,
+     "R": 34,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 23213,
+     "S": 12198,
+     "SorI": 1,
+     "I": 436,
+     "IorR": 143,
+     "R": 9806,
+     "NS": null,
+     "ND": 629
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 10980,
+     "S": 340,
+     "SorI": 0,
+     "I": 1351,
+     "IorR": 0,
+     "R": 9289,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 11819,
+     "S": 4722,
+     "SorI": 0,
+     "I": 1879,
+     "IorR": 0,
+     "R": 5218,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 12778,
+     "S": 11246,
+     "SorI": 0,
+     "I": 516,
+     "IorR": 0,
+     "R": 1016,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 13448,
+     "S": 5990,
+     "SorI": 2353,
+     "I": 284,
+     "IorR": 0,
+     "R": 4765,
+     "NS": null,
+     "ND": 56
+    },
+    "CMZ": {
+     "total": 13334,
+     "S": 13012,
+     "SorI": 0,
+     "I": 111,
+     "IorR": 0,
+     "R": 211,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 6762,
+     "S": 5322,
+     "SorI": 0,
+     "I": 23,
+     "IorR": 0,
+     "R": 1417,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 12438,
+     "S": 8693,
+     "SorI": 0,
+     "I": 36,
+     "IorR": 0,
+     "R": 3709,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 12491,
+     "S": 9264,
+     "SorI": 0,
+     "I": 278,
+     "IorR": 0,
+     "R": 2949,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 12802,
+     "S": 9703,
+     "SorI": 0,
+     "I": 190,
+     "IorR": 203,
+     "R": 2706,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 9837,
+     "S": 7524,
+     "SorI": 0,
+     "I": 67,
+     "IorR": 0,
+     "R": 2246,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 10733,
+     "S": 10649,
+     "SorI": 0,
+     "I": 64,
+     "IorR": 0,
+     "R": 19,
+     "NS": null,
+     "ND": 1
+    },
+    "MEPM": {
+     "total": 13582,
+     "S": 13487,
+     "SorI": 0,
+     "I": 30,
+     "IorR": 0,
+     "R": 65,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 13116,
+     "S": 13093,
+     "SorI": 0,
+     "I": 10,
+     "IorR": 0,
+     "R": 13,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 13089,
+     "S": 11319,
+     "SorI": 0,
+     "I": 358,
+     "IorR": 7,
+     "R": 1294,
+     "NS": null,
+     "ND": 111
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 2134,
+     "S": 1413,
+     "SorI": 0,
+     "I": 12,
+     "IorR": 0,
+     "R": 709,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 3373,
+     "S": 2056,
+     "SorI": 0,
+     "I": 96,
+     "IorR": 0,
+     "R": 1221,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 3447,
+     "S": 3438,
+     "SorI": 0,
+     "I": 8,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 3617,
+     "S": 1364,
+     "SorI": 382,
+     "I": 381,
+     "IorR": 0,
+     "R": 1486,
+     "NS": null,
+     "ND": 4
+    },
+    "CMZ": {
+     "total": 3505,
+     "S": 3479,
+     "SorI": 0,
+     "I": 14,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1308,
+     "S": 1124,
+     "SorI": 0,
+     "I": 8,
+     "IorR": 0,
+     "R": 176,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 3318,
+     "S": 2430,
+     "SorI": 0,
+     "I": 12,
+     "IorR": 0,
+     "R": 876,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 3172,
+     "S": 2671,
+     "SorI": 0,
+     "I": 15,
+     "IorR": 0,
+     "R": 486,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 3322,
+     "S": 2549,
+     "SorI": 0,
+     "I": 25,
+     "IorR": 8,
+     "R": 740,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2059,
+     "S": 1731,
+     "SorI": 0,
+     "I": 19,
+     "IorR": 0,
+     "R": 309,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1952,
+     "S": 680,
+     "SorI": 0,
+     "I": 789,
+     "IorR": 0,
+     "R": 483,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 3623,
+     "S": 3623,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 3539,
+     "S": 3520,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 3716,
+     "S": 2664,
+     "SorI": 0,
+     "I": 482,
+     "IorR": 6,
+     "R": 527,
+     "NS": null,
+     "ND": 37
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 10410,
+     "S": 8580,
+     "SorI": 0,
+     "I": 886,
+     "IorR": 0,
+     "R": 944,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 11187,
+     "S": 9577,
+     "SorI": 0,
+     "I": 807,
+     "IorR": 0,
+     "R": 803,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 10375,
+     "S": 9114,
+     "SorI": 0,
+     "I": 419,
+     "IorR": 3,
+     "R": 839,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 10334,
+     "S": 9159,
+     "SorI": 0,
+     "I": 704,
+     "IorR": 1,
+     "R": 470,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 8129,
+     "S": 6223,
+     "SorI": 0,
+     "I": 925,
+     "IorR": 12,
+     "R": 969,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 10357,
+     "S": 8431,
+     "SorI": 0,
+     "I": 572,
+     "IorR": 14,
+     "R": 1340,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 11298,
+     "S": 9974,
+     "SorI": 0,
+     "I": 392,
+     "IorR": 12,
+     "R": 920,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 8459,
+     "S": 7519,
+     "SorI": 0,
+     "I": 771,
+     "IorR": 0,
+     "R": 169,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 10889,
+     "S": 10703,
+     "SorI": 0,
+     "I": 114,
+     "IorR": 0,
+     "R": 72,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 10573,
+     "S": 9166,
+     "SorI": 0,
+     "I": 539,
+     "IorR": 0,
+     "R": 866,
+     "NS": null,
+     "ND": 2
+    }
+   }
+  },
+  "奈良県": {
+   "efaecalis": {
+    "PCG": {
+     "total": 1401,
+     "S": 1371,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 30,
+     "NS": null,
+     "ND": 0
+    },
+    "ABPC": {
+     "total": 1214,
+     "S": 1213,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 1362,
+     "S": 123,
+     "SorI": 0,
+     "I": 433,
+     "IorR": 0,
+     "R": 806,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1539,
+     "S": 1341,
+     "SorI": 0,
+     "I": 6,
+     "IorR": 0,
+     "R": 192,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 1582,
+     "S": 465,
+     "SorI": 0,
+     "I": 221,
+     "IorR": 0,
+     "R": 896,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 1622,
+     "S": 1622,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 1320,
+     "S": 1320,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 4443,
+     "S": 1677,
+     "SorI": 0,
+     "I": 93,
+     "IorR": 0,
+     "R": 2673,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 4249,
+     "S": 1873,
+     "SorI": 0,
+     "I": 155,
+     "IorR": 0,
+     "R": 2221,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 2913,
+     "S": 2774,
+     "SorI": 0,
+     "I": 80,
+     "IorR": 1,
+     "R": 58,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 4665,
+     "S": 1069,
+     "SorI": 1233,
+     "I": 110,
+     "IorR": 0,
+     "R": 2252,
+     "NS": null,
+     "ND": 1
+    },
+    "CMZ": {
+     "total": 4685,
+     "S": 4570,
+     "SorI": 0,
+     "I": 60,
+     "IorR": 0,
+     "R": 55,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1939,
+     "S": 1296,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 632,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 3032,
+     "S": 1704,
+     "SorI": 0,
+     "I": 7,
+     "IorR": 0,
+     "R": 1321,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 4124,
+     "S": 3257,
+     "SorI": 0,
+     "I": 117,
+     "IorR": 0,
+     "R": 750,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 4556,
+     "S": 3757,
+     "SorI": 0,
+     "I": 114,
+     "IorR": 25,
+     "R": 660,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2771,
+     "S": 1995,
+     "SorI": 0,
+     "I": 60,
+     "IorR": 0,
+     "R": 716,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 3555,
+     "S": 3552,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 4718,
+     "S": 4704,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 12,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 4277,
+     "S": 4258,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 4601,
+     "S": 2337,
+     "SorI": 0,
+     "I": 81,
+     "IorR": 336,
+     "R": 1847,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 2644,
+     "S": 72,
+     "SorI": 0,
+     "I": 408,
+     "IorR": 0,
+     "R": 2164,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 2128,
+     "S": 823,
+     "SorI": 0,
+     "I": 313,
+     "IorR": 0,
+     "R": 992,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1713,
+     "S": 1526,
+     "SorI": 0,
+     "I": 73,
+     "IorR": 0,
+     "R": 114,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 2594,
+     "S": 682,
+     "SorI": 829,
+     "I": 25,
+     "IorR": 0,
+     "R": 1058,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 2685,
+     "S": 2619,
+     "SorI": 0,
+     "I": 27,
+     "IorR": 0,
+     "R": 39,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1054,
+     "S": 730,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 319,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 1775,
+     "S": 1112,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 660,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 2452,
+     "S": 1728,
+     "SorI": 0,
+     "I": 114,
+     "IorR": 0,
+     "R": 610,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 2640,
+     "S": 2240,
+     "SorI": 0,
+     "I": 68,
+     "IorR": 9,
+     "R": 323,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1651,
+     "S": 1140,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 500,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 2064,
+     "S": 2053,
+     "SorI": 0,
+     "I": 8,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 2721,
+     "S": 2696,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 25,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 2504,
+     "S": 2497,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 6,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 2592,
+     "S": 2086,
+     "SorI": 0,
+     "I": 84,
+     "IorR": 80,
+     "R": 342,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 639,
+     "S": 326,
+     "SorI": 0,
+     "I": 32,
+     "IorR": 0,
+     "R": 281,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 496,
+     "S": 326,
+     "SorI": 0,
+     "I": 29,
+     "IorR": 0,
+     "R": 141,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 423,
+     "S": 421,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 641,
+     "S": 148,
+     "SorI": 153,
+     "I": 52,
+     "IorR": 0,
+     "R": 288,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 648,
+     "S": 646,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 278,
+     "S": 166,
+     "SorI": 0,
+     "I": 10,
+     "IorR": 0,
+     "R": 102,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 400,
+     "S": 261,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 139,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 609,
+     "S": 595,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 11,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 645,
+     "S": 608,
+     "SorI": 0,
+     "I": 11,
+     "IorR": 0,
+     "R": 26,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 429,
+     "S": 418,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 9,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 455,
+     "S": 309,
+     "SorI": 0,
+     "I": 90,
+     "IorR": 0,
+     "R": 56,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 654,
+     "S": 654,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 628,
+     "S": 628,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 567,
+     "S": 343,
+     "SorI": 0,
+     "I": 39,
+     "IorR": 86,
+     "R": 99,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 2889,
+     "S": 2331,
+     "SorI": 0,
+     "I": 285,
+     "IorR": 0,
+     "R": 273,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 2747,
+     "S": 2232,
+     "SorI": 0,
+     "I": 275,
+     "IorR": 0,
+     "R": 240,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 2584,
+     "S": 2274,
+     "SorI": 0,
+     "I": 139,
+     "IorR": 0,
+     "R": 171,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 2877,
+     "S": 2621,
+     "SorI": 0,
+     "I": 142,
+     "IorR": 0,
+     "R": 114,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2364,
+     "S": 1649,
+     "SorI": 0,
+     "I": 398,
+     "IorR": 0,
+     "R": 317,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 2779,
+     "S": 2212,
+     "SorI": 0,
+     "I": 73,
+     "IorR": 0,
+     "R": 494,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 2903,
+     "S": 2399,
+     "SorI": 0,
+     "I": 194,
+     "IorR": 0,
+     "R": 310,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 2742,
+     "S": 2535,
+     "SorI": 0,
+     "I": 149,
+     "IorR": 0,
+     "R": 58,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 2747,
+     "S": 2689,
+     "SorI": 0,
+     "I": 20,
+     "IorR": 0,
+     "R": 38,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 2514,
+     "S": 2071,
+     "SorI": 0,
+     "I": 197,
+     "IorR": 0,
+     "R": 246,
+     "NS": null,
+     "ND": 0
+    }
+   }
+  },
+  "和歌山県": {
+   "efaecalis": {
+    "PCG": {
+     "total": 969,
+     "S": 966,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "ABPC": {
+     "total": 968,
+     "S": 968,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "EM": {
+     "total": 969,
+     "S": 222,
+     "SorI": 0,
+     "I": 325,
+     "IorR": 0,
+     "R": 422,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1125,
+     "S": 1047,
+     "SorI": 0,
+     "I": 16,
+     "IorR": 0,
+     "R": 62,
+     "NS": null,
+     "ND": 0
+    },
+    "MINO": {
+     "total": 1141,
+     "S": 391,
+     "SorI": 0,
+     "I": 164,
+     "IorR": 0,
+     "R": 586,
+     "NS": null,
+     "ND": 0
+    },
+    "VCM": {
+     "total": 1126,
+     "S": 1126,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "TEIC": {
+     "total": 1111,
+     "S": 1111,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    }
+   },
+   "ecoli": {
+    "ABPC": {
+     "total": 3159,
+     "S": 1500,
+     "SorI": 0,
+     "I": 37,
+     "IorR": 0,
+     "R": 1622,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 2302,
+     "S": 1148,
+     "SorI": 0,
+     "I": 121,
+     "IorR": 0,
+     "R": 1033,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 2961,
+     "S": 2865,
+     "SorI": 0,
+     "I": 28,
+     "IorR": 0,
+     "R": 68,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 3437,
+     "S": 1486,
+     "SorI": 548,
+     "I": 115,
+     "IorR": 0,
+     "R": 1288,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 3301,
+     "S": 3257,
+     "SorI": 0,
+     "I": 23,
+     "IorR": 0,
+     "R": 21,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 1306,
+     "S": 957,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 0,
+     "R": 340,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 3152,
+     "S": 2171,
+     "SorI": 1,
+     "I": 8,
+     "IorR": 0,
+     "R": 972,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 3477,
+     "S": 2801,
+     "SorI": 0,
+     "I": 136,
+     "IorR": 0,
+     "R": 540,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 2954,
+     "S": 2512,
+     "SorI": 0,
+     "I": 72,
+     "IorR": 108,
+     "R": 262,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 2218,
+     "S": 1744,
+     "SorI": 0,
+     "I": 68,
+     "IorR": 0,
+     "R": 406,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 2005,
+     "S": 2002,
+     "SorI": 1,
+     "I": 2,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 3474,
+     "S": 3473,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 3082,
+     "S": 3080,
+     "SorI": 0,
+     "I": 2,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 3476,
+     "S": 1927,
+     "SorI": 0,
+     "I": 54,
+     "IorR": 63,
+     "R": 1218,
+     "NS": null,
+     "ND": 214
+    }
+   },
+   "kpneumoniae": {
+    "ABPC": {
+     "total": 1362,
+     "S": 51,
+     "SorI": 0,
+     "I": 201,
+     "IorR": 0,
+     "R": 1110,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 1144,
+     "S": 579,
+     "SorI": 0,
+     "I": 213,
+     "IorR": 0,
+     "R": 352,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1606,
+     "S": 1505,
+     "SorI": 0,
+     "I": 43,
+     "IorR": 0,
+     "R": 58,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 1657,
+     "S": 981,
+     "SorI": 311,
+     "I": 23,
+     "IorR": 0,
+     "R": 341,
+     "NS": null,
+     "ND": 1
+    },
+    "CMZ": {
+     "total": 1737,
+     "S": 1693,
+     "SorI": 0,
+     "I": 12,
+     "IorR": 0,
+     "R": 32,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 571,
+     "S": 477,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 91,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 1640,
+     "S": 1357,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 279,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 1782,
+     "S": 1521,
+     "SorI": 0,
+     "I": 25,
+     "IorR": 0,
+     "R": 236,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1471,
+     "S": 1355,
+     "SorI": 0,
+     "I": 13,
+     "IorR": 28,
+     "R": 75,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1073,
+     "S": 936,
+     "SorI": 0,
+     "I": 9,
+     "IorR": 0,
+     "R": 128,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1053,
+     "S": 1045,
+     "SorI": 0,
+     "I": 5,
+     "IorR": 0,
+     "R": 3,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 1781,
+     "S": 1770,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 0,
+     "R": 8,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 1550,
+     "S": 1550,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1780,
+     "S": 1668,
+     "SorI": 0,
+     "I": 33,
+     "IorR": 2,
+     "R": 63,
+     "NS": null,
+     "ND": 14
+    }
+   },
+   "pmirabilis": {
+    "ABPC": {
+     "total": 309,
+     "S": 197,
+     "SorI": 0,
+     "I": 4,
+     "IorR": 0,
+     "R": 108,
+     "NS": null,
+     "ND": 0
+    },
+    "PIPC": {
+     "total": 251,
+     "S": 161,
+     "SorI": 0,
+     "I": 13,
+     "IorR": 0,
+     "R": 77,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 264,
+     "S": 264,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "CEZ": {
+     "total": 330,
+     "S": 134,
+     "SorI": 68,
+     "I": 26,
+     "IorR": 0,
+     "R": 102,
+     "NS": null,
+     "ND": 0
+    },
+    "CMZ": {
+     "total": 332,
+     "S": 331,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 1,
+     "NS": null,
+     "ND": 0
+    },
+    "CTX": {
+     "total": 107,
+     "S": 89,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 18,
+     "NS": null,
+     "ND": 0
+    },
+    "CTRX": {
+     "total": 310,
+     "S": 242,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 68,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 348,
+     "S": 327,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 21,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 299,
+     "S": 284,
+     "SorI": 0,
+     "I": 3,
+     "IorR": 3,
+     "R": 9,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 226,
+     "S": 216,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 10,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 136,
+     "S": 58,
+     "SorI": 0,
+     "I": 56,
+     "IorR": 0,
+     "R": 22,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 348,
+     "S": 348,
+     "SorI": 0,
+     "I": 0,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 302,
+     "S": 301,
+     "SorI": 0,
+     "I": 1,
+     "IorR": 0,
+     "R": 0,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 348,
+     "S": 280,
+     "SorI": 0,
+     "I": 23,
+     "IorR": 3,
+     "R": 37,
+     "NS": null,
+     "ND": 5
+    }
+   },
+   "paeruginosa": {
+    "PIPC": {
+     "total": 1402,
+     "S": 1177,
+     "SorI": 0,
+     "I": 122,
+     "IorR": 1,
+     "R": 102,
+     "NS": null,
+     "ND": 0
+    },
+    "TAZ/PIPC": {
+     "total": 1620,
+     "S": 1388,
+     "SorI": 0,
+     "I": 134,
+     "IorR": 0,
+     "R": 98,
+     "NS": null,
+     "ND": 0
+    },
+    "CAZ": {
+     "total": 1649,
+     "S": 1457,
+     "SorI": 0,
+     "I": 85,
+     "IorR": 0,
+     "R": 107,
+     "NS": null,
+     "ND": 0
+    },
+    "CFPM": {
+     "total": 1475,
+     "S": 1361,
+     "SorI": 0,
+     "I": 65,
+     "IorR": 0,
+     "R": 49,
+     "NS": null,
+     "ND": 0
+    },
+    "AZT": {
+     "total": 1078,
+     "S": 822,
+     "SorI": 0,
+     "I": 146,
+     "IorR": 0,
+     "R": 110,
+     "NS": null,
+     "ND": 0
+    },
+    "IPM/CS": {
+     "total": 1611,
+     "S": 1367,
+     "SorI": 0,
+     "I": 63,
+     "IorR": 0,
+     "R": 181,
+     "NS": null,
+     "ND": 0
+    },
+    "MEPM": {
+     "total": 1657,
+     "S": 1478,
+     "SorI": 0,
+     "I": 61,
+     "IorR": 0,
+     "R": 118,
+     "NS": null,
+     "ND": 0
+    },
+    "GM": {
+     "total": 1553,
+     "S": 1437,
+     "SorI": 0,
+     "I": 84,
+     "IorR": 0,
+     "R": 32,
+     "NS": null,
+     "ND": 0
+    },
+    "AMK": {
+     "total": 1629,
+     "S": 1604,
+     "SorI": 0,
+     "I": 14,
+     "IorR": 0,
+     "R": 11,
+     "NS": null,
+     "ND": 0
+    },
+    "LVFX": {
+     "total": 1657,
+     "S": 1474,
+     "SorI": 0,
+     "I": 106,
+     "IorR": 0,
+     "R": 77,
+     "NS": null,
+     "ND": 0
+    }
+   }
+  }
+ },
+ "urineIsolation": {
+  "全国": {
+   "_total": 1264105,
+   "ecoli": 302672,
+   "efaecalis": 112160,
+   "kpneumoniae": 91258,
+   "paeruginosa": 82987,
+   "pmirabilis": 37436
+  },
+  "福井県": {
+   "_total": 9835,
+   "ecoli": 2362,
+   "efaecalis": 713,
+   "kpneumoniae": 599,
+   "paeruginosa": 576,
+   "pmirabilis": 377
+  },
+  "滋賀県": {
+   "_total": 12654,
+   "ecoli": 2863,
+   "efaecalis": 1003,
+   "kpneumoniae": 816,
+   "paeruginosa": 690,
+   "pmirabilis": 367
+  },
+  "京都府": {
+   "_total": 27307,
+   "ecoli": 7172,
+   "kpneumoniae": 2552,
+   "efaecalis": 2500,
+   "paeruginosa": 1684,
+   "pmirabilis": 840
+  },
+  "大阪府": {
+   "_total": 107270,
+   "ecoli": 25672,
+   "efaecalis": 9161,
+   "kpneumoniae": 8381,
+   "paeruginosa": 6825,
+   "pmirabilis": 3108
+  },
+  "兵庫県": {
+   "_total": 64482,
+   "ecoli": 16813,
+   "kpneumoniae": 6020,
+   "efaecalis": 5512,
+   "paeruginosa": 4114,
+   "pmirabilis": 2385
+  },
+  "奈良県": {
+   "_total": 14117,
+   "ecoli": 3414,
+   "efaecalis": 1320,
+   "kpneumoniae": 1160,
+   "paeruginosa": 831,
+   "pmirabilis": 452
+  },
+  "和歌山県": {
+   "_total": 8023,
+   "ecoli": 2073,
+   "efaecalis": 654,
+   "kpneumoniae": 610,
+   "paeruginosa": 462,
+   "pmirabilis": 208
+  }
+ }
+}

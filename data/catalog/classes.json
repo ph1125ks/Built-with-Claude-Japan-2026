@@ -1,0 +1,14 @@
+{
+  "_comment": "抗菌薬の系統。結果画面の使用割合と偏りの指標、耐性化の計算に使う。色は画面用。",
+  "classes": [
+    { "id": "penicillin", "name": "ペニシリン系", "color": "#3b82f6" },
+    { "id": "bl-bli", "name": "βラクタマーゼ阻害薬配合ペニシリン", "color": "#6366f1" },
+    { "id": "ceph1", "name": "第1世代セフェム", "color": "#14b8a6" },
+    { "id": "cephamycin", "name": "セファマイシン系", "color": "#22c55e" },
+    { "id": "ceph3", "name": "第3世代セフェム", "color": "#eab308" },
+    { "id": "ceph4", "name": "第4世代セフェム", "color": "#f97316" },
+    { "id": "carbapenem", "name": "カルバペネム系", "color": "#ef4444" },
+    { "id": "fluoroquinolone", "name": "キノロン系", "color": "#a855f7" },
+    { "id": "aminoglycoside", "name": "アミノグリコシド系", "color": "#78716c" }
+  ]
+}

@@ -1,0 +1,381 @@
+{
+ "_comment": "薬価基準収載品目リスト（令和8年11月1日適用）から作成。単位は円。出典は data/README.md",
+ "sources": [
+  {
+   "file": "yakka/tp20261101-01_02.xlsx",
+   "url": "https://www.mhlw.go.jp/topics/2026/04/xls/tp20261101-01_02.xlsx",
+   "title": "薬価基準収載品目リスト（令和8年11月1日適用）注射薬",
+   "page": "https://www.mhlw.go.jp/topics/2026/04/tp20260401-01.html",
+   "retrieved": "2026-11-02"
+  },
+  {
+   "file": "yakka/tp20261101-01_01.xlsx",
+   "url": "https://www.mhlw.go.jp/topics/2026/04/xls/tp20261101-01_01.xlsx",
+   "title": "薬価基準収載品目リスト（令和8年11月1日適用）内用薬",
+   "page": "https://www.mhlw.go.jp/topics/2026/04/tp20260401-01.html",
+   "retrieved": "2026-11-02"
+  }
+ ],
+ "drugs": {
+  "ABPC": {
+   "ingredient": "アンピシリンナトリウム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 4,
+   "min": 481,
+   "max": 481,
+   "brand": null,
+   "yenPerDayMin": 1924,
+   "yenPerDayBrand": null,
+   "products": [
+    {
+     "product": "ビクシリン注射用1g",
+     "brand": false,
+     "price": 481,
+     "transitional": null
+    }
+   ]
+  },
+  "CEZ": {
+   "ingredient": "セファゾリンナトリウム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 3,
+   "min": 333,
+   "max": 346,
+   "brand": 346,
+   "yenPerDayMin": 999,
+   "yenPerDayBrand": 1038,
+   "products": [
+    {
+     "product": "セファメジンα注射用1g",
+     "brand": true,
+     "price": 346,
+     "transitional": null
+    },
+    {
+     "product": "セファゾリンナトリウム注射用1g「日医工」",
+     "brand": false,
+     "price": 346,
+     "transitional": null
+    },
+    {
+     "product": "セファゾリンNa注射用1g「NP」",
+     "brand": false,
+     "price": 346,
+     "transitional": null
+    },
+    {
+     "product": "セファゾリンNa注射用1g「イセイ」",
+     "brand": false,
+     "price": 346,
+     "transitional": null
+    },
+    {
+     "product": "セファゾリンNa注射用1g「CHM」",
+     "brand": false,
+     "price": 333,
+     "transitional": null
+    }
+   ]
+  },
+  "CMZ": {
+   "ingredient": "セフメタゾールナトリウム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 3,
+   "min": 486,
+   "max": 525,
+   "brand": 486,
+   "yenPerDayMin": 1458,
+   "yenPerDayBrand": 1458,
+   "products": [
+    {
+     "product": "セフメタゾン静注用1g",
+     "brand": true,
+     "price": 486,
+     "transitional": null
+    },
+    {
+     "product": "セフメタゾールNa静注用1g「NP」",
+     "brand": false,
+     "price": 525,
+     "transitional": null
+    },
+    {
+     "product": "セフメタゾールナトリウム静注用1g「日医工」",
+     "brand": false,
+     "price": 525,
+     "transitional": null
+    }
+   ]
+  },
+  "CTRX": {
+   "ingredient": "セフトリアキソンナトリウム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 2,
+   "min": 401,
+   "max": 422,
+   "brand": 422,
+   "yenPerDayMin": 802,
+   "yenPerDayBrand": 844,
+   "products": [
+    {
+     "product": "セフトリアキソンナトリウム1g静注用",
+     "brand": false,
+     "price": 422,
+     "transitional": null
+    },
+    {
+     "product": "ロセフィン静注用1g",
+     "brand": true,
+     "price": 422,
+     "transitional": null
+    },
+    {
+     "product": "セフトリアキソンナトリウム静注用1g「NP」",
+     "brand": false,
+     "price": 422,
+     "transitional": null
+    },
+    {
+     "product": "セフトリアキソンナトリウム静注用1g「日医工」",
+     "brand": false,
+     "price": 422,
+     "transitional": null
+    },
+    {
+     "product": "セフトリアキソンNa静注用1g「CHM」",
+     "brand": false,
+     "price": 401,
+     "transitional": null
+    },
+    {
+     "product": "セフトリアキソンNa静注用1g「VTRS」",
+     "brand": false,
+     "price": 401,
+     "transitional": null
+    }
+   ]
+  },
+  "CFPM": {
+   "ingredient": "セフェピム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 2,
+   "min": 515,
+   "max": 522,
+   "brand": null,
+   "yenPerDayMin": 1030,
+   "yenPerDayBrand": null,
+   "products": [
+    {
+     "product": "セフェピム塩酸塩静注用1g「サンド」",
+     "brand": false,
+     "price": 522,
+     "transitional": null
+    },
+    {
+     "product": "セフェピム塩酸塩静注用1g「CMX」",
+     "brand": false,
+     "price": 515,
+     "transitional": null
+    }
+   ]
+  },
+  "TAZPIPC": {
+   "ingredient": "タゾバクタム",
+   "spec": "(4.5g)1瓶",
+   "unitsPerDay": 3,
+   "min": 892,
+   "max": 1160,
+   "brand": 1160,
+   "yenPerDayMin": 2676,
+   "yenPerDayBrand": 3480,
+   "products": [
+    {
+     "product": "ゾシン静注用4.5",
+     "brand": true,
+     "price": 1160,
+     "transitional": null
+    },
+    {
+     "product": "タゾピペ配合静注用4.5「DSEP」",
+     "brand": false,
+     "price": 892,
+     "transitional": null
+    },
+    {
+     "product": "タゾピペ配合静注用4.5「SN」",
+     "brand": false,
+     "price": 1160,
+     "transitional": null
+    },
+    {
+     "product": "タゾピペ配合静注用4.5「ニプロ」",
+     "brand": false,
+     "price": 1160,
+     "transitional": null
+    },
+    {
+     "product": "タゾピペ配合静注用4.5「明治」",
+     "brand": false,
+     "price": 1160,
+     "transitional": null
+    }
+   ]
+  },
+  "MEPM": {
+   "ingredient": "メロペネム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 3,
+   "min": 1095,
+   "max": 1210,
+   "brand": null,
+   "yenPerDayMin": 3285,
+   "yenPerDayBrand": null,
+   "products": [
+    {
+     "product": "メロペネム点滴静注用1g「NP」",
+     "brand": false,
+     "price": 1095,
+     "transitional": null
+    },
+    {
+     "product": "メロペネム点滴静注用1g「明治」",
+     "brand": false,
+     "price": 1210,
+     "transitional": null
+    }
+   ]
+  },
+  "AMK": {
+   "ingredient": "アミカシン",
+   "spec": "200mg1管",
+   "unitsPerDay": 2,
+   "min": 357,
+   "max": 686,
+   "brand": 610,
+   "yenPerDayMin": 714,
+   "yenPerDayBrand": 1220,
+   "products": [
+    {
+     "product": "アミカシン硫酸塩200mg注射液",
+     "brand": false,
+     "price": 357,
+     "transitional": null
+    },
+    {
+     "product": "アミカシン硫酸塩注射液200mg「日医工」",
+     "brand": true,
+     "price": 610,
+     "transitional": null
+    },
+    {
+     "product": "アミカシン硫酸塩注200mg「NP」",
+     "brand": false,
+     "price": 686,
+     "transitional": null
+    },
+    {
+     "product": "アミカシン硫酸塩注射液200mg「F」",
+     "brand": false,
+     "price": 385,
+     "transitional": null
+    },
+    {
+     "product": "アミカシン硫酸塩注射液200mg「明治」",
+     "brand": false,
+     "price": 671,
+     "transitional": null
+    }
+   ]
+  },
+  "LVFX_PO": {
+   "ingredient": "レボフロキサシン",
+   "spec": "500mg1錠(レボフロキサシンとして)",
+   "unitsPerDay": 1,
+   "min": 36.7,
+   "max": 91.8,
+   "brand": 91.8,
+   "yenPerDayMin": 36.7,
+   "yenPerDayBrand": 91.8,
+   "products": [
+    {
+     "product": "レボフロキサシン500mg錠",
+     "brand": false,
+     "price": 36.7,
+     "transitional": null
+    },
+    {
+     "product": "クラビット錠500mg",
+     "brand": true,
+     "price": 91.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「CH」",
+     "brand": false,
+     "price": 60.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「DSEP」",
+     "brand": false,
+     "price": 60.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「TCK」",
+     "brand": false,
+     "price": 60.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「ケミファ」",
+     "brand": false,
+     "price": 91.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「サワイ」",
+     "brand": false,
+     "price": 60.8,
+     "transitional": null
+    },
+    {
+     "product": "レボフロキサシン錠500mg「トーワ」",
+     "brand": false,
+     "price": 60.8,
+     "transitional": null
+    }
+   ]
+  },
+  "CFDN_PO": {
+   "ingredient": "セフジニル",
+   "spec": "100mg1カプセル",
+   "unitsPerDay": 3,
+   "min": 59.7,
+   "max": 59.7,
+   "brand": 59.7,
+   "yenPerDayMin": 179.1,
+   "yenPerDayBrand": 179.1,
+   "products": [
+    {
+     "product": "セフゾンカプセル100mg",
+     "brand": true,
+     "price": 59.7,
+     "transitional": null
+    },
+    {
+     "product": "セフジニルカプセル100mg「日医工」",
+     "brand": false,
+     "price": 59.7,
+     "transitional": null
+    },
+    {
+     "product": "セフジニルカプセル100mg「JG」",
+     "brand": false,
+     "price": 59.7,
+     "transitional": null
+    }
+   ]
+  }
+ }
+}

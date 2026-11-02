@@ -1,2 +1,23 @@
 # macOS
 .DS_Store
+
+# 依存パッケージとビルド結果
+node_modules/
+dist/
+coverage/
+test-results/
+*.log
+
+# 秘密（API キーなど）。コミットしない
+.env
+.env.*
+!.env.example
+
+# 公開データの元ファイル（取り込みスクリプトで取り直せる）
+data/raw/
+
+# コミット前フックで探す、手元だけの秘密の文字列
+.claude/secret-patterns.local
+
+# Claude Code の個人設定
+.claude/settings.local.json

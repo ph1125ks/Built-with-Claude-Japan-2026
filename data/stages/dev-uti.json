@@ -1,0 +1,54 @@
+{
+  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。",
+  "id": "dev-uti",
+  "title": "開発用：尿路（全国）",
+  "region": "全国",
+  "target": "開発用",
+  "present": {
+    "title": "いま",
+    "budget": 2400,
+    "bladderHp": 100,
+    "hand": [
+      { "drug": "ABPC" },
+      { "drug": "CEZ" },
+      { "drug": "CMZ" },
+      { "drug": "CTRX" },
+      { "drug": "CFDN_PO" },
+      { "drug": "LVFX_PO" },
+      { "drug": "TAZPIPC" },
+      { "drug": "MEPM" }
+    ],
+    "waves": [
+      { "at": 2, "lane": "random", "species": "auto", "count": 4, "spacing": 2.0 },
+      { "at": 22, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
+      { "at": 45, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 70, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 95, "lane": "random", "species": "auto", "count": 7, "spacing": 1.5 },
+      { "at": 120, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 },
+      { "at": 145, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 }
+    ]
+  },
+  "future": {
+    "title": "数年後の同じ病棟",
+    "yearsLater": 5,
+    "budget": 2400,
+    "bladderHp": 100,
+    "hand": [
+      { "drug": "ABPC" },
+      { "drug": "CMZ" },
+      { "drug": "CTRX" },
+      { "drug": "LVFX_PO" },
+      { "drug": "TAZPIPC" },
+      { "drug": "MEPM" }
+    ],
+    "waves": [
+      { "at": 2, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
+      { "at": 22, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 45, "lane": "random", "species": "auto", "count": 7, "spacing": 1.6 },
+      { "at": 70, "lane": "random", "species": "auto", "count": 7, "spacing": 1.6 },
+      { "at": 95, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 },
+      { "at": 120, "lane": "random", "species": "auto", "count": 9, "spacing": 1.4 },
+      { "at": 145, "lane": "random", "species": "auto", "count": 9, "spacing": 1.4 }
+    ]
+  }
+}
