@@ -83,11 +83,12 @@ describe("公的な文書に沿った設定（抗微生物薬適正使用の手�
     expect(perDay).toMatchObject({ MEPM: 3, CMZ: 3, CTRX: 1, CFPM: 3, TAZPIPC: 4, ABPC: 4, CEZ: 3, LVFX_PO: 1, AMK: 1 });
   });
 
-  it("手引きで確かめた薬には出典がある", () => {
+  it("確かめた薬には、公的な文書の出典がある", () => {
     for (const d of data.drugs) {
       const raw = d as unknown as { sources?: Record<string, string>; review?: { status: string } };
       expect(raw.sources?.aware, `${d.id} の AWaRe の出典`).toMatch(/手引き/);
-      if (raw.review?.status === "確認済み") expect(raw.sources?.dosing, `${d.id} の用法の出典`).toMatch(/手引き/);
+      if (raw.review?.status === "確認済み") expect(raw.sources?.dosing, `${d.id} の用法の出典`).toMatch(/手引き|JAID\/JSC|電子添文/);
+      if (d.bioavailability !== null) expect(raw.sources?.bioavailability, `${d.id} の吸収率の出典`).toMatch(/手引き|インタビューフォーム/);
     }
   });
 
@@ -102,15 +103,35 @@ describe("公的な文書に沿った設定（抗微生物薬適正使用の手�
     expect(rank("CMZ")).toBe(rank("CTRX"));
   });
 
-  it("ESBL の連動：腸内細菌目では、経口第3世代セフェムの耐性率は CTRX 以上（経口のほうが効くことはない）", () => {
+  it("ESBL の連動：腸内細菌目では、ABPC・CEZ・経口第3世代セフェム・CFPM の耐性率は CTRX 以上", () => {
     for (const region of data.janis.regions) {
       const t = resistanceTableFor(data, region);
       for (const sp of ["ecoli", "kpneumoniae", "pmirabilis"]) {
-        for (const d of ["ABPC", "CEZ", "CFDN_PO"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
+        for (const d of ["ABPC", "CEZ", "CFDN_PO", "CFPM"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
         // セファマイシン系とカルバペネム系は連動させない（ESBL は分解しない）
         expect(t[sp]!.CMZ!).toBeCloseTo(1 - susceptibility(data, region, sp, "CMZ").p, 10);
         expect(t[sp]!.MEPM!).toBeCloseTo(1 - susceptibility(data, region, sp, "MEPM").p, 10);
       }
     }
+  });
+});
+
+describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合わせた例外）", () => {
+  const amk = data.drugById.get("AMK")! as unknown as {
+    dosesPerDay: number;
+    dosing: { label: string; unitsPerDay: number };
+    price: { spec: string };
+    sources: Record<string, string>;
+  };
+
+  it("用法の出典は JAID の尿路感染症の章", () => {
+    expect(amk.sources.dosing).toMatch(/JAID\/JSC 感染症治療ガイド2023 Ⅺ 尿路感染症 E/);
+    expect(amk.dosesPerDay).toBe(1);
+  });
+
+  it("1日量 15mg/kg × 体重60kg ＝ 900mg を、200mg 規格の単位数に直している", () => {
+    expect(amk.dosing.label).toMatch(/15mg\/kg/);
+    expect(amk.price.spec).toBe("200mg1管");
+    expect(amk.dosing.unitsPerDay).toBeCloseTo((15 * 60) / 200, 10);
   });
 });

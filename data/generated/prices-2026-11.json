@@ -242,12 +242,12 @@
   "AMK": {
    "ingredient": "アミカシン",
    "spec": "200mg1管",
-   "unitsPerDay": 3,
+   "unitsPerDay": 4.5,
    "min": 357,
    "max": 686,
    "brand": 610,
-   "yenPerDayMin": 1071,
-   "yenPerDayBrand": 1830,
+   "yenPerDayMin": 1606.5,
+   "yenPerDayBrand": 2745,
    "products": [
     {
      "product": "アミカシン硫酸塩200mg注射液",
