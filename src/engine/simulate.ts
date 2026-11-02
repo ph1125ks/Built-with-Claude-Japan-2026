@@ -35,11 +35,11 @@ export function runStage(opts: RunStageOptions): { result: StageResult; state: G
 export interface ScenarioRun {
   present: StageResult;
   future: StageResult;
-  /** 未来ステージの開始時の表（ステージ1の終わりに「数年分」の進みを足したもの） */
+  /** 未来ステージの開始時の表（ステージ1の終わりに、未来の年（既定は2050年）までの進みを足したもの） */
   futureStart: ResistanceTable;
 }
 
-/** いま → 未来の同じ病棟（既定は2050年）、を続けて動かす。未来の開始時の耐性率はモデルの carryOver で作る */
+/** いま → 未来（既定は2050年）、を続けて動かす。未来の開始時の耐性率はモデルの carryOver で作る */
 export function runScenario(opts: {
   data: GameData;
   scenario: ScenarioDef;

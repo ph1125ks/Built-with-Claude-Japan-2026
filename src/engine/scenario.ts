@@ -24,7 +24,15 @@ export function validateStage(data: GameData, stage: StageDef, label = "ステ�
     const at = `${label}：波${i + 1}`;
     if (!isNum(w.at) || w.at < 0) e.push(`${at}：at は0以上`);
     if (w.lane !== "random" && (!isInt(w.lane) || w.lane < 0 || w.lane >= lanes)) e.push(`${at}：lane は 0〜${lanes - 1} か "random"`);
-    if (w.species !== "auto" && !data.bacteriumById.has(w.species)) e.push(`${at}：菌 ${w.species} がカタログにない`);
+    if (typeof w.species === "object" && w.species !== null) {
+      const mix = (w.species as { mix?: Record<string, number> }).mix;
+      if (!mix || Object.keys(mix).length === 0) e.push(`${at}：species の mix が空`);
+      else
+        for (const [sp, wt] of Object.entries(mix)) {
+          if (!data.bacteriumById.has(sp)) e.push(`${at}：mix の菌 ${sp} がカタログにない`);
+          if (!isNum(wt) || wt <= 0) e.push(`${at}：mix の ${sp} の重みは正の数`);
+        }
+    } else if (w.species !== "auto" && !data.bacteriumById.has(w.species)) e.push(`${at}：菌 ${w.species} がカタログにない`);
     if (!isInt(w.count) || w.count < 1) e.push(`${at}：count は1以上の整数`);
     if (!isNum(w.spacing) || w.spacing < 0) e.push(`${at}：spacing は0以上`);
   });

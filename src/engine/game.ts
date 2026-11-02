@@ -110,7 +110,12 @@ export function createGame(opts: GameOptions): GameState {
       plan.push({
         tick: Math.round((w.at + i * w.spacing) * tps),
         lane: w.lane === "random" ? rng.int(data.rules.board.lanes) : w.lane,
-        species: w.species === "auto" ? rng.weighted(auto!.species, auto!.weights) : w.species,
+        species:
+          w.species === "auto"
+            ? rng.weighted(auto!.species, auto!.weights)
+            : typeof w.species === "object"
+              ? rng.weighted(Object.keys(w.species.mix), Object.values(w.species.mix))
+              : w.species,
         wave,
       });
     }

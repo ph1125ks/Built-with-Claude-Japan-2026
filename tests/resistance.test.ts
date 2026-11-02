@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   appropriateBot,
+  balanceFactor,
   breadthOf,
   broadBot,
   cloneTable,
@@ -154,15 +155,16 @@ describe("未来ステージへの引き継ぎ", () => {
     expect(1 - future.ecoli!.LVFX_PO!).toBeCloseTo(0.55 * Math.pow(0.55 / s0, m), 8);
   });
 
-  it("上限：どのモデルでも、ステージ1の終わりから 90% に届くまで minYears 年以上かかる（AMR Review の RAND の前提を目安にした）", () => {
-    const { rate, minYears } = data.rules.resistance.carryOver.ceiling;
+  it("上限：1年あたりの上がり方は、オッズの対数で「実測でいちばん速い傾き × 誇張の倍率」まで（どのモデルでも）", () => {
+    const { observed, exaggeration } = data.rules.resistance.carryOver.maxLogitPerYear;
+    const logit = (r: number) => Math.log(r / (1 - r));
     const end = cloneTable(start);
-    end.ecoli!.LVFX_PO = 0.75; // 大きく上がった組（上限がなければ数年で 90% を超える）
+    end.ecoli!.LVFX_PO = 0.75; // 大きく上がった組（上限がなければ数年でほぼ 100% になる）
     for (const model of [selectionModel, gaugeModel]) {
-      expect(model.carryOver(data, start, end, minYears - 1).ecoli!.LVFX_PO!, model.id).toBeLessThan(rate);
-      expect(model.carryOver(data, start, end, minYears).ecoli!.LVFX_PO!, model.id).toBeCloseTo(rate, 6);
-      // 上限を過ぎても、さらに上がる（2050年にはほぼ効かなくなる）
-      expect(model.carryOver(data, start, end, 25).ecoli!.LVFX_PO!, model.id).toBeGreaterThan(rate);
+      for (const years of [5, 10, 25]) {
+        const r = model.carryOver(data, start, end, years).ecoli!.LVFX_PO!;
+        expect(logit(r) - logit(0.75), `${model.id} ${years}年`).toBeCloseTo(years * observed * exaggeration, 6);
+      }
     }
   });
 
@@ -236,4 +238,42 @@ describe("ボットの基準（SPEC.md 5.4 の目安。耐性モデル A・B と
       expect(brFuture / runs).toBeLessThanOrEqual(0.3);
     });
   }
+});
+
+describe("系統の偏りの倍率（AHI の考え方）", () => {
+  const data = withModel("A");
+  const s = createGame({ data, stage: stage([{ at: 100, lane: 0, species: "ecoli", count: 1, spacing: 0 }], ["CMZ", "CTRX", "MEPM", "LVFX_PO"]), region: "全国", seed: 1 });
+  const { referenceShare, exponent, minFactor, maxFactor } = data.rules.resistance.balance;
+
+  it("まだ何も使っていなければ 1", () => {
+    expect(balanceFactor(s, "cephamycin")).toBe(1);
+  });
+
+  it("使用日数の合計が minDays に届くまでは 1（最初の波だけで倍率が上がらない）", () => {
+    s.stats.activeTicks = { CMZ: 10 };
+    expect(balanceFactor(s, "cephamycin")).toBe(1);
+  });
+
+  it("基準の割合を超えて使った系統は強まり、あまり使っていない系統は弱まる（上限・下限つき）", () => {
+    // 合計を minDays より多くする（1日 ＝ 毎秒のティック数 × 1日の秒数）
+    const day = data.rules.time.ticksPerSecond * data.rules.time.secondsPerGameDay;
+    s.stats.activeTicks = { CMZ: 6 * day, CTRX: 2 * day, MEPM: 2 * day };
+    const expected = (share: number) => Math.min(maxFactor, Math.max(minFactor, Math.pow(share / referenceShare, exponent)));
+    expect(balanceFactor(s, "cephamycin")).toBeCloseTo(expected(0.6), 10);
+    expect(balanceFactor(s, "ceph3")).toBeCloseTo(expected(0.2), 10);
+    expect(balanceFactor(s, "cephamycin")).toBeGreaterThan(1);
+    expect(balanceFactor(s, "ceph3")).toBeLessThan(1);
+    // 使っていない系統は下限
+    expect(balanceFactor(s, "fluoroquinolone")).toBe(minFactor);
+  });
+});
+
+describe("菌を混ぜる波（{ mix }）", () => {
+  it("重みのとおりに菌が出る（検査も通る）", () => {
+    const st = stage([{ at: 0, lane: 0, species: { mix: { ecoli: 3, efaecalis: 1 } }, count: 4000, spacing: 0 }]);
+    const g = createGame({ data: base, stage: st, region: "全国", seed: 9 });
+    const ecoli = g.spawnPlan.filter((p) => p.species === "ecoli").length / g.spawnPlan.length;
+    expect(Math.abs(ecoli - 0.75)).toBeLessThan(0.03);
+    expect(g.spawnPlan.every((p) => p.species === "ecoli" || p.species === "efaecalis")).toBe(true);
+  });
 });

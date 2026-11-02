@@ -8,6 +8,6 @@ export { validateStage, validateScenario } from "./scenario.ts";
 export { createGame, step, canSummon, intervalTicks, revealLevelAt, type GameState, type GameOptions } from "./game.ts";
 export { observe, type Observation, type ObservedBacterium, type ObservedCard, type ObservedUnit } from "./observe.ts";
 export { stageResult, spectrumUse, type StageResult, type SpectrumUse } from "./results.ts";
-export { getResistanceModel, noResistanceModel, selectionModel, gaugeModel, breadthOf, diffTables, futureYear, type ResistanceModel } from "./resistance.ts";
+export { getResistanceModel, noResistanceModel, selectionModel, gaugeModel, breadthOf, balanceFactor, diffTables, futureYear, type ResistanceModel } from "./resistance.ts";
 export { appropriateBot, broadBot, singleDrugBot, randomBot, idleBot, expectedEffect, knowledgeFor, type Bot, type Knowledge } from "./bots.ts";
 export { runStage, runScenario, type ScenarioRun } from "./simulate.ts";

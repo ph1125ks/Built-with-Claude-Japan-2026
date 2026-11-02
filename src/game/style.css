@@ -1265,3 +1265,8 @@ button {
   border-radius: 8px;
   padding: 8px 14px;
 }
+
+.timeline td.stage1 {
+  background: #f8f4f6;
+  color: #6b4a5a;
+}

@@ -83,7 +83,7 @@ export function howtoScreen(): string {
           <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
           <li><b>内服薬</b>は吸収率のぶん弱い状態で出ます。</li>
           <li>効かない菌には弾がはじかれます。<b>耐性</b>＝その個体が耐性を獲得している。<b>自然耐性</b>＝その菌種がもともと効かない。<b>効かない扱い</b>＝このゲームで効かないことにしている組み合わせ（腸球菌に MEPM）。</li>
-          <li>薬を使うと、その薬にさらされた菌の中で耐性菌が選ばれて残り（<b>選択圧</b>）、<b>耐性率が上がります</b>。</li>
+          <li>薬を使うと、その薬にさらされた菌の中で耐性菌が選ばれて残り（<b>選択圧</b>）、<b>耐性率が上がります</b>。このゲームでは、同じ系統ばかり使うと、その系統の耐性が早く進みます。</li>
         </ul>
         <p class="small">カードの <b>Access</b>・<b>Watch</b> は WHO の AWaRe 分類（Access がまず使う薬、Watch は耐性化に注意して使う薬）。「大腸菌など・緑膿菌・腸球菌」は、この地域のデータで効く見込みがあるかのゲーム内の目安で、実際の薬の選び方の根拠にはなりません。</p>
       </section>
@@ -107,8 +107,8 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
   const head = phase === "present" ? `ステージ1「${escapeHtml(stage.title)}」` : `ステージ2「${escapeHtml(stage.title)}」`;
   const defaultBrief =
     phase === "present"
-      ? `${escapeHtml(scenario.region)}の公開データ（JANIS）の耐性率から始まる病棟です。菌の正体が分かるにつれて、薬を選び直せます。`
-      : `ステージ1の終わりの耐性率を引き継ぎ、同じ使い方が ${futureYear(data, scenario.future.yearsLater)}年まで（${scenario.future.yearsLater}年間）続いたとみなした病棟です。`;
+      ? `${escapeHtml(scenario.region)}の公開データ（JANIS）の耐性率から始まります。菌の正体が分かるにつれて、薬を選び直せます。`
+      : `ステージ1の終わりの耐性率を引き継ぎ、同じ使い方が ${futureYear(data, scenario.future.yearsLater)}年まで（${scenario.future.yearsLater}年間）続いたとみなしています。`;
   // 手札が変わったら書く（ステージごとに手札を決める：SPEC.md 4.9）
   let handNote = "";
   if (phase === "future") {
@@ -117,16 +117,16 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
     const added = scenario.future.hand.map((h) => h.drug).filter((d) => !scenario.present.hand.some((h) => h.drug === d));
     const ab = (ds: string[]) => ds.map((d) => escapeHtml(data.drugById.get(d)?.abbr ?? d)).join("・");
     const parts: string[] = [];
-    if (gone.length) parts.push(`${ab(gone)} はこの病棟では使えません`);
+    if (gone.length) parts.push(`${ab(gone)} はこのステージでは使えません`);
     if (added.length) parts.push(`${ab(added)} が使えるようになりました`);
     if (parts.length) handNote = `<p class="hand-note">手札が変わりました：${parts.join("。")}。</p>`;
   }
   return `
   <div class="screen briefing-screen ${phase}">
-    ${phase === "future" ? `<p class="kicker">${futureYear(data, scenario.future.yearsLater)}年</p>` : ""}
+    ${phase === "future" ? `<p class="kicker">${scenario.future.yearsLater}年後</p>` : ""}
     <h2>${head}</h2>
     <p class="brief">${stage.briefing ? escapeHtml(stage.briefing) : defaultBrief}</p>
-    ${phase === "future" ? `<p class="exaggerated">ゲームの中の耐性化の速さは誇張しています。現実の病棟が${futureYear(data, scenario.future.yearsLater)}年にこのとおりになる、という予測ではありません。</p>` : ""}
+    ${phase === "future" ? `<p class="exaggerated">ゲームの中の耐性化の速さは誇張しています。現実が${futureYear(data, scenario.future.yearsLater)}年にこのとおりになる、という予測ではありません。</p>` : ""}
     ${extra}
     <div class="facts">
       <div><span>手札</span><div class="chips">${handChips(data, stage)}</div></div>
@@ -169,7 +169,7 @@ export function antibiogramBlock(data: GameData, region: string, table: Resistan
   const caption =
     phase === "present"
       ? `${escapeHtml(region)}の感性率（JANIS 2025年報、入院検体・すべての検査材料、CLSI 2012）。地域の集計で、施設ごとや尿だけの値ではありません。ゲームで使う値で、ESBL の連動などで調整したものを含みます。* は代用の値。セルにカーソルを置くと株数が出ます。`
-      : "この病棟の感性率。ステージ1の結果から作ったゲーム内の値です（耐性化の速さは誇張しています）。";
+      : "このステージの感性率。ステージ1の結果から作ったゲーム内の値です（耐性化の速さは誇張しています）。";
   return `${antibiogramTable(data, region, table, drugs, phase === "present")}
     <p class="table-note">${caption} 緑＝80%以上、黄＝50〜80%、赤＝50%未満（色の区切りはゲーム用の目安で、実際の薬の選択には使えません）。アンチバイオグラムは、菌名や感受性が分かる前に「効く見込みの高い薬」を選ぶ手がかりです。</p>`;
 }
@@ -207,10 +207,16 @@ export function risesTimeline(
   years: number[],
   tables: ResistanceTable[],
   usedDrugs = true,
+  stage1End?: ResistanceTable,
 ): string {
   if (rises.length === 0) return risesList(data, rises, usedDrugs);
   const base = data.rules.resistance.carryOver.dataYear;
-  const head = [`<th>${base}年<br><small>ステージ1の開始</small></th>`, ...years.map((y) => `<th>${base + y}年</th>`)].join("");
+  // ステージ1の中の変化（ゲーム用に誇張した部分）と、そのあと実測の速さを上限に延ばした部分を分けて見せる
+  const head = [
+    `<th>${base}年<br><small>ステージ1の開始</small></th>`,
+    ...(stage1End ? [`<th>ステージ1の終わり<br><small>（ゲーム内の変化）</small></th>`] : []),
+    ...years.map((y) => `<th>${base + y}年</th>`),
+  ].join("");
   const body = rises
     .map((r) => {
       const cells = tables.map((t) => {
@@ -218,11 +224,12 @@ export function risesTimeline(
         const cls = v >= 0.8 ? "poor" : v >= 0.5 ? "mid" : "";
         return `<td class="${cls}">${pct(v)}</td>`;
       });
-      return `<tr><th>${escapeHtml(data.bacteriumById.get(r.species)!.name)}の <b>${escapeHtml(data.drugById.get(r.drug)!.abbr)}</b></th><td>${pct(r.from)}</td>${cells.join("")}</tr>`;
+      const mid = stage1End ? `<td class="stage1">${pct(stage1End[r.species]?.[r.drug] ?? r.from)}</td>` : "";
+      return `<tr><th>${escapeHtml(data.bacteriumById.get(r.species)!.name)}の <b>${escapeHtml(data.drugById.get(r.drug)!.abbr)}</b></th><td>${pct(r.from)}</td>${mid}${cells.join("")}</tr>`;
     })
     .join("");
   return `<table class="timeline"><thead><tr><th>耐性率</th>${head}</tr></thead><tbody>${body}</tbody></table>
-    <p class="table-note">ゲーム内の値です（耐性化の速さは誇張しています）。予測ではありません。</p>`;
+    <p class="table-note">ゲーム内の値で、予測ではありません。ステージ1の中の変化はゲーム用に誇張しています。そのあとの1年あたりの上がり方は、国の報告書で実際に観測された上がり方のうち、このゲームの菌と薬でいちばん速かったものを超えないようにしています（多くの組では、実測より速く上がります）。</p>`;
 }
 
 /** 「2050年問題」の注記（研究の推計の数字と、ゲームの値はそこから出したものではないこと） */
@@ -409,8 +416,10 @@ export function sourcesScreen(data: GameData): string {
           <dd>厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。AMK の用法（1日量を含む）は JAID/JSC 感染症治療ガイド2023。セフジニルの用法は電子添文、LVFX の吸収率はインタビューフォーム（この2つは PMDA 掲載）。</dd>
           <dt>使用日数・スペクトラムの広さ（DASC/DOT）・アンチバイオグラムの使い方</dt>
           <dd>8学会合同抗微生物薬適正使用推進検討委員会「抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版」（日本化学療法学会雑誌 73巻2号）。使用日数と DASC は表4（p.119）の考え方にならい、ASC スコアは表5（p.120。Kakiuchi ら, Clin Infect Dis 2022 の値）。表にない CMZ・AMK・LVFX・CFDN の ASC は未設定です。アンチバイオグラムを初期治療の薬選びに使うことは p.130。</dd>
-          <dt>2050年の設定と、耐性化の速さの決め方</dt>
-          <dd>Review on Antimicrobial Resistance（委員長 Jim O'Neill）「Antimicrobial Resistance: Tackling a crisis for the health and wealth of nations」2014年12月：2050年の推計と、その前提（RAND Europe：15年で耐性率が100%になる、KPMG：耐性率が今より40%上がる（相対か絶対かは本文に書かれていない）。どちらも確かな予測ではない大まかな見積もり。p.6・p.8）。GBD 2021 Antimicrobial Resistance Collaborators. Lancet 2024; 404: 1199–226：2050年の予測（細菌の薬剤耐性が直接の原因の死亡 191万人、関連した死亡 822万人）。ゲームでは、どの菌×薬でも、ステージ1の終わりから耐性率が 90% に届くまで15年以上かかるように上限をかけています（RAND の前提を目安にした）。</dd>
+          <dt>2050年の注記</dt>
+          <dd>Review on Antimicrobial Resistance（委員長 Jim O'Neill）「Antimicrobial Resistance: Tackling a crisis for the health and wealth of nations」2014年12月：2050年の推計と、その前提（RAND Europe：15年で耐性率が100%になる、KPMG：耐性率が今より40%上がる（相対か絶対かは本文に書かれていない）。どちらも確かな予測ではない大まかな見積もり。p.6・p.8）。GBD 2021 Antimicrobial Resistance Collaborators. Lancet 2024; 404: 1199–226：2050年の予測（細菌の薬剤耐性が直接の原因の死亡 191万人、関連した死亡 822万人）。この2つは2050年の注記にだけ使っています。</dd>
+          <dt>2050年までの耐性化の速さ</dt>
+          <dd>厚生労働省「薬剤耐性ワンヘルス動向調査年次報告書 2024」（令和7年3月14日）の JANIS の耐性率の推移（2014〜2023年）で、このゲームに出てくる菌と薬の組み合わせ（CTRX は CTX の値で見た）の中でいちばん速く上がった組（肺炎桿菌の CFPM：3.5% → 9.7%、表2）の上がり方を、1年あたりの上限にしています（表の値は「耐性（R）」の割合で、使ったのは上がる速さだけです）。ステージ1の中の変化はゲーム用に誇張しています。2050年までは、上がった組の多くがこの上限の速さで延びるので、多くの組では実測より速く上がります。</dd>
           <dt>自然耐性・値のない組み合わせの扱い</dt>
           <dd>EUCAST「Expected Resistant Phenotypes」v1.2、「Expert Rules v3.2 on Enterococcus spp.」、「Breakpoint tables」v16.1。</dd>
         </dl>
@@ -429,8 +438,9 @@ export function sourcesScreen(data: GameData): string {
         </ul>
         <h3>誇張していること</h3>
         <ul>
-          <li>耐性化の速さ：実際の病棟で年単位で起きる変化を、数分のステージに縮めています（${escapeHtml(modelLabel(r.model))}。式と係数は data/rules.json）。</li>
-          <li>ステージ2は、ステージ1と同じ使い方が2050年まで続いたとみなして、耐性率を先へ延ばしています。どの菌×薬でも、ステージ1の終わりから耐性率が 90% に届くまで15年以上かかるようにしています（AMR Review の、耐性の仮定が厳しいほうの前提「15年で100%」を目安にした）。ゲームの耐性率は、2050年の予測ではありません。</li>
+          <li>耐性化の速さ：現実に年単位で起きる変化を、数分のステージに縮めています（${escapeHtml(modelLabel(r.model))}。式と係数は data/rules.json）。</li>
+          <li>ステージ2は、ステージ1と同じ使い方が2050年まで続いたとみなして、耐性率を先へ延ばしています。1年あたりの上がり方は、国の報告書で2014〜2023年に実際に観測された上がり方のうち、このゲームの菌と薬でいちばん速かったもの（オッズが約5.6年で2倍）を超えないようにしています。多くの組ではこの上限の速さで延びるので、実測より速く上がります。ゲームの耐性率は、2050年の予測ではありません。</li>
+          <li>同じ系統ばかり使うと、その系統の耐性が早く進みます（使い方が偏るほど選択圧が強まる、という考え方。式と強さはゲームの決めごと）。</li>
           <li>菌の体力・速さ・膀胱へのダメージ、薬の強さはゲーム用の値です。</li>
         </ul>
       </section>

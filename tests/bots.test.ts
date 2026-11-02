@@ -9,6 +9,7 @@ import {
   knowledgeFor,
   loadGameData,
   randomBot,
+  resistanceTableFor,
   runScenario,
   runStage,
   observe,
@@ -89,5 +90,44 @@ describe("適正ボットの選び方（AWaRe の順）", () => {
     const state = createGame({ data, stage, region: "全国", seed: 1 });
     step(state);
     expect(broadBot().decide(observe(state), knowledgeFor(state))).toEqual([{ type: "summon", drug: "MEPM", lane: 1 }]);
+  });
+});
+
+describe("適正ボットのデエスカレーションと温存", () => {
+  /** 自然耐性だけを残し、ほかはすべて効く表 */
+  const allS = () => {
+    const t = resistanceTableFor(data, "全国");
+    for (const [sp, row] of Object.entries(t)) {
+      const intrinsic = data.bacteriumById.get(sp)!.intrinsicResistance;
+      for (const d of Object.keys(row)) row[d] = intrinsic.includes(d) ? 1 : 0;
+    }
+    return t;
+  };
+
+  it("菌名が分かって、効いている薬より狭い薬で足りるなら、狭い薬に切り替える", () => {
+    // すべて効く表なら、大腸菌には Access の ABPC が最も優先（CMZ は Watch）
+    const stage = { ...scenario.present, waves: [{ at: 0, lane: 0, species: "ecoli", count: 1, spacing: 0 }] };
+    const state = createGame({ data, stage, region: "全国", seed: 1, resistance: allS() });
+    const k = knowledgeFor(state);
+    step(state);
+    while (state.bacteria[0] && state.bacteria[0].level === "gram") step(state);
+    expect(state.bacteria[0]?.level).toBe("species");
+    // CMZ が効いている状態をつくってから判断させる
+    step(state, [{ type: "summon", drug: "CMZ", lane: 0 }]);
+    expect(state.units.map((u) => u.drug)).toEqual(["CMZ"]);
+    // Access の薬（ABPC・CEZ）のうち、カバー率の低い CEZ に切り替える
+    expect(appropriateBot().decide(observe(state), k)).toEqual([{ type: "summon", drug: "CEZ", lane: 0 }]);
+  });
+
+  it("最適な薬がレーンに残っていて次を召喚できないあいだは、別の薬（キノロン系など）でつながずに待つ", () => {
+    const stage = { ...scenario.present, waves: [{ at: 0, lane: 0, species: "paeruginosa", count: 1, spacing: 0 }] };
+    const state = createGame({ data, stage, region: "全国", seed: 1 });
+    const k = knowledgeFor(state);
+    step(state, [{ type: "summon", drug: "TAZPIPC", lane: 0 }]);
+    // TAZ/PIPC の量が少なくなり、まだ次を出せない時点まで進める
+    while (state.units[0] && state.units[0].hp / data.rules.units.fullHp > 0.1) step(state);
+    while (state.bacteria[0] && state.bacteria[0].level === "gram") step(state);
+    const cmds = appropriateBot().decide(observe(state), k);
+    expect(cmds.some((c) => c.drug === "LVFX_PO" || c.drug === "MEPM")).toBe(false);
   });
 });

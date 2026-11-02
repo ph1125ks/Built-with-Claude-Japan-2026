@@ -115,6 +115,12 @@ export interface ResistanceRules {
     /** この値未満の耐性率（0% を含む）は、さらされたときにこの値として上げ始める（外から持ち込まれうるとみなす） */
     minRate: number;
   };
+  /**
+   * 系統の偏り：1つの系統が使用日数の referenceShare を超えて使われると選択圧が強まり、下回ると弱まる。
+   * 倍率 ＝ （その系統の使用日数の割合 ÷ referenceShare）^ exponent（minFactor〜maxFactor に収める）。exponent 0 で無効。
+   * 使用日数の合計が minDays に届くまでは 1（最初の波で1系統しか使っていないだけで倍率が上がらないように）
+   */
+  balance: { referenceShare: number; exponent: number; minFactor: number; maxFactor: number; minDays: number };
   /** B：耐性ゲージ */
   B: {
     /** ゲージ1段の大きさ（「広さ × 効いている日数」の合計） */
@@ -130,8 +136,11 @@ export interface ResistanceRules {
   carryOver: {
     dataYear: number;
     stagesPerYear: { A: number; B: number };
-    /** 上限：どの菌×薬でも、ステージ1の終わりから rate に届くまで minYears 年以上かかる（AMR Review の RAND の前提を目安にする） */
-    ceiling: { rate: number; minYears: number };
+    /**
+     * 1年あたりの上がり方の上限（オッズの対数）＝ observed × exaggeration。
+     * observed は公的な実測（NAOR 2024 の JANIS の推移）で、いちばん速く上がった組の傾き。exaggeration はゲーム用の誇張の倍率
+     */
+    maxLogitPerYear: { observed: number; exaggeration: number };
   };
 }
 
@@ -214,8 +223,8 @@ export interface WaveDef {
   at: number;
   /** レーン番号（0 始まり）か "random" */
   lane: number | "random";
-  /** 菌の id か "auto"（地域の尿の分離菌の割合で選ぶ） */
-  species: string | "auto";
+  /** 菌の id か "auto"（地域の尿の分離菌の割合で選ぶ）か、菌 → 重みの組み合わせ（{ mix: { ecoli: 2, efaecalis: 1 } }） */
+  species: string | "auto" | { mix: Record<string, number> };
   count: number;
   /** 1匹ごとの間隔（秒） */
   spacing: number;

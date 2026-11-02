@@ -40,8 +40,8 @@ export function futureYear(data: GameData, yearsLater: number): number {
 /**
  * 表の各値を、開始時 → 終わりの変化を「空間」の中でまっすぐ延ばす。
  * 自然耐性など 100% のものと、変化しなかったものはそのまま。
- * 上限（carryOver.ceiling）：ステージ1の終わりで rate 未満の組は、rate に届くまで minYears 年以上かかるように、
- * 延ばす量を「年数 ÷ minYears × （rate までの残り）」で頭打ちにする
+ * 上限（carryOver.maxLogitPerYear）：1年あたりの上がり方を、オッズの対数で「公的な実測でいちばん速く上がった組の傾き
+ * × ゲーム用の誇張の倍率」までに抑える
  */
 function extrapolate(
   data: GameData,
@@ -54,8 +54,8 @@ function extrapolate(
   startValue: (r: number) => number = (r) => r,
 ): ResistanceTable {
   const m = repeats(data, yearsLater, model);
-  const { rate, minYears } = data.rules.resistance.carryOver.ceiling;
-  const zc = forward(rate);
+  const { observed, exaggeration } = data.rules.resistance.carryOver.maxLogitPerYear;
+  const maxLogit = Math.max(0, yearsLater) * observed * exaggeration;
   const out = cloneTable(end);
   for (const [sp, row] of Object.entries(out)) {
     for (const [d, r1] of Object.entries(row)) {
@@ -63,16 +63,31 @@ function extrapolate(
       if (r1 >= 1 || r1 <= r0) continue;
       const z1 = forward(r1);
       const z0 = forward(startValue(r0));
-      let shift = m * (z1 - z0);
-      // 上限。forward は A では増える向き、B では減る向きなので、向きによらず大きさで比べる
-      if (r1 < rate && minYears > 0) {
-        const allowed = (Math.max(0, yearsLater) / minYears) * Math.abs(zc - z1);
-        if (Math.abs(shift) > allowed) shift = Math.sign(shift) * allowed;
-      }
-      row[d] = Math.min(1, Math.max(r1, back(z1 + shift)));
+      const extrapolated = Math.min(1, Math.max(r1, back(z1 + m * (z1 - z0))));
+      // 上限：1年あたりの上がり方は、オッズの対数で maxLogitPerYear まで（どのモデルでも同じ物差しで比べる）
+      row[d] = Math.min(extrapolated, sigmoid(logit(r1) + maxLogit));
     }
   }
   return applyLinkageFloor(data, out);
+}
+
+/**
+ * 系統の偏りの倍率。ステージのこれまでの使用日数のうち、その系統が占める割合が referenceShare を超えると 1 より大きく、
+ * 下回ると 1 より小さくなる。考え方は AHI（抗菌薬選択圧指数：系統を偏らせずに使う）にならう（rules.json の balance）
+ */
+export function balanceFactor(state: GameState, drugClass: string): number {
+  const { referenceShare, exponent, minFactor, maxFactor, minDays } = state.data.rules.resistance.balance;
+  if (!(exponent > 0)) return 1;
+  const ticksPerDay = state.data.rules.time.ticksPerSecond * state.data.rules.time.secondsPerGameDay;
+  let total = 0;
+  let mine = 0;
+  for (const [drug, ticks] of Object.entries(state.stats.activeTicks)) {
+    total += ticks;
+    if (drugOf(state.data, drug).class === drugClass) mine += ticks;
+  }
+  if (total <= 0 || total < minDays * ticksPerDay) return 1;
+  const f = Math.pow(mine / total / referenceShare, exponent);
+  return Math.min(maxFactor, Math.max(minFactor, f));
 }
 
 /** 耐性化しない（比較の基準。エンジンの確認用） */
@@ -113,7 +128,7 @@ export const selectionModel: ResistanceModel = {
         let exposed = 0;
         for (const b of bugs) exposed += Math.min(1, (b.exposure[d.id] ?? 0) / fullTicks);
         if (exposed <= 0) continue;
-        const shift = exaggeration * A.logitPerWave * (exposed / bugs.length);
+        const shift = exaggeration * A.logitPerWave * (exposed / bugs.length) * balanceFactor(state, d.class);
         row[d.id] = sigmoid(logit(Math.max(r, A.minRate)) + shift);
       }
     }
@@ -150,7 +165,7 @@ export const gaugeModel: ResistanceModel = {
     const { exaggeration, B } = data.rules.resistance;
     const drug = drugOf(data, drugId);
     const before = state.gauge[drug.class] ?? 0;
-    const after = before + (exaggeration * breadthOf(state, drugId)) / drug.dosesPerDay;
+    const after = before + ((exaggeration * breadthOf(state, drugId)) / drug.dosesPerDay) * balanceFactor(state, drug.class);
     state.gauge[drug.class] = after;
     const steps = Math.floor(after / B.gaugePerStep) - Math.floor(before / B.gaugePerStep);
     if (steps <= 0) return;

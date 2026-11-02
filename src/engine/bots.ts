@@ -80,7 +80,25 @@ export function appropriateBot(threshold = 0.8): Bot {
         const target = bs[0];
         if (!target) return;
         const units = obs.units.filter((u) => u.lane === lane);
-        if (units.some((u) => u.hpFraction > ACTIVE && expectedEffect(k, target, u.drug) >= threshold)) return;
+        // 狭い順：AWaRe の順位、同じならカバー率が低いほう
+        const narrower = (a: string, b: string) =>
+          stewardshipRank(k.data, a) - stewardshipRank(k.data, b) || k.coverage(a) - k.coverage(b);
+        // いまの情報で、手札の中で最も優先すべき薬（待ち時間中かどうかは問わない）
+        const best = obs.hand
+          .map((h) => h.drug)
+          .filter((d) => expectedEffect(k, target, d) >= threshold)
+          .sort(narrower)[0];
+        const active = units.filter((u) => u.hpFraction > ACTIVE && expectedEffect(k, target, u.drug) >= threshold);
+        if (active.length) {
+          // 効いている薬がある。菌名・感受性が分かって、より狭い薬で足りるなら切り替える（デエスカレーション）
+          if (!best || active.some((u) => u.drug === best)) return;
+          const bestCard = obs.hand.find((h) => h.drug === best);
+          if (active.every((u) => narrower(best, u.drug) < 0) && bestCard?.usable[lane]) cmds.push({ type: "summon", drug: best, lane });
+          return;
+        }
+        // 最適な薬がこのレーンにまだ残っていて、次の投与（待ち時間）を待つだけなら、別の薬でつながない
+        // （温存すべき薬を「つなぎ」に使わない）
+        if (best && units.some((u) => u.drug === best) && !obs.hand.find((h) => h.drug === best)?.usable[lane]) return;
         const scored = obs.hand
           .filter((h) => h.usable[lane])
           .map((h) => ({ h, p: expectedEffect(k, target, h.drug), rank: stewardshipRank(k.data, h.drug) }));

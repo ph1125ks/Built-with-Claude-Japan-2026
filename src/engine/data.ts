@@ -63,8 +63,11 @@ function checkCatalog(data: GameData): void {
   const spy = res.carryOver?.stagesPerYear;
   if (!spy || !(spy.A >= 0) || !(spy.B >= 0)) errors.push("resistance.carryOver.stagesPerYear は A と B の0以上の数");
   if (!Number.isInteger(res.carryOver?.dataYear)) errors.push("resistance.carryOver.dataYear は年（整数）");
-  const ceil = res.carryOver?.ceiling;
-  if (!ceil || !(ceil.rate > 0 && ceil.rate < 1) || !(ceil.minYears >= 0)) errors.push("resistance.carryOver.ceiling は rate（0〜1）と minYears（0以上）");
+  const cap = res.carryOver?.maxLogitPerYear;
+  if (!cap || !(cap.observed > 0) || !(cap.exaggeration > 0)) errors.push("resistance.carryOver.maxLogitPerYear は observed と exaggeration（どちらも正の数）");
+  const bal = res.balance;
+  if (!bal || !(bal.referenceShare > 0 && bal.referenceShare <= 1) || !(bal.exponent >= 0) || !(bal.minFactor > 0) || !(bal.maxFactor >= bal.minFactor) || !(bal.minDays >= 0))
+    errors.push("resistance.balance は referenceShare（0〜1）・exponent（0以上）・minFactor ≤ maxFactor・minDays（0以上）");
   for (const p of data.rules.susceptibility.proxies) {
     if (!data.drugById.has(p.drug)) errors.push(`代用：薬 ${p.drug} がない`);
     for (const b of p.bacteria) if (!data.bacteriumById.has(b)) errors.push(`代用：菌 ${b} がない`);
