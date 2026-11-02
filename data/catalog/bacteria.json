@@ -1,6 +1,7 @@
 {
   "_comment": [
-    "敵の細菌の一覧。intrinsicResistance（自然耐性）は医学的な事実として作者が監修で確定する。",
+    "敵の細菌の一覧。intrinsicResistance（自然耐性）は、EUCAST「Expected Resistant Phenotypes v1.2」（2023年1月）の表に沿って決め、sources に表と行番号（Rule）とページを書く。",
+    "EUCAST は「intrinsic resistance」の語をやめ「expected resistant phenotype」と呼んでいる（90%を超える株が耐性で、使用を避けるべきもの）。ゲームでは「自然耐性」と表示する。",
     "hp・speed・bladderDamage はゲームの調整値で、医学的な意味はない（速さだけは、プロテウスの遊走を表すために速くしている）。",
     "look はグラム染色の見た目（陽性＝紫、陰性＝ピンク〜赤）。janis は JANIS の表の菌種名。"
   ],
@@ -16,7 +17,8 @@
       "hp": 100,
       "speed": 45,
       "bladderDamage": 10,
-      "review": { "status": "仮", "check": ["自然耐性（このカードの範囲ではなし）"] }
+      "sources": { "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 1（p.3〜4）に大腸菌の行はなく、今回のカードに自然耐性はない" },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "kpneumoniae",
@@ -29,7 +31,8 @@
       "hp": 130,
       "speed": 40,
       "bladderDamage": 12,
-      "review": { "status": "仮", "check": ["自然耐性（ABPC）"] }
+      "sources": { "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 1 Rule 1.7（p.3）：Klebsiella pneumoniae complex はアンピシリン・アモキシシリン、チカルシリンに R" },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "pmirabilis",
@@ -42,7 +45,8 @@
       "hp": 90,
       "speed": 60,
       "bladderDamage": 10,
-      "review": { "status": "仮", "check": ["自然耐性（このカードの範囲ではなし）"] }
+      "sources": { "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 1 Rule 1.12（p.3）：テトラサイクリン、ポリミキシン B・コリスチン、ニトロフラントインに R。今回のカードには該当なし" },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "paeruginosa",
@@ -55,7 +59,11 @@
       "hp": 120,
       "speed": 45,
       "bladderDamage": 12,
-      "review": { "status": "仮", "check": ["自然耐性（ABPC、CEZ、CMZ、CTRX、経口第3世代セフェム）"] }
+      "sources": {
+        "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 2 Rule 2.7（p.5）：アンピシリン・アモキシシリン、セフォタキシム・セフトリアキソンなどに R。表の見出しで、ブドウ糖非発酵菌は第1・第2世代セファロスポリンにも耐性とされる。EUCAST Breakpoint Tables v16.1 の Pseudomonas spp.（印刷 p.22）では、セファゾリン、セフォキシチン（セファマイシン系）、セフロキシム、CTX、CTRX、経口第3世代のセフィキシム・セフポドキシム・セフチブテンがすべて「-」（治療に適さない：注8、印刷 p.4）",
+        "notes": "CMZ とセフジニルそのものは EUCAST の表にない。同じ系統（セファマイシン系のセフォキシチン、経口第3世代セフェム）が「-」であることから耐性とした"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "efaecalis",
@@ -68,7 +76,10 @@
       "hp": 90,
       "speed": 35,
       "bladderDamage": 8,
-      "review": { "status": "仮", "check": ["自然耐性（セフェム系すべて、アミノグリコシド単剤）"] }
+      "sources": {
+        "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 4 Rule 4.7（p.7）：セファロスポリン（セフタジジムを含む）とアミノグリコシド（低レベル耐性：脚注1）に R。併用での相乗効果は、細胞壁合成阻害薬に感性でアミノグリコシドの高度耐性がない株に限られ、Breakpoint Tables v16.1（印刷 p.41 注2）で相乗効果を見込めるとされるのはゲンタマイシン（スクリーニング陰性のとき）で、AMK では保証されない。ゲームは単剤だけを扱うので、耐性とする。EUCAST Breakpoint Tables v16.1 の腸球菌の表（印刷 p.40〜41）でも、セファロスポリンはすべて「-」、アミノグリコシドは単剤では耐性と注記"
+      },
+      "review": { "status": "確認済み" }
     }
   ]
 }

@@ -75,10 +75,13 @@ describe("召喚", () => {
     const cfdn = s.units.find((u) => u.drug === "CFDN_PO")!;
     const lvfx = s.units.find((u) => u.drug === "LVFX_PO")!;
     // 1ティック分はもう減っている
-    expect(cfdn.hp + cfdn.decayPerTick).toBeCloseTo(full * 0.25, 6);
-    expect(lvfx.hp + lvfx.decayPerTick).toBeCloseTo(full * 0.99, 6);
-    // CFDN は投与間隔の 25% の長さで消える
-    const expectedLife = Math.ceil(intervalTicks(data, "CFDN_PO") * 0.25);
+    const ba = (id: string) => data.drugById.get(id)!.bioavailability!;
+    expect(ba("CFDN_PO")).toBeLessThan(0.3);
+    expect(ba("LVFX_PO")).toBeGreaterThan(0.9);
+    expect(cfdn.hp + cfdn.decayPerTick).toBeCloseTo(full * ba("CFDN_PO"), 6);
+    expect(lvfx.hp + lvfx.decayPerTick).toBeCloseTo(full * ba("LVFX_PO"), 6);
+    // CFDN は投与間隔に吸収率を掛けた長さで消える
+    const expectedLife = Math.ceil(intervalTicks(data, "CFDN_PO") * ba("CFDN_PO"));
     for (let i = 0; i < expectedLife + 1; i++) step(s);
     expect(s.units.some((u) => u.drug === "CFDN_PO")).toBe(false);
   });

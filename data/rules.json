@@ -26,17 +26,34 @@
       "S_PLUS_HALF_SORI": "効く確率 =（S + SorI の半分）/ 合計"
     },
     "proxies": [
-      { "bacteria": ["ecoli", "kpneumoniae", "pmirabilis"], "drug": "CFDN_PO", "useJanis": "CTX", "note": "経口第3世代セフェムの感受性を CTX で代用" },
-      { "bacteria": ["efaecalis"], "drug": "TAZPIPC", "useJanis": "ABPC", "note": "腸球菌の TAZ/PIPC を ABPC で代用" },
-      { "bacteria": ["efaecalis"], "drug": "MEPM", "fixedSusceptible": 0, "note": "JANIS に値がない。腸球菌にカルバペネムは頼れない扱い" }
+      {
+        "bacteria": ["ecoli", "kpneumoniae", "pmirabilis"],
+        "drug": "CFDN_PO",
+        "useJanis": "CTX",
+        "note": "経口第3世代セフェムの感受性を CTX で代用",
+        "basis": "JANIS にセフジニルの値がない。EUCAST Breakpoint Tables v16.1 の腸内細菌目（印刷 p.16）では、経口第3世代セフェム（セフィキシム・セフポドキシム、単純性尿路感染症のみ）の感性の基準は CTX・CTRX と同じ S≤1 mg/L で、耐性の基準はより厳しい（R>1）。セフジニル自体は表にない。経口のほうが CTRX より効く値にならないよう、linkedResistance で耐性率の下限を CTRX にしている"
+      },
+      {
+        "bacteria": ["efaecalis"],
+        "drug": "TAZPIPC",
+        "useJanis": "ABPC",
+        "note": "腸球菌の TAZ/PIPC を ABPC で代用",
+        "basis": "JANIS に値がない。EUCAST Expert Rules v3.2（腸球菌、2020年2月）Rule 1：ABPC に耐性なら PIPC（阻害薬を含まないもの）とイミペネムも耐性と報告する。備考に、ABPC 感性からはイミペネムの結果を予測できないとある（PIPC の感性の向きは書かれていない）。EUCAST Breakpoint Tables v16.1（印刷 p.39）は E. faecalis の TAZ/PIPC に S≤0.001・R>16 を設けている。S≤0.001 は、野生株を「I（増量投与で感性）」に分け S とは報告しない、という意味（注13、印刷 p.5）。同じ表の注2 では、腸球菌に β-ラクタマーゼ阻害薬を足しても臨床上の上乗せ効果はないとしており、TAZ/PIPC と PIPC を同じに扱う裏付けになる"
+      },
+      {
+        "bacteria": ["efaecalis"],
+        "drug": "MEPM",
+        "fixedSusceptible": 0,
+        "note": "腸球菌に MEPM は効かない扱い",
+        "basis": "自然耐性ではない（EUCAST Expected Resistant Phenotypes v1.2 Table 4 に記載なし）。EUCAST Breakpoint Tables v16.1 の腸球菌の表（印刷 p.40）で MEPM は「-」で、「その菌の感染症の治療には適さず、検査も臨床での使用も避けるべき」という意味（同 注8、印刷 p.4）。イミペネムには E. faecalis のブレイクポイントがある"
+      }
     ],
     "missing": "NOT_EFFECTIVE",
     "review": {
       "status": "仮",
       "check": [
-        "変換ルール（S のみか、SorI をどう扱うか）（手引きに記載なし）",
-        "代用の3件（手引きに記載なし。CLSI M100・EUCAST で確かめる）",
-        "値がない組み合わせを効かない扱いにしてよいか"
+        "変換ルール（S のみか、SorI をどう扱うか）（手引き・EUCAST に記載なし。ゲームとしての判断）",
+        "TAZ/PIPC の代用は、EUCAST の推定ルールが耐性の向きだけなので、感性の向きはゲームとしての近似。EUCAST では E. faecalis の TAZ/PIPC は野生株でも「I（増量投与で感性）」で、増量投与は 4.5g×1日4回を3時間で点滴する方法。ゲームの 1回4.5g・6時間毎は EUCAST では標準用量にあたる。「S のみを効く」とする変換との関係を作者が判断する"
       ]
     }
   },
@@ -49,8 +66,9 @@
       "_comment": [
         "CTRX に耐性の個体は、alsoResistant の薬にも耐性にする。それ以外の個体は、薬ごとの全体の耐性率がデータどおりになるように確率を調整して決める",
         "単純化：CTRX 耐性を ESBL とみなしている。手引きによれば、セフォタキシム耐性の株の多くは ESBL 産生菌とみられるが、すべてではない（p.9）。プラスミド性 AmpC では CMZ も効きにくくなる（p.12）が、CMZ は連動させていない",
-        "CFPM は、ESBL では選択肢にならない（p.12〜13）が、JANIS（CLSI 2012）の感性率を優先して連動させていない。CLSI 2012 の CFPM の感性には、いまの SDD の範囲が含まれるとみられる。作者の判断待ち"
-      ]
+        "CFPM は、ESBL では選択肢にならない（p.12〜13）が、JANIS（CLSI 2012）の感性率を優先して連動させていない。CLSI 2012 の CFPM の感性には、いまの SDD の範囲が含まれるとみられる。一方 EUCAST Breakpoint Tables v16.1（腸内細菌目、印刷 p.16 注1）は、ESBL 産生の有無だけでは判定を変えず、測ったとおりに報告するとしている。ただしこれは EUCAST 自身の基準（CFPM は S≤1・R>4）で判定することが前提で、JANIS（CLSI 2012）の感性率をそのまま使う根拠にはならない。作者の判断待ち"
+      ],
+      "review": { "status": "仮", "check": ["CFPM を連動に入れるか（手引きは ESBL なら選択肢にならないとし、JANIS の CLSI 2012 の感性率と食い違う）"] }
     }
   ],
   "stewardship": {
