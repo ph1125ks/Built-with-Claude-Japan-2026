@@ -1,5 +1,5 @@
 {
-  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。医療費は 2026-11-03 に「はじめ 100、1日ごとに +200」（仮。作者の希望で時間とともに増える仕組みにした。DEVLOG の試算）。",
+  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。医療費は 2026-11-03 に「はじめ 100、1日ごとに +200」（仮。作者の希望で時間とともに増える仕組みにした。DEVLOG の試算）。供給制限（2026-11-03、作者の希望）：いまは9枚の候補から毎回2枚（MEPM は候補外。乱用の誘惑と録画シーン3を残すため）、2050年は6枚から1枚が使えない（仮）。AMK は Access なので適正ボットが最優先で使い、7割を占めたので候補に入れていない。",
   "id": "dev-uti",
   "title": "開発用：尿路（全国）",
   "region": "全国",
@@ -17,8 +17,10 @@
       { "drug": "CFDN_PO" },
       { "drug": "LVFX_PO" },
       { "drug": "TAZPIPC" },
-      { "drug": "MEPM" }
+      { "drug": "MEPM" },
+      { "drug": "CFPM" }
     ],
+    "shortage": { "count": 2, "candidates": ["ABPC", "CEZ", "CMZ", "CTRX", "CFDN_PO", "LVFX_PO", "TAZPIPC", "CFPM"] },
     "waves": [
       { "at": 2, "lane": "random", "species": "auto", "count": 4, "spacing": 2.0 },
       { "at": 22, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
@@ -43,6 +45,7 @@
       { "drug": "TAZPIPC" },
       { "drug": "MEPM" }
     ],
+    "shortage": { "count": 1 },
     "waves": [
       { "at": 2, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
       { "at": 22, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },

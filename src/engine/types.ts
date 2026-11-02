@@ -248,6 +248,12 @@ export interface StageDef {
   budgetPerDay?: number;
   /** 医療費：ためておける上限。省略すると上限なし */
   budgetMax?: number;
+  /**
+   * 供給制限：遊ぶたびに、手札の候補から count 枚が「今回は使えない」になる（種で決まる。src/engine/shortage.ts）。
+   * candidates：使えなくなりうる薬（省略すると手札すべて）。keepSusceptible：出てくる菌それぞれに、公開データでこの感性率以上の薬が
+   * 1枚は残るようにする（既定 0.8）。2026-11-03 作者の希望（何度も遊びたくなるように。実臨床の供給制限）
+   */
+  shortage?: { count: number; candidates?: string[]; keepSusceptible?: number };
   bladderHp: number;
   hand: HandEntry[];
   waves: WaveDef[];

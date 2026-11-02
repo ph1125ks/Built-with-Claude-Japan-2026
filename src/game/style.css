@@ -886,6 +886,58 @@ button {
   background: #fff;
 }
 
+/* 供給制限で使えない薬 */
+.chip.short {
+  color: #a8949d;
+  text-decoration: line-through;
+  background: #f5f0f2;
+  border-left-color: #d6c8ce;
+}
+
+.short-note {
+  margin: 8px auto 0;
+  max-width: 760px;
+  padding: 6px 12px;
+  border: 1px dashed #b08a99;
+  border-radius: 8px;
+  background: #fbf7f9;
+  font-size: 14px;
+}
+
+.card.short-card {
+  border: 2px dashed #c9b3bd;
+  border-top: 2px dashed #c9b3bd;
+  background: #f7f2f4;
+  color: #7a6570;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.short-card b {
+  font-size: 16px;
+}
+
+.short-card .short-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.short-card .short-list span {
+  font-weight: bold;
+  text-decoration: line-through;
+  background: #fff;
+  border: 1px solid #d6c8ce;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
 .timeline-note {
   margin-bottom: 6px;
 }

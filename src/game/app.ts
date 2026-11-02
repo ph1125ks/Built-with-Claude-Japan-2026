@@ -6,6 +6,7 @@
 import {
   appropriateBot,
   broadBot,
+  drawShortage,
   getResistanceModel,
   loadGameData,
   randomBot,
@@ -13,6 +14,7 @@ import {
   stageResult,
   usedDrugsOf,
   validateScenario,
+  withShortage,
   type Bot,
   type GameData,
   type ResistanceModel,
@@ -90,6 +92,13 @@ export class App {
   private present: StageResult | null = null;
   private future: StageResult | null = null;
   private futureStart: ResistanceTable | null = null;
+  /** 供給制限で今回は使えない薬（ブリーフィングで種から決める） */
+  private short: { present: string[]; future: string[] } = { present: [], future: [] };
+
+  /** ステージの種。同じ種なら毎回同じ展開・同じ供給制限になる（シミュレーターと同じく、未来は種をずらす） */
+  private stageSeed(phase: "present" | "future"): number {
+    return this.params.seed + this.attempt * 1000 + (phase === "future" ? 7919 : 0);
+  }
   private attempt = 0;
   /** 遊び方を一度見たか（初めての人は「はじめる」のあとに必ず一度出す） */
   private sawHowto = false;
@@ -237,13 +246,14 @@ export class App {
         break;
       case "brief1":
         this.stopPlay();
-        this.showScreen(briefingScreen(data, scenario, "present", "", resistanceTableFor(data, scenario.region)));
+        this.short.present = drawShortage(data, scenario.present, scenario.region, this.stageSeed("present"));
+        this.showScreen(briefingScreen(data, scenario, "present", "", resistanceTableFor(data, scenario.region), this.short.present));
         break;
       case "play1":
         this.startStage("present");
         break;
       case "result1":
-        this.showScreen(resultScreen(data, scenario, "present", this.present!));
+        this.showScreen(resultScreen(data, scenario, "present", this.present!, undefined, this.short.present));
         break;
       case "brief2": {
         this.stopPlay();
@@ -258,18 +268,19 @@ export class App {
         const tables = years.map((y) => this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, y, usedSet));
         const drops = biggestDrops(data, p.resistanceEnd, this.futureStart, scenario.future.hand.map((h) => h.drug));
         const extra = `${year2050Note(data, scenario.future.yearsLater)}<h3 class="rises-head">ゲーム内の耐性率の推移（予測ではありません）<small>ステージ1の開始時から大きく上がった組</small></h3>${risesTimeline(data, rises, years, tables, used, p.resistanceEnd)}${dropsNote(data, drops)}`;
-        this.showScreen(briefingScreen(data, scenario, "future", extra, this.futureStart));
+        this.short.future = drawShortage(data, scenario.future, scenario.region, this.stageSeed("future"));
+        this.showScreen(briefingScreen(data, scenario, "future", extra, this.futureStart, this.short.future));
         break;
       }
       case "play2":
         this.startStage("future");
         break;
       case "result2":
-        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart));
+        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart, this.short.future));
         break;
       case "final":
         this.stopPlay();
-        this.showScreen(finalScreen(data, scenario, this.present!, this.future!));
+        this.showScreen(finalScreen(data, scenario, this.present!, this.future!, this.short));
         break;
     }
   }
@@ -277,9 +288,9 @@ export class App {
   private startStage(phase: "present" | "future"): void {
     this.showScreen(null);
     this.stopPlay();
-    const stage = phase === "present" ? this.scenario.present : this.scenario.future;
-    // 同じ種なら毎回同じ展開になる（シミュレーターと同じく、未来は種をずらす）
-    const seed = this.params.seed + this.attempt * 1000 + (phase === "future" ? 7919 : 0);
+    // 供給制限で使えない薬を外した手札で遊ぶ
+    const stage = withShortage(phase === "present" ? this.scenario.present : this.scenario.future, this.short[phase]);
+    const seed = this.stageSeed(phase);
     const session = new PlaySession({
       data: this.data,
       stage,
@@ -301,6 +312,7 @@ export class App {
       antibiogram: antibiogramBlock(this.data, this.scenario.region, session.state.startResistance, stage.hand.map((h) => h.drug), phase),
       keyOrder: [...this.scenario.present.hand, ...this.scenario.future.hand].map((h) => h.drug),
       showDev: this.showDev,
+      shortDrugs: this.short[phase],
       onEnd: () => {
         const r = stageResult(session.state);
         if (phase === "present") {

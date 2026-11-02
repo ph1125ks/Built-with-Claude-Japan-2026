@@ -78,7 +78,7 @@ export function howtoScreen(): string {
       </section>
       <section>
         <h3>3. 抗菌薬を召喚する</h3>
-        <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。</p>
+        <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。遊ぶたびに、手札の何枚かが供給制限で使えなくなります。</p>
         <ul>
           <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
           <li><b>内服薬</b>は吸収率のぶん弱い状態で出ます。</li>
@@ -92,14 +92,27 @@ export function howtoScreen(): string {
   </div>`;
 }
 
-function handChips(data: GameData, stage: StageDef): string {
+function handChips(data: GameData, stage: StageDef, short: readonly string[] = []): string {
   return stage.hand
     .map((h) => {
       const d = data.drugById.get(h.drug)!;
       const color = data.classById.get(d.class)?.color ?? "#64748b";
-      return `<span class="chip" style="--cls:${color}" title="${escapeHtml(d.name)}">${escapeHtml(d.abbr)}</span>`;
+      const out = short.includes(d.id);
+      return `<span class="chip${out ? " short" : ""}" style="--cls:${color}" title="${escapeHtml(d.name)}${out ? "（供給制限で今回は使えません）" : ""}">${escapeHtml(d.abbr)}</span>`;
     })
     .join("");
+}
+
+/** 供給制限の知らせ（ブリーフィング） */
+function shortNote(data: GameData, short: readonly string[]): string {
+  if (short.length === 0) return "";
+  const list = short.map((d) => escapeHtml(data.drugById.get(d)?.abbr ?? d)).join("・");
+  return `<p class="short-note"><b>供給制限</b>：${list} は今回は使えません。どの薬が使えないかは、遊ぶたびに変わります。</p>`;
+}
+
+/** 結果・まとめの「使えなかった薬」 */
+function shortList(data: GameData, short: readonly string[]): string {
+  return short.length ? short.map((d) => escapeHtml(data.drugById.get(d)?.abbr ?? d)).join("・") : "なし";
 }
 
 /** ブリーフィングの医療費の欄。時間で増えるステージは「はじめ ◯、1日ごとに +◯」 */
@@ -109,7 +122,7 @@ function budgetFact(stage: StageDef): string {
   return `<div><span>医療費</span><b>はじめ ${yen(stage.budget)}</b><small>1日（ゲーム内の24秒）ごとに +${yen(stage.budgetPerDay)}${max}</small></div>`;
 }
 
-export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = "", startTable?: ResistanceTable): string {
+export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = "", startTable?: ResistanceTable, short: readonly string[] = []): string {
   const stage = phase === "present" ? scenario.present : scenario.future;
   const head = phase === "present" ? `ステージ1「${escapeHtml(stage.title)}」` : `ステージ2「${escapeHtml(stage.title)}」`;
   const defaultBrief =
@@ -136,12 +149,13 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
     ${phase === "future" ? `<p class="exaggerated">ゲームの中の耐性化の速さは誇張しています。現実が${futureYear(data, scenario.future.yearsLater)}年にこのとおりになる、という予測ではありません。</p>` : ""}
     ${extra}
     <div class="facts">
-      <div><span>手札</span><div class="chips">${handChips(data, stage)}</div></div>
+      <div><span>手札</span><div class="chips">${handChips(data, stage, short)}</div></div>
       ${budgetFact(stage)}
       <div><span>敵の波</span><b>${stage.waves.length}</b></div>
     </div>
+    ${shortNote(data, short)}
     ${handNote}
-    ${startTable ? `<details class="abg-details"><summary>アンチバイオグラム（開始時の感性率）を見る</summary>${antibiogramBlock(data, scenario.region, startTable, stage.hand.map((h) => h.drug), phase)}</details>` : ""}
+    ${startTable ? `<details class="abg-details"><summary>アンチバイオグラム（開始時の感性率）を見る</summary>${antibiogramBlock(data, scenario.region, startTable, stage.hand.map((h) => h.drug).filter((d) => !short.includes(d)), phase)}</details>` : ""}
     <div class="buttons"><button class="primary" data-action="play">開始</button></div>
   </div>`;
 }
@@ -375,9 +389,9 @@ function risesLine(data: GameData, from: ResistanceTable, to: ResistanceTable, d
  * 結果画面。ステージ2では、耐性率の表をステージ1の開始時から数える（from を渡す）。
  * ステージ1 → 2 のあいだ（既定は2050年まで）の変化も見えるようにするため
  */
-export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", r: StageResult, from?: ResistanceTable): string {
+export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", r: StageResult, from?: ResistanceTable, short: readonly string[] = []): string {
   const stage = phase === "present" ? scenario.present : scenario.future;
-  const drugs = stage.hand.map((h) => h.drug);
+  const drugs = stage.hand.map((h) => h.drug).filter((d) => !short.includes(d));
   const access = r.usageByAware.Access;
   const target = data.rules.stewardship.accessTarget;
   const start = from ?? r.resistanceStart;
@@ -386,6 +400,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
   return `
   <div class="screen result-screen">
     <h2>${phase === "present" ? "ステージ1" : "ステージ2"}の結果：${outcomeLine(r)}</h2>
+    ${short.length ? `<p class="why short-why">供給制限で使えなかった薬：<b>${shortList(data, short)}</b></p>` : ""}
     <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので、耐性率は変わっていません"}</p>
     <div class="stats">
       <div><span>膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
@@ -425,7 +440,7 @@ function resultButtons(scenario: ScenarioDef, phase: "present" | "future", r: St
   return won ? next + retry : retry + next;
 }
 
-export function finalScreen(data: GameData, scenario: ScenarioDef, present: StageResult, future: StageResult): string {
+export function finalScreen(data: GameData, scenario: ScenarioDef, present: StageResult, future: StageResult, short: { present: string[]; future: string[] } = { present: [], future: [] }): string {
   const row = (label: string, f: (r: StageResult) => string) => `<tr><th>${label}</th><td>${f(present)}</td><td>${f(future)}</td></tr>`;
   const drugs = [...new Set([...scenario.present.hand, ...scenario.future.hand].map((h) => h.drug))];
   return `
@@ -435,6 +450,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
       <thead><tr><th></th><th>ステージ1「${escapeHtml(scenario.present.title)}」</th><th>ステージ2「${escapeHtml(scenario.future.title)}」</th></tr></thead>
       <tbody>
         ${row("結果", outcomeLine)}
+        ${short.present.length || short.future.length ? `<tr><th>供給制限で使えなかった薬</th><td>${shortList(data, short.present)}</td><td>${shortList(data, short.future)}</td></tr>` : ""}
         ${row("膀胱の残り", (r) => `${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}`)}
         ${row("医療費の合計", (r) => yen(r.costSpent))}
         ${row("いちばん使った系統", (r) => topClass(data, r))}
@@ -522,6 +538,7 @@ const GLOSSARY: [string, string][] = [
   ["β-ラクタム系", "ペニシリン系・セフェム系（セファロスポリン系と、CMZ などのセファマイシン系）・カルバペネム系など、β-ラクタム環という共通の形を持つ薬。"],
   ["β-ラクタマーゼ阻害薬", "β-ラクタム系を分解する酵素（β-ラクタマーゼ）の働きを抑える薬。TAZ/PIPC のタゾバクタムがこれに当たり、系統名の「βラクタマーゼ阻害薬配合ペニシリン」はこの組み合わせのことです。"],
   ["ESBL", "基質特異性拡張型 β-ラクタマーゼ。ペニシリン系や第1〜3世代のセファロスポリン系を分解する酵素で、これを作る菌にはそれらの薬が効きにくくなります。セファマイシン系（CMZ）とカルバペネム系（MEPM）は分解されません。このゲームでは手引き（薬剤耐性菌感染症編 p.12〜13）にならい、ESBL を作る菌には CFPM も効かないことにしています。"],
+  ["供給制限", "製造や流通の事情で、薬が手に入りにくくなること。このゲームでは、遊ぶたびに手札の何枚かが使えなくなります（どの薬かは毎回変わり、出てくる菌それぞれに、公開データで感性率 80% 以上の薬が1枚は残るようにしています）。"],
   ["耐性の連動", "このゲームで、ある薬に耐性の菌を、仕組みの近いほかの薬にも耐性にすること。CTRX に耐性の腸内細菌目は ESBL とみなして ABPC・CEZ・経口第3世代セフェム・CFPM にも、MEPM に耐性の腸内細菌目は CRE とみなしてほかの β-ラクタム系にも耐性にします。遊んでいる途中の知らせでは、こうして上がった薬（そのステージでまだ使っていない薬）に ※ を付けます。"],
   ["CRE", "カルバペネム耐性腸内細菌目細菌。カルバペネム系の薬（このゲームでは MEPM）に耐性を示す腸内細菌目の菌です。"],
   ["CTX", "セフォタキシム（第3世代セフェム）。手札にはない薬ですが、経口第3世代セフェムの感性率の代用と、国の報告書の耐性率の推移（CTRX の代わり）に使っています。"],

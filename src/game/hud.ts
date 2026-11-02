@@ -1,5 +1,5 @@
 // 遊んでいる最中の DOM：上の帯（膀胱の耐久・医療費・波）、情報の見え方の帯、レーンの選択、手札のカード、知らせ。
-import { canSummon, costPerDose, type GameEvent, type ResistanceChange } from "../engine/index.ts";
+import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
 import { LAYOUT, laneTopY } from "./board.ts";
 import { cardKeys, escapeHtml, genericName, intervalShort, modelLabel, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
@@ -14,7 +14,16 @@ export interface HudOptions {
   keyOrder: string[];
   /** 開発用の表示（耐性モデルの名前） */
   showDev?: boolean;
+  /** 供給制限で今回は使えない薬（手札の右に札で出す） */
+  shortDrugs?: string[];
   onEnd: () => void;
+}
+
+/** 供給制限で使えない薬の札（カードの列の右端。並べられる枚数に余りがあるときだけ） */
+function shortCard(data: GameData, short: string[], cards: number): string {
+  if (short.length === 0 || cards >= MAX_CARDS) return "";
+  const chips = short.map((d) => `<span>${escapeHtml(data.drugById.get(d)?.abbr ?? d)}</span>`).join("");
+  return `<div class="card short-card" title="供給制限：今回は使えません（遊ぶたびに変わります）"><b>供給制限</b><small>今回は使えません</small><div class="short-list">${chips}</div><small>遊ぶたびに変わります</small></div>`;
 }
 
 export class Hud {
@@ -91,7 +100,7 @@ export class Hud {
         (_, i) => `<div class="lane" data-lane="${i}" style="top:${laneTopY(i)}px;height:${LAYOUT.laneH}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px"><span class="lane-msg"></span></div>`,
       ).join("")}</div>
       <div class="ticker" style="top:${LAYOUT.msgTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;height:${LAYOUT.msgH}px"></div>
-      <div class="hand" style="top:${LAYOUT.cardsTop}px">${cardHtml}</div>
+      <div class="hand" style="top:${LAYOUT.cardsTop}px">${cardHtml}${shortCard(data, opts.shortDrugs ?? [], s.stage.hand.length)}</div>
       <div class="abg-panel" hidden><div class="abg-head"><b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
     `;
 

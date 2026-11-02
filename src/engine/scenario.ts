@@ -1,4 +1,5 @@
 // ステージ（シナリオ）の検査。教員モードで Claude が作った案もここを通す。
+import { MAX_CARDS } from "./shortage.ts";
 import { hasRegion } from "./susceptibility.ts";
 import type { GameData, ScenarioDef, StageDef } from "./types.ts";
 
@@ -21,6 +22,13 @@ export function validateStage(data: GameData, stage: StageDef, label = "ステ�
     seen.add(h.drug);
     if (h.stock !== undefined && h.stock !== null && (!isInt(h.stock) || h.stock < 0)) e.push(`${label}：${h.drug} の stock は0以上の整数`);
   }
+  const sh = stage.shortage;
+  if (sh !== undefined) {
+    if (!isInt(sh.count) || sh.count < 0 || sh.count >= (stage.hand?.length ?? 0)) e.push(`${label}：shortage.count は0以上で、手札の枚数より少ない整数`);
+    for (const d of sh.candidates ?? []) if (!seen.has(d)) e.push(`${label}：shortage の候補 ${d} が手札にない`);
+    if (sh.keepSusceptible !== undefined && (!isNum(sh.keepSusceptible) || sh.keepSusceptible < 0 || sh.keepSusceptible > 1)) e.push(`${label}：shortage.keepSusceptible は0〜1`);
+  }
+  if ((stage.hand?.length ?? 0) - (sh?.count ?? 0) > MAX_CARDS) e.push(`${label}：画面に並ぶ手札は${MAX_CARDS}枚まで（手札 − 供給制限の枚数）`);
   if (!Array.isArray(stage.waves) || stage.waves.length === 0) e.push(`${label}：waves が空`);
   (stage.waves ?? []).forEach((w, i) => {
     const at = `${label}：波${i + 1}`;

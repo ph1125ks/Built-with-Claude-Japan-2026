@@ -4,6 +4,7 @@ import { createGame, step, type GameState } from "./game.ts";
 import { observe } from "./observe.ts";
 import { getResistanceModel, usedDrugsOf, type ResistanceModel } from "./resistance.ts";
 import { stageResult, type StageResult } from "./results.ts";
+import { drawShortage, withShortage } from "./shortage.ts";
 import type { GameData, ResistanceTable, ScenarioDef, StageDef } from "./types.ts";
 
 export interface RunStageOptions {
@@ -35,6 +36,8 @@ export function runStage(opts: RunStageOptions): { result: StageResult; state: G
 export interface ScenarioRun {
   present: StageResult;
   future: StageResult;
+  /** 供給制限で使えなかった薬（ステージごと） */
+  shortage: { present: string[]; future: string[] };
   /** 未来ステージの開始時の表（ステージ1の終わりに、未来の年（既定は2050年）までの進みを足したもの） */
   futureStart: ResistanceTable;
 }
@@ -50,7 +53,10 @@ export function runScenario(opts: {
 }): ScenarioRun {
   const model = opts.model ?? getResistanceModel(opts.data.rules.resistance.model);
   const { scenario } = opts;
-  const present = runStage({ data: opts.data, stage: scenario.present, region: scenario.region, seed: opts.seed, bot: opts.bot, model });
+  // 供給制限（種で決まる。画面の App と同じ種の決め方）
+  const shortPresent = drawShortage(opts.data, scenario.present, scenario.region, opts.seed);
+  const shortFuture = drawShortage(opts.data, scenario.future, scenario.region, opts.seed + 7919);
+  const present = runStage({ data: opts.data, stage: withShortage(scenario.present, shortPresent), region: scenario.region, seed: opts.seed, bot: opts.bot, model });
   const futureStart = model.carryOver(
     opts.data,
     present.result.resistanceStart,
@@ -60,12 +66,12 @@ export function runScenario(opts: {
   );
   const future = runStage({
     data: opts.data,
-    stage: scenario.future,
+    stage: withShortage(scenario.future, shortFuture),
     region: scenario.region,
     seed: opts.seed + 7919,
     bot: opts.futureBot ?? opts.bot,
     resistance: futureStart,
     model,
   });
-  return { present: present.result, future: future.result, futureStart };
+  return { present: present.result, future: future.result, futureStart, shortage: { present: shortPresent, future: shortFuture } };
 }
