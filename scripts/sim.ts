@@ -59,6 +59,7 @@ interface Summary {
   futureBladder: number;
   presentCost: number;
   presentUsage: Record<string, number>;
+  presentAccess: number;
   msPerRun: number;
 }
 
@@ -88,6 +89,7 @@ for (const id of botIds) {
     futureBladder: mean(future.map((r) => r.bladderHp / r.bladderMaxHp)),
     presentCost: mean(present.map((r) => r.costSpent)),
     presentUsage: usage,
+    presentAccess: mean(present.map((r) => r.usageByAware.Access)),
     msPerRun: ms,
   });
 }
@@ -96,14 +98,14 @@ if (values.json) {
   console.log(JSON.stringify({ scenario: scenario.id, region: scenario.region, model: modelId, runs, summaries }, null, 2));
 } else {
   console.log(`シナリオ ${scenario.id}（${scenario.region}）／耐性モデル ${modelId}／各 ${runs} 回`);
-  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\t1回(ms)\tいまの系統別使用割合");
+  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\tAccess割合\t1回(ms)\tいまの系統別使用割合");
   for (const s of summaries) {
     const usage = Object.entries(s.presentUsage)
       .sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `${data.classById.get(k)?.name ?? k} ${pct(v)}`)
       .join("、");
     console.log(
-      [s.bot, pct(s.presentWin), pct(s.futureWin), pct(s.presentBladder), pct(s.futureBladder), s.presentCost.toFixed(0), s.msPerRun.toFixed(1), usage].join("\t"),
+      [s.bot, pct(s.presentWin), pct(s.futureWin), pct(s.presentBladder), pct(s.futureBladder), s.presentCost.toFixed(0), pct(s.presentAccess), s.msPerRun.toFixed(1), usage].join("\t"),
     );
   }
 }

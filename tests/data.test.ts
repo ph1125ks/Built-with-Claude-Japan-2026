@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costPerDay, costPerDose, loadGameData, resistanceTableFor, susceptibility, yakkaTier } from "../src/engine/index.ts";
+import { costPerDay, costPerDose, loadGameData, resistanceTableFor, stewardshipRank, susceptibility, yakkaTier } from "../src/engine/index.ts";
 
 const data = loadGameData();
 
@@ -74,5 +74,43 @@ describe("医療費（薬価の段階化）", () => {
 
   it("1回の召喚のコストは、1日のコストを1日の投与回数で割ったもの", () => {
     for (const d of data.drugs) expect(costPerDose(data, d.id)).toBeCloseTo(costPerDay(data, d.id) / d.dosesPerDay, 10);
+  });
+});
+
+describe("公的な文書に沿った設定（抗微生物薬適正使用の手引き 第四版）", () => {
+  it("投与回数は手引きの治療例の表のとおり", () => {
+    const perDay = Object.fromEntries(data.drugs.map((d) => [d.id, d.dosesPerDay]));
+    expect(perDay).toMatchObject({ MEPM: 3, CMZ: 3, CTRX: 1, CFPM: 3, TAZPIPC: 4, ABPC: 4, CEZ: 3, LVFX_PO: 1, AMK: 1 });
+  });
+
+  it("手引きで確かめた薬には出典がある", () => {
+    for (const d of data.drugs) {
+      const raw = d as unknown as { sources?: Record<string, string>; review?: { status: string } };
+      expect(raw.sources?.aware, `${d.id} の AWaRe の出典`).toMatch(/手引き/);
+      if (raw.review?.status === "確認済み") expect(raw.sources?.dosing, `${d.id} の用法の出典`).toMatch(/手引き/);
+    }
+  });
+
+  it("AWaRe 分類：Access → Watch → 温存すべき系統（カルバペネム・キノロン）の順に優先する", () => {
+    const rank = (id: string) => stewardshipRank(data, id);
+    for (const a of ["ABPC", "CEZ", "AMK"]) for (const w of ["CMZ", "CTRX", "CFPM", "TAZPIPC", "LVFX_PO", "CFDN_PO"]) expect(rank(a)).toBeLessThan(rank(w));
+    for (const w of ["CMZ", "CTRX", "CFPM", "TAZPIPC", "CFDN_PO"]) {
+      expect(rank(w)).toBeLessThan(rank("MEPM"));
+      expect(rank(w)).toBeLessThan(rank("LVFX_PO"));
+    }
+    // 手引きの表では CMZ と CTRX は同じ Watch（どちらが狭いかは決めない）
+    expect(rank("CMZ")).toBe(rank("CTRX"));
+  });
+
+  it("ESBL の連動：腸内細菌目では、経口第3世代セフェムの耐性率は CTRX 以上（経口のほうが効くことはない）", () => {
+    for (const region of data.janis.regions) {
+      const t = resistanceTableFor(data, region);
+      for (const sp of ["ecoli", "kpneumoniae", "pmirabilis"]) {
+        for (const d of ["ABPC", "CEZ", "CFDN_PO"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
+        // セファマイシン系とカルバペネム系は連動させない（ESBL は分解しない）
+        expect(t[sp]!.CMZ!).toBeCloseTo(1 - susceptibility(data, region, sp, "CMZ").p, 10);
+        expect(t[sp]!.MEPM!).toBeCloseTo(1 - susceptibility(data, region, sp, "MEPM").p, 10);
+      }
+    }
   });
 });

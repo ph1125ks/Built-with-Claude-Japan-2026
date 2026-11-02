@@ -1,10 +1,14 @@
 {
   "_comment": [
-    "抗菌薬カードの一覧。医学的な値（投与回数・吸収率・尿中移行・スペクトラムの順位・1日量）は作者の監修で確定する。",
-    "review.status が「仮」の項目は、監修が済むまで暫定値。review.check に確認してほしい点を書く。",
+    "抗菌薬カードの一覧。医学的な値は公的な文書に沿って決め、sources に出典（文書名とページ）を書く。",
+    "「手引き」は厚生労働省「抗微生物薬適正使用の手引き 第四版」。編の名前とページは data/README.md の出典を参照。",
+    "投与回数と1日量は、手引きの治療例の表に合わせる（2026-11-02 作者決定）。手引きの表には海外用量を含む。",
+    "用量の採り方：手引きの表の範囲の中に国内の電子添文の上限に収まる値があればそれを採り、なければ表の値を採る。",
+    "手引きの表は、MSSA 菌血症・VRE 菌血症・ESBL・AmpC・カルバペネム耐性緑膿菌など特定の場面の治療例で、尿路感染症の用量の表ではない。尿路感染症に限った記載があればそちらを採る（AMK）。",
+    "aware は WHO の AWaRe 分類（Access／Watch／Reserve）。ゲームでは、ボットが優先して使う順に当てはめる（rules.json の stewardship）。手引きにこの使い方は書かれておらず、ゲームとしての判断。",
+    "review.status が「仮」の項目は、公的な文書でまだ確かめられていない。review.check に、何の文書で確かめるかを書く。",
     "janis は JANIS の表の抗菌薬名。price は薬価リストで代表にする成分名（前方一致）と規格（全角を半角にして空白を除いた形）。",
-    "dosing.unitsPerDay は 1日に使う規格単位の数（1日量の薬価 = 単位あたりの薬価 × unitsPerDay）。",
-    "spectrumRank は狭い順の目安（1 が最も狭い）。ボットが「効く中で最も狭い薬」を選ぶときに使う。"
+    "dosing.unitsPerDay は 1日に使う規格単位の数（1日量の薬価 = 単位あたりの薬価 × unitsPerDay）。"
   ],
   "drugs": [
     {
@@ -12,156 +16,199 @@
       "abbr": "ABPC",
       "name": "アンピシリン",
       "class": "penicillin",
+      "aware": "Access",
       "route": "iv",
       "dosesPerDay": 4,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 1,
       "janis": "ABPC",
-      "price": { "list": "injection", "ingredient": "アンピシリンナトリウム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回1g・1日4回", "unitsPerDay": 4 },
-      "review": { "status": "仮", "check": ["1日4回でよいか", "1日量（1回1g）"] }
+      "price": { "list": "injection", "ingredient": "アンピシリンナトリウム", "spec": "2g1瓶" },
+      "dosing": { "label": "1回2g・6時間毎", "unitsPerDay": 4 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表2（p.8）「VRE による血流感染症の単剤治療の例（感染性心内膜炎を除く）」のアンピシリン感性（E. faecalis など）の行：1回2g 4〜6時間毎（血流感染症の用量。海外用量を含む）。6時間毎を採った。国内の電子添文は1日1〜4gを1〜2回（同 p.61）",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "CEZ",
       "abbr": "CEZ",
       "name": "セファゾリン",
       "class": "ceph1",
+      "aware": "Access",
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 2,
       "janis": "CEZ",
-      "price": { "list": "injection", "ingredient": "セファゾリンナトリウム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回1g・1日3回", "unitsPerDay": 3 },
-      "review": { "status": "仮", "check": ["1日3回でよいか", "1日量（1回1g）", "SorI の多い CEZ の感受性の扱い"] }
+      "price": { "list": "injection", "ingredient": "セファゾリンナトリウム", "spec": "2g1瓶" },
+      "dosing": { "label": "1回2g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表1（p.6）：MSSA 菌血症にセファゾリン 1回2g 8時間毎（海外用量を含む）。国内の電子添文の上限は 5g/日で、重症例への 1回2g 8時間毎は審査上認められる（同 p.61）",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "CMZ",
       "abbr": "CMZ",
       "name": "セフメタゾール",
       "class": "cephamycin",
+      "aware": "Watch",
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 3,
       "janis": "CMZ",
       "price": { "list": "injection", "ingredient": "セフメタゾールナトリウム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回1g・1日3回", "unitsPerDay": 3 },
-      "review": { "status": "仮", "check": ["1日3回でよいか", "1日量（1回1g）"] }
+      "dosing": { "label": "1回1g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表3（p.11）：ESBL 産生腸内細菌目細菌に1回1g 8時間毎",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "CTRX",
       "abbr": "CTRX",
       "name": "セフトリアキソン",
       "class": "ceph3",
+      "aware": "Watch",
       "route": "iv",
       "dosesPerDay": 1,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 4,
       "janis": "CTRX",
       "price": { "list": "injection", "ingredient": "セフトリアキソンナトリウム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回2g・1日1回", "unitsPerDay": 2 },
-      "review": { "status": "仮", "check": ["1日1回でよいか", "1日量（1回2g か 1g か）", "尿中移行の係数（胆汁排泄もある）"] }
+      "dosing": { "label": "1回2g・24時間毎", "unitsPerDay": 2 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）：1回1〜2g 12〜24時間毎。24時間毎（1日1回）を採った",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "CFPM",
       "abbr": "CFPM",
       "name": "セフェピム",
       "class": "ceph4",
+      "aware": "Watch",
       "route": "iv",
-      "dosesPerDay": 2,
+      "dosesPerDay": 3,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 6,
       "janis": "CFPM",
       "price": { "list": "injection", "ingredient": "セフェピム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回1g・1日2回", "unitsPerDay": 2 },
-      "review": { "status": "仮", "check": ["1日2回か3回か", "1日量", "スペクトラムの順位"] }
+      "dosing": { "label": "1回1g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）・表7（p.26）：1回1〜2g 8時間毎。国内の電子添文の上限 1日4g（同 p.64）に収まる1回1gを採った",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "TAZPIPC",
       "abbr": "TAZ/PIPC",
       "name": "タゾバクタム・ピペラシリン",
       "class": "bl-bli",
+      "aware": "Watch",
       "route": "iv",
-      "dosesPerDay": 3,
+      "dosesPerDay": 4,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 7,
       "janis": "TAZ/PIPC",
       "price": { "list": "injection", "ingredient": "タゾバクタム", "spec": "(4.5g)1瓶" },
-      "dosing": { "label": "1回4.5g・1日3回", "unitsPerDay": 3 },
-      "review": { "status": "仮", "check": ["1日3回か4回か", "1日量"] }
+      "dosing": { "label": "1回4.5g・6時間毎", "unitsPerDay": 4 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）・表7（p.26）：1回4.5g 6時間毎（海外用量を含む。国内の電子添文では疾患ごとに用量が違う：同 p.65）",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "MEPM",
       "abbr": "MEPM",
       "name": "メロペネム",
       "class": "carbapenem",
+      "aware": "Watch",
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 8,
       "janis": "MEPM",
       "price": { "list": "injection", "ingredient": "メロペネム", "spec": "1g1瓶" },
-      "dosing": { "label": "1回1g・1日3回", "unitsPerDay": 3 },
-      "review": { "status": "仮", "check": ["1日3回でよいか", "1日量（1回1g）"] }
+      "dosing": { "label": "1回1g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表3（p.11）・表4（p.14）：1回1g 8時間毎",
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "stewardship": "他剤で治療できる場合はカルバペネムを温存する（手引き 薬剤耐性菌感染症編 p.65）"
+      },
+      "review": { "status": "確認済み" }
     },
     {
       "id": "AMK",
       "abbr": "AMK",
       "name": "アミカシン",
       "class": "aminoglycoside",
+      "aware": "Access",
       "route": "iv",
       "dosesPerDay": 1,
       "bioavailability": null,
       "urineFactor": 1.0,
-      "spectrumRank": 5,
       "janis": "AMK",
       "price": { "list": "injection", "ingredient": "アミカシン", "spec": "200mg1管" },
-      "dosing": { "label": "1回400mg・1日1回", "unitsPerDay": 2 },
-      "review": { "status": "仮", "check": ["1日1回でよいか", "1日量（体重あたりの量をゲームでどう置くか）", "スペクトラムの順位"] }
+      "dosing": { "label": "1回10mg/kg・1日1回（体重60kgで600mg）", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 医科・外来編 p.45 注16：尿路感染症ではアミカシン 10mg/kg を1日1回（1日1回の投与は適応外と本文にある）。参考：薬剤耐性菌感染症編 表4（p.14）は膀胱炎に15mg/kg 単回、腎盂腎炎・複雑性尿路感染症は初回15mg/kg のあと TDM で調整。非尿路感染症では単剤を避ける（同 p.66）",
+        "aware": "手引き 医科・外来編 表2（p.18）"
+      },
+      "review": {
+        "status": "仮",
+        "check": ["1日量の計算に使う体重 60kg の仮定", "外来編 注16（10mg/kg 1日1回）と表4（15mg/kg）のどちらを採るか（いまは尿路感染症に限った注16）"]
+      }
     },
     {
       "id": "LVFX_PO",
       "abbr": "LVFX",
       "name": "レボフロキサシン（内服）",
       "class": "fluoroquinolone",
+      "aware": "Watch",
       "route": "po",
       "dosesPerDay": 1,
       "bioavailability": 0.99,
       "urineFactor": 1.0,
-      "spectrumRank": 6,
       "janis": "LVFX",
       "price": { "list": "oral", "ingredient": "レボフロキサシン", "spec": "500mg1錠(レボフロキサシンとして)" },
-      "dosing": { "label": "1回500mg・1日1回", "unitsPerDay": 1 },
-      "review": { "status": "仮", "check": ["吸収率（添付文書・IF の値）", "スペクトラムの順位"] }
+      "dosing": { "label": "1回500mg・24時間毎", "unitsPerDay": 1 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表3（p.11）：1回500〜750mg 1日1回。国内の電子添文の上限 500mg 1日1回（同 p.63）",
+        "bioavailability": "手引き 医科・入院編 p.37〜38 表9：吸収率が良好（60%以上）な経口抗菌薬に入る",
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "stewardship": "フルオロキノロン系は、大腸菌の耐性率が約40%で腎盂腎炎の第一選択には適さず、抗緑膿菌作用・抗結核作用があるためできるだけ温存すべきとされる（手引き 医科・外来編 p.45）"
+      },
+      "review": { "status": "仮", "check": ["吸収率の数値 0.99（インタビューフォームで確かめる）"] }
     },
     {
       "id": "CFDN_PO",
       "abbr": "CFDN",
       "name": "セフジニル（内服・第3世代セフェム）",
       "class": "ceph3",
+      "aware": "Watch",
       "route": "po",
       "dosesPerDay": 3,
       "bioavailability": 0.25,
       "urineFactor": 1.0,
-      "spectrumRank": 4,
       "janis": null,
       "price": { "list": "oral", "ingredient": "セフジニル", "spec": "100mg1カプセル" },
       "dosing": { "label": "1回100mg・1日3回", "unitsPerDay": 3 },
+      "sources": {
+        "bioavailability": "手引き 歯科編 表9（p.21）：セフジニル 20〜25%。範囲の上限 0.25 を採った（第3世代セフェムは吸収率が低いという説明は同 p.20〜21）",
+        "aware": "手引き 歯科編 表4（p.11）",
+        "background": "経口第3世代セフェムは日本で使用量が多く（手引き 医科・入院編 p.10）、国の行動計画で2020年比40%削減が目標（同 歯科編 p.4）"
+      },
       "review": {
         "status": "仮",
-        "check": [
-          "経口第3世代セフェムの代表をセフジニルにするか（セフカペン、セフジトレンなど）",
-          "吸収率（添付文書・IF の値）",
-          "感受性を JANIS の CTX で代用してよいか（rules.json の proxies）"
-        ]
+        "check": ["投与回数と1日量（手引きに記載なし。電子添文で確かめる）", "経口第3世代セフェムの代表をセフジニルにするか"]
       }
     }
   ]

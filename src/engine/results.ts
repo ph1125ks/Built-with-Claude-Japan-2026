@@ -2,7 +2,7 @@
 import { drugOf } from "./data.ts";
 import type { GameState } from "./game.ts";
 import { cloneTable } from "./susceptibility.ts";
-import type { Outcome, ResistanceTable } from "./types.ts";
+import type { AwareGroup, Outcome, ResistanceTable } from "./types.ts";
 
 export interface StageResult {
   outcome: Outcome;
@@ -18,6 +18,8 @@ export interface StageResult {
   usageByClass: Record<string, number>;
   /** 偏りの指標（仮）。系統別使用割合の均等度（0〜1、1 が均等）。作者の指定する式に差し替える（SPEC.md 4.10） */
   evennessProvisional: number | null;
+  /** WHO の AWaRe 分類ごとの使用割合（activeDays をもとに、合計 1）。WHO の目標は Access 60% 以上 */
+  usageByAware: Record<AwareGroup, number>;
   kills: Record<string, number>;
   spawned: number;
   leaked: number;
@@ -30,15 +32,20 @@ export function stageResult(state: GameState): StageResult {
   const ticksPerDay = data.rules.time.ticksPerSecond * data.rules.time.secondsPerGameDay;
   const activeDays: Record<string, number> = {};
   const byClass: Record<string, number> = {};
+  const byAware: Record<AwareGroup, number> = { Access: 0, Watch: 0, Reserve: 0 };
   let total = 0;
   for (const [drug, ticks] of Object.entries(state.stats.activeTicks)) {
     const days = ticks / ticksPerDay;
     activeDays[drug] = days;
-    const cls = drugOf(data, drug).class;
-    byClass[cls] = (byClass[cls] ?? 0) + days;
+    const def = drugOf(data, drug);
+    byClass[def.class] = (byClass[def.class] ?? 0) + days;
+    byAware[def.aware] += days;
     total += days;
   }
   const usageByClass = Object.fromEntries(Object.entries(byClass).map(([k, v]) => [k, total > 0 ? v / total : 0]));
+  const usageByAware = Object.fromEntries(
+    Object.entries(byAware).map(([k, v]) => [k, total > 0 ? v / total : 0]),
+  ) as Record<AwareGroup, number>;
 
   // 手札にある系統の数で正規化した均等度（Pielou の J）。仮の式
   const handClasses = new Set(state.stage.hand.map((h) => drugOf(data, h.drug).class));
@@ -59,6 +66,7 @@ export function stageResult(state: GameState): StageResult {
     activeDays,
     usageByClass,
     evennessProvisional: evenness,
+    usageByAware,
     kills: { ...state.stats.kills },
     spawned: state.stats.spawned,
     leaked: state.stats.leaked,

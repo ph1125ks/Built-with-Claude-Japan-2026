@@ -4,6 +4,8 @@ export type Gram = "positive" | "negative";
 export type Shape = "rod" | "slender-rod" | "coccus";
 export type Arrangement = "single" | "pair" | "chain" | "cluster";
 export type Route = "iv" | "po";
+/** WHO の AWaRe 分類 */
+export type AwareGroup = "Access" | "Watch" | "Reserve";
 
 // ---------- カタログ（data/catalog/） ----------
 
@@ -33,8 +35,8 @@ export interface DrugDef {
   bioavailability: number | null;
   /** 膀胱での効きやすさ（尿中移行）。1 が標準 */
   urineFactor: number;
-  /** 狭い順の目安（1 が最も狭い） */
-  spectrumRank: number;
+  /** WHO の AWaRe 分類。ボットの「狭い順」はこれと rules.stewardship で決める */
+  aware: AwareGroup;
   /** JANIS の表の抗菌薬名。null は代用（rules.susceptibility.proxies）だけで決まる */
   janis: string | null;
   price: { list: "injection" | "oral"; ingredient: string; spec: string };
@@ -86,6 +88,22 @@ export interface Rules {
     abstractCostPerDay: Record<string, number>;
   };
   resistance: { model: ResistanceModelId; exaggeration: number };
+  /** 耐性の連動（例：ESBL）。trigger に耐性の個体は alsoResistant にも耐性 */
+  linkedResistance: LinkedResistance[];
+  stewardship: {
+    groupOrder: AwareGroup[];
+    /** 同じ群の中で最後に回す系統（カルバペネム系など） */
+    spareLastWithinGroup: string[];
+    /** Access 薬の使用割合の目標（WHO） */
+    accessTarget: number;
+  };
+}
+
+export interface LinkedResistance {
+  bacteria: string[];
+  trigger: string;
+  alsoResistant: string[];
+  basis: string;
 }
 
 // ---------- 公開データ（data/generated/） ----------

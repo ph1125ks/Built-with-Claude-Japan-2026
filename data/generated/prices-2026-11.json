@@ -19,60 +19,54 @@
  "drugs": {
   "ABPC": {
    "ingredient": "アンピシリンナトリウム",
-   "spec": "1g1瓶",
+   "spec": "2g1瓶",
    "unitsPerDay": 4,
-   "min": 481,
-   "max": 481,
+   "min": 818,
+   "max": 818,
    "brand": null,
-   "yenPerDayMin": 1924,
+   "yenPerDayMin": 3272,
    "yenPerDayBrand": null,
    "products": [
     {
-     "product": "ビクシリン注射用1g",
+     "product": "ビクシリン注射用2g",
      "brand": false,
-     "price": 481,
+     "price": 818,
      "transitional": null
     }
    ]
   },
   "CEZ": {
    "ingredient": "セファゾリンナトリウム",
-   "spec": "1g1瓶",
+   "spec": "2g1瓶",
    "unitsPerDay": 3,
-   "min": 333,
-   "max": 346,
-   "brand": 346,
-   "yenPerDayMin": 999,
-   "yenPerDayBrand": 1038,
+   "min": 498,
+   "max": 829,
+   "brand": 829,
+   "yenPerDayMin": 1494,
+   "yenPerDayBrand": 2487,
    "products": [
     {
-     "product": "セファメジンα注射用1g",
+     "product": "セファメジンα注射用2g",
      "brand": true,
-     "price": 346,
+     "price": 829,
      "transitional": null
     },
     {
-     "product": "セファゾリンナトリウム注射用1g「日医工」",
+     "product": "セファゾリンナトリウム注射用2g「日医工」",
      "brand": false,
-     "price": 346,
+     "price": 829,
      "transitional": null
     },
     {
-     "product": "セファゾリンNa注射用1g「NP」",
+     "product": "セファゾリンNa注射用2g「NP」",
      "brand": false,
-     "price": 346,
+     "price": 829,
      "transitional": null
     },
     {
-     "product": "セファゾリンNa注射用1g「イセイ」",
+     "product": "セファゾリンNa注射用2g「CHM」",
      "brand": false,
-     "price": 346,
-     "transitional": null
-    },
-    {
-     "product": "セファゾリンNa注射用1g「CHM」",
-     "brand": false,
-     "price": 333,
+     "price": 498,
      "transitional": null
     }
    ]
@@ -158,11 +152,11 @@
   "CFPM": {
    "ingredient": "セフェピム",
    "spec": "1g1瓶",
-   "unitsPerDay": 2,
+   "unitsPerDay": 3,
    "min": 515,
    "max": 522,
    "brand": null,
-   "yenPerDayMin": 1030,
+   "yenPerDayMin": 1545,
    "yenPerDayBrand": null,
    "products": [
     {
@@ -182,12 +176,12 @@
   "TAZPIPC": {
    "ingredient": "タゾバクタム",
    "spec": "(4.5g)1瓶",
-   "unitsPerDay": 3,
+   "unitsPerDay": 4,
    "min": 892,
    "max": 1160,
    "brand": 1160,
-   "yenPerDayMin": 2676,
-   "yenPerDayBrand": 3480,
+   "yenPerDayMin": 3568,
+   "yenPerDayBrand": 4640,
    "products": [
     {
      "product": "ゾシン静注用4.5",
@@ -248,12 +242,12 @@
   "AMK": {
    "ingredient": "アミカシン",
    "spec": "200mg1管",
-   "unitsPerDay": 2,
+   "unitsPerDay": 3,
    "min": 357,
    "max": 686,
    "brand": 610,
-   "yenPerDayMin": 714,
-   "yenPerDayBrand": 1220,
+   "yenPerDayMin": 1071,
+   "yenPerDayBrand": 1830,
    "products": [
     {
      "product": "アミカシン硫酸塩200mg注射液",

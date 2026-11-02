@@ -1,9 +1,9 @@
 // シミュレーション用のボット。教員モードで Claude がステージを検証するときと、バランスの比較に使う。
 // ボットは Observation（プレイヤーに見える情報）とアンチバイオグラムの知識だけで判断する。
-import { drugOf } from "./data.ts";
 import type { GameState } from "./game.ts";
 import type { ObservedBacterium, Observation } from "./observe.ts";
 import { createRng } from "./rng.ts";
+import { stewardshipRank } from "./stewardship.ts";
 import { urineWeights } from "./susceptibility.ts";
 import type { Command, GameData } from "./types.ts";
 
@@ -14,14 +14,21 @@ export interface Knowledge {
   pSusceptible(species: string, drug: string): number;
   /** 尿から分離される菌の重み */
   speciesWeights: { species: string[]; weights: number[] };
+  /** この薬が、尿から出る菌全体（分離割合で重み付け）に効く見込み。「広く効く」の目安 */
+  coverage(drug: string): number;
 }
 
 export function knowledgeFor(state: GameState): Knowledge {
   const table = state.startResistance;
+  const pSusceptible = (species: string, drug: string) => 1 - (table[species]?.[drug] ?? 1);
+  const speciesWeights = urineWeights(state.data, state.region);
+  const total = speciesWeights.weights.reduce((s, w) => s + w, 0);
   return {
     data: state.data,
-    pSusceptible: (species, drug) => 1 - (table[species]?.[drug] ?? 1),
-    speciesWeights: urineWeights(state.data, state.region),
+    pSusceptible,
+    speciesWeights,
+    coverage: (drug) =>
+      speciesWeights.species.reduce((s, sp, i) => s + (speciesWeights.weights[i] ?? 0) * pSusceptible(sp, drug), 0) / total,
   };
 }
 
@@ -58,7 +65,12 @@ function lanesWithBacteria(obs: Observation): ObservedBacterium[][] {
 
 const ACTIVE = 0.15;
 
-/** 適正ボット：見えている情報で効く見込みが基準以上の薬のうち、最も狭いものを選ぶ。分かったら切り替える */
+/**
+ * 適正ボット：見えている情報で効く見込みが基準以上の薬のうち、AWaRe の順で最も優先すべきもの
+ * （Access → Watch → カルバペネム → Reserve）を選ぶ。同じ順位なら、カバー率（尿から出る菌全体に
+ * 効く見込み。公開データから計算）が低いもの＝狭いもの、次に安いものの順。
+ * 菌名・感受性が分かったら選び直す（デエスカレーション）
+ */
 export function appropriateBot(threshold = 0.8): Bot {
   return {
     name: "適正",
@@ -71,8 +83,10 @@ export function appropriateBot(threshold = 0.8): Bot {
         if (units.some((u) => u.hpFraction > ACTIVE && expectedEffect(k, target, u.drug) >= threshold)) return;
         const scored = obs.hand
           .filter((h) => h.usable[lane])
-          .map((h) => ({ h, p: expectedEffect(k, target, h.drug), rank: drugOf(k.data, h.drug).spectrumRank }));
-        const ok = scored.filter((s) => s.p >= threshold).sort((a, b) => a.rank - b.rank || a.h.cost - b.h.cost);
+          .map((h) => ({ h, p: expectedEffect(k, target, h.drug), rank: stewardshipRank(k.data, h.drug) }));
+        const ok = scored
+          .filter((s) => s.p >= threshold)
+          .sort((a, b) => a.rank - b.rank || k.coverage(a.h.drug) - k.coverage(b.h.drug) || a.h.cost - b.h.cost);
         const pick = ok[0] ?? scored.filter((s) => s.p > 0).sort((a, b) => b.p - a.p || a.rank - b.rank)[0];
         if (pick) cmds.push({ type: "summon", drug: pick.h.drug, lane });
       });
@@ -81,7 +95,10 @@ export function appropriateBot(threshold = 0.8): Bot {
   };
 }
 
-/** 乱用ボット：菌がいるレーンには、いつも最も広域の薬を使う */
+/**
+ * 乱用ボット：菌がいるレーンには、いつも「温存すべき順」で最も上の薬（カルバペネム系・キノロン系）を使う。
+ * 同じ順位なら、尿から出る菌全体に広く効くものを選ぶ（MEPM → 待ち時間中は LVFX、のように使う）
+ */
 export function broadBot(): Bot {
   return {
     name: "乱用",
@@ -92,7 +109,10 @@ export function broadBot(): Bot {
         if (obs.units.some((u) => u.lane === lane && u.hpFraction > ACTIVE)) return;
         const pick = obs.hand
           .filter((h) => h.usable[lane])
-          .sort((a, b) => drugOf(k.data, b.drug).spectrumRank - drugOf(k.data, a.drug).spectrumRank)[0];
+          .sort(
+            (a, b) =>
+              stewardshipRank(k.data, b.drug) - stewardshipRank(k.data, a.drug) || k.coverage(b.drug) - k.coverage(a.drug),
+          )[0];
         if (pick) cmds.push({ type: "summon", drug: pick.drug, lane });
       });
       return cmds;

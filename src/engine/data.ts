@@ -39,6 +39,13 @@ function checkCatalog(data: GameData): void {
   for (const b of data.bacteria) {
     for (const id of b.intrinsicResistance) if (!data.drugById.has(id)) errors.push(`${b.id}：自然耐性の薬 ${id} がない`);
   }
+  for (const d of data.drugs) {
+    if (!data.rules.stewardship.groupOrder.includes(d.aware)) errors.push(`${d.id}：AWaRe 分類 ${d.aware} が rules.stewardship.groupOrder にない`);
+  }
+  for (const l of data.rules.linkedResistance) {
+    for (const id of [l.trigger, ...l.alsoResistant]) if (!data.drugById.has(id)) errors.push(`連動：薬 ${id} がない`);
+    for (const b of l.bacteria) if (!data.bacteriumById.has(b)) errors.push(`連動：菌 ${b} がない`);
+  }
   for (const p of data.rules.susceptibility.proxies) {
     if (!data.drugById.has(p.drug)) errors.push(`代用：薬 ${p.drug} がない`);
     for (const b of p.bacteria) if (!data.bacteriumById.has(b)) errors.push(`代用：菌 ${b} がない`);

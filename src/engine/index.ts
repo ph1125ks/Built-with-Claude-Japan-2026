@@ -1,7 +1,8 @@
 export * from "./types.ts";
 export { loadGameData, drugOf, bacteriumOf } from "./data.ts";
 export { createRng, type Rng } from "./rng.ts";
-export { susceptibility, resistanceTableFor, urineWeights, hasRegion, type SusceptibilityValue } from "./susceptibility.ts";
+export { susceptibility, resistanceTableFor, applyLinkageFloor, urineWeights, hasRegion, type SusceptibilityValue } from "./susceptibility.ts";
+export { stewardshipRank, awareOf } from "./stewardship.ts";
 export { costPerDay, costPerDose, yakkaTier, yenPerDay } from "./cost.ts";
 export { validateStage, validateScenario } from "./scenario.ts";
 export { createGame, step, canSummon, intervalTicks, revealLevelAt, type GameState, type GameOptions } from "./game.ts";

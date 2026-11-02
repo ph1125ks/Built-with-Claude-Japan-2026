@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   appropriateBot,
+  broadBot,
   createGame,
   expectedEffect,
   idleBot,
@@ -10,6 +11,8 @@ import {
   randomBot,
   runScenario,
   runStage,
+  observe,
+  step,
   validateScenario,
   type ScenarioDef,
 } from "../src/engine/index.ts";
@@ -64,5 +67,27 @@ describe("速さ", () => {
     const t0 = performance.now();
     for (let i = 0; i < n; i++) runStage({ data, stage: scenario.present, region: scenario.region, seed: i, bot: appropriateBot() });
     expect((performance.now() - t0) / n).toBeLessThan(50);
+  });
+});
+
+describe("適正ボットの選び方（AWaRe の順）", () => {
+  it("腸球菌と分かったら、効く見込みの高い Access の ABPC を選ぶ", () => {
+    const stage = { ...scenario.present, waves: [{ at: 0, lane: 0, species: "efaecalis", count: 1, spacing: 0 }] };
+    const state = createGame({ data, stage, region: "全国", seed: 1 });
+    const k = knowledgeFor(state);
+    const bot = appropriateBot();
+    // 出現させてから、菌名が分かる位置まで進める
+    step(state);
+    while (state.bacteria[0] && state.bacteria[0].level === "gram") step(state);
+    expect(state.bacteria[0]?.level).toBe("species");
+    const cmds = bot.decide(observe(state), k);
+    expect(cmds).toEqual([{ type: "summon", drug: "ABPC", lane: 0 }]);
+  });
+
+  it("乱用ボットは、手札で最も温存すべき薬（MEPM）から使う", () => {
+    const stage = { ...scenario.present, waves: [{ at: 0, lane: 1, species: "ecoli", count: 1, spacing: 0 }] };
+    const state = createGame({ data, stage, region: "全国", seed: 1 });
+    step(state);
+    expect(broadBot().decide(observe(state), knowledgeFor(state))).toEqual([{ type: "summon", drug: "MEPM", lane: 1 }]);
   });
 });

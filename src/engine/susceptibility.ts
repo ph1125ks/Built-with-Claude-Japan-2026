@@ -59,6 +59,23 @@ export function resistanceTableFor(data: GameData, region: string): ResistanceTa
     for (const d of data.drugs) row[d.id] = 1 - susceptibility(data, region, b.id, d.id).p;
     table[b.id] = row;
   }
+  return applyLinkageFloor(data, table);
+}
+
+/**
+ * 耐性の連動（rules.linkedResistance）と表を矛盾させない。
+ * trigger に耐性の個体は alsoResistant にも耐性なので、alsoResistant の耐性率は trigger の耐性率を下回れない。
+ * 例：経口第3世代セフェムの耐性率は、CTRX の耐性率以上になる。表を書き換えて返す。
+ */
+export function applyLinkageFloor(data: GameData, table: ResistanceTable): ResistanceTable {
+  for (const link of data.rules.linkedResistance) {
+    for (const sp of link.bacteria) {
+      const row = table[sp];
+      if (!row) continue;
+      const rt = row[link.trigger] ?? 0;
+      for (const d of link.alsoResistant) row[d] = Math.max(row[d] ?? 0, rt);
+    }
+  }
   return table;
 }
 

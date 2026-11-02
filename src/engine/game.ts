@@ -4,7 +4,7 @@ import { bacteriumOf, drugOf } from "./data.ts";
 import { getResistanceModel, type ResistanceModel } from "./resistance.ts";
 import { createRng, type Rng } from "./rng.ts";
 import { validateStage } from "./scenario.ts";
-import { cloneTable, resistanceTableFor, urineWeights } from "./susceptibility.ts";
+import { applyLinkageFloor, cloneTable, resistanceTableFor, urineWeights } from "./susceptibility.ts";
 import type {
   Bacterium,
   Command,
@@ -96,7 +96,7 @@ export function createGame(opts: GameOptions): GameState {
   if (errors.length) throw new Error(`ステージの誤り：\n${errors.join("\n")}`);
   const rng = createRng(seed);
   const tps = ticksPerSecond(data);
-  const resistance = cloneTable(opts.resistance ?? resistanceTableFor(data, region));
+  const resistance = applyLinkageFloor(data, cloneTable(opts.resistance ?? resistanceTableFor(data, region)));
 
   // 敵の出現予定を最初に決める（同じ種なら毎回同じ）
   const auto = stage.waves.some((w) => w.species === "auto") ? urineWeights(data, region) : null;
@@ -188,7 +188,19 @@ function spawn(state: GameState, p: SpawnPlan, events: GameEvent[]): void {
   const row = state.resistance[p.species] ?? {};
   const resistant = new Set<string>();
   // 個体ごとに、薬ごとの感受性・耐性を決める（いまの耐性率に従う。自然耐性は確率 1）
-  for (const d of data.drugs) if (rng.next() < (row[d.id] ?? 1)) resistant.add(d.id);
+  const links = data.rules.linkedResistance.filter((l) => l.bacteria.includes(p.species));
+  const dependent = new Set(links.flatMap((l) => l.alsoResistant));
+  for (const d of data.drugs) if (!dependent.has(d.id) && rng.next() < (row[d.id] ?? 1)) resistant.add(d.id);
+  // 連動（例：ESBL）。trigger に耐性なら必ず耐性。そうでなければ、全体の耐性率が表の値になるように
+  // 条件付きの確率 (r_d − r_t) / (1 − r_t) で決める（表は applyLinkageFloor で r_d ≥ r_t にしてある）
+  for (const link of links) {
+    const rt = row[link.trigger] ?? 0;
+    for (const d of link.alsoResistant) {
+      const rd = row[d] ?? 1;
+      const q = resistant.has(link.trigger) || rt >= 1 ? 1 : Math.max(0, (rd - rt) / (1 - rt));
+      if (rng.next() < q) resistant.add(d);
+    }
+  }
   const x = data.rules.board.laneLength;
   const b: Bacterium = {
     uid: state.nextUid++,

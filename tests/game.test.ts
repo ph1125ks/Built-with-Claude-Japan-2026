@@ -184,3 +184,28 @@ describe("シナリオの検査", () => {
     expect(errors.join("\n")).toMatch(/unknown-bug/);
   });
 });
+
+describe("ESBL の連動（個体の耐性の決め方）", () => {
+  // 大腸菌を一度に 4000 匹出して、個体の耐性を数える
+  const stage = oneBug("ecoli", { waves: [{ at: 0, lane: 0, species: "ecoli", count: 4000, spacing: 0 }] });
+  const s = createGame({ data, stage, region: "全国", seed: 7 });
+  step(s);
+  const bugs = s.bacteria;
+  const table = resistanceTableFor(data, "全国").ecoli!;
+  const rate = (drug: string) => bugs.filter((b) => b.resistant.has(drug)).length / bugs.length;
+
+  it("CTRX に耐性の個体は、ABPC・CEZ・経口第3世代セフェムにも必ず耐性", () => {
+    const ctrxR = bugs.filter((b) => b.resistant.has("CTRX"));
+    expect(ctrxR.length).toBeGreaterThan(800);
+    for (const b of ctrxR) for (const d of ["ABPC", "CEZ", "CFDN_PO"]) expect(b.resistant.has(d)).toBe(true);
+  });
+
+  it("連動させても、薬ごとの全体の耐性率は表の値のまま（±3%）", () => {
+    for (const d of ["CTRX", "ABPC", "CEZ", "CFDN_PO", "CMZ", "LVFX_PO"]) expect(Math.abs(rate(d) - table[d]!), d).toBeLessThan(0.03);
+  });
+
+  it("CMZ は連動しない（CTRX に耐性でも、ほとんどの個体に CMZ が効く）", () => {
+    const ctrxR = bugs.filter((b) => b.resistant.has("CTRX"));
+    expect(ctrxR.filter((b) => !b.resistant.has("CMZ")).length / ctrxR.length).toBeGreaterThan(0.9);
+  });
+});
