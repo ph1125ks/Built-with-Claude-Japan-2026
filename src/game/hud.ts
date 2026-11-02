@@ -285,8 +285,8 @@ export class Hud {
       else if (e.type === "resistanceChanged") {
         const head =
           e.cause === "wave"
-            ? `波${(e.wave ?? 0) + 1}が片付いた。使った薬に耐性の菌が残り（選択圧）、耐性率が上がった${this.anyLinked(e.changes) ? "（※は使っていない薬。使った薬に耐性の菌は、この薬にも効きにくい＝耐性の連動）" : ""}`
-            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった${this.anyLinked(e.changes) ? "（※は使っていない薬。同じ系統の薬と、耐性の連動で上がる）" : ""}`;
+            ? `波${(e.wave ?? 0) + 1}が片付いた。使った薬に耐性の菌が残り（選択圧）、耐性率が上がった${this.anyLinked(e.changes) ? "（※はこのステージでまだ使っていない薬。使った薬に耐性の菌は、この薬にも効かないことにしている＝耐性の連動（ESBL・CRE））" : ""}`
+            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった${this.anyLinked(e.changes) ? "（※はこのステージでまだ使っていない薬。ゲージは系統ごとなので同じ系統の薬も上がり、耐性の連動でも上がる）" : ""}`;
         const lines = this.topChanges(e.changes);
         if (lines.length) this.message(`${head}：${lines.join("、")}`, "res");
       } else if (e.type === "end" && !this.ended) {
