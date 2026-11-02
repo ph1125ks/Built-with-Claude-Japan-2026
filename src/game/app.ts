@@ -1,4 +1,4 @@
-// 画面の流れ：タイトル → 遊び方 → ステージ1 → 結果1 → ステージ2「数年後の同じ病棟」→ 結果2 → まとめ（SPEC.md 3.1）。
+// 画面の流れ：タイトル → 遊び方 → ステージ1 → 結果1 → ステージ2（既定は「2050年の同じ病棟」）→ 結果2 → まとめ（SPEC.md 3.1）。
 // URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル）、?seed=<数>、?region=<地域>、
 // ?auto=appropriate|broad|random（ボットに自動で遊ばせる。試遊・確認用）
 import {
@@ -20,7 +20,7 @@ import {
 } from "../engine/index.ts";
 import type { BoardScene } from "./board.ts";
 import { Hud } from "./hud.ts";
-import { antibiogramBlock, biggestRises, briefingScreen, finalScreen, howtoScreen, resultScreen, risesList, sourcesScreen, titleScreen } from "./screens.ts";
+import { antibiogramBlock, biggestRises, briefingScreen, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
@@ -210,7 +210,10 @@ export class App {
         this.futureStart = this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, scenario.future.yearsLater);
         const rises = biggestRises(data, p.resistanceStart, this.futureStart, scenario.future.hand.map((h) => h.drug));
         const used = Object.values(p.summons).reduce((a, b) => a + b, 0) > 0;
-        const extra = `<h3 class="rises-head">ステージ1の開始時から、耐性率が大きく上がったもの</h3>${risesList(data, rises, used)}`;
+        // 節目の年ごとの耐性率（2030・2040・2050年など）。同じ延ばし方で途中の年を計算する
+        const years = milestoneYears(data, scenario.future.yearsLater);
+        const tables = years.map((y) => this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, y));
+        const extra = `${year2050Note(data, scenario.future.yearsLater)}<h3 class="rises-head">ステージ1の開始時から、耐性率が大きく上がったもの</h3>${risesTimeline(data, rises, years, tables, used)}`;
         this.showScreen(briefingScreen(data, scenario, "future", extra, this.futureStart));
         break;
       }

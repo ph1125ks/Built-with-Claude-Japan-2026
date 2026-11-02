@@ -122,8 +122,17 @@ export interface ResistanceRules {
     /** 1段上がるごとに、まだ効いている菌のうち耐性になる割合 */
     risePerStep: number;
   };
-  /** 未来ステージへの引き継ぎ：1年あたり、ステージ1と同じ使い方が何回分続いたとみなすか */
-  carryOver: { stagesPerYear: number };
+  /**
+   * 未来ステージへの引き継ぎ。
+   * dataYear：開始時の耐性率のデータの年（JANIS 2025年報なら 2025）。未来ステージの年 ＝ dataYear ＋ yearsLater
+   * stagesPerYear：1年あたり、ステージ1と同じ使い方が何回分続いたとみなすか（モデルごと。速さの決め方は rules.json の basis）
+   */
+  carryOver: {
+    dataYear: number;
+    stagesPerYear: { A: number; B: number };
+    /** 上限：どの菌×薬でも、ステージ1の終わりから rate に届くまで minYears 年以上かかる（AMR Review の RAND の前提を目安にする） */
+    ceiling: { rate: number; minYears: number };
+  };
 }
 
 /** 耐性率の変化（結果画面と、遊んでいる途中の知らせに使う） */

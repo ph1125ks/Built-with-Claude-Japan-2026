@@ -135,22 +135,35 @@ describe("未来ステージへの引き継ぎ", () => {
     expect(selectionModel.carryOver(data, start, end, 0).ecoli!.LVFX_PO).toBeCloseTo(0.6, 12);
   });
 
+  // 式の確かめは、上限（carryOver.ceiling）にかからない小さな変化と短い年数で行う
   it("A はオッズの対数で、ステージ1の変化を yearsLater × stagesPerYear 回分延ばす", () => {
     const end = cloneTable(start);
-    end.ecoli!.LVFX_PO = 0.6;
+    end.ecoli!.LVFX_PO = 0.5;
     const logit = (r: number) => Math.log(r / (1 - r));
-    const m = 5 * data.rules.resistance.carryOver.stagesPerYear;
-    const future = selectionModel.carryOver(data, start, end, 5);
-    expect(logit(future.ecoli!.LVFX_PO!)).toBeCloseTo(logit(0.6) + m * (logit(0.6) - logit(start.ecoli!.LVFX_PO!)), 8);
+    const m = 2 * data.rules.resistance.carryOver.stagesPerYear.A;
+    const future = selectionModel.carryOver(data, start, end, 2);
+    expect(logit(future.ecoli!.LVFX_PO!)).toBeCloseTo(logit(0.5) + m * (logit(0.5) - logit(start.ecoli!.LVFX_PO!)), 8);
   });
 
   it("B は、まだ効いている割合の対数で延ばす", () => {
     const end = cloneTable(start);
-    end.ecoli!.LVFX_PO = 0.6;
-    const m = 5 * data.rules.resistance.carryOver.stagesPerYear;
-    const future = gaugeModel.carryOver(data, start, end, 5);
+    end.ecoli!.LVFX_PO = 0.45;
+    const m = 1 * data.rules.resistance.carryOver.stagesPerYear.B;
+    const future = gaugeModel.carryOver(data, start, end, 1);
     const s0 = 1 - start.ecoli!.LVFX_PO!;
-    expect(1 - future.ecoli!.LVFX_PO!).toBeCloseTo(0.4 * Math.pow(0.4 / s0, m), 8);
+    expect(1 - future.ecoli!.LVFX_PO!).toBeCloseTo(0.55 * Math.pow(0.55 / s0, m), 8);
+  });
+
+  it("上限：どのモデルでも、ステージ1の終わりから 90% に届くまで minYears 年以上かかる（AMR Review の RAND の前提を目安にした）", () => {
+    const { rate, minYears } = data.rules.resistance.carryOver.ceiling;
+    const end = cloneTable(start);
+    end.ecoli!.LVFX_PO = 0.75; // 大きく上がった組（上限がなければ数年で 90% を超える）
+    for (const model of [selectionModel, gaugeModel]) {
+      expect(model.carryOver(data, start, end, minYears - 1).ecoli!.LVFX_PO!, model.id).toBeLessThan(rate);
+      expect(model.carryOver(data, start, end, minYears).ecoli!.LVFX_PO!, model.id).toBeCloseTo(rate, 6);
+      // 上限を過ぎても、さらに上がる（2050年にはほぼ効かなくなる）
+      expect(model.carryOver(data, start, end, 25).ecoli!.LVFX_PO!, model.id).toBeGreaterThan(rate);
+    }
   });
 
   it("延ばしたあとも連動の下限がかかる（MEPM が上がれば、CTRX・CMZ・TAZ/PIPC、さらに ABPC なども上がる）", () => {

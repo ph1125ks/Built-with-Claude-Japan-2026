@@ -14,7 +14,7 @@ export interface ResistanceModel {
   onWaveCleared(state: GameState, wave: number, resolved: Bacterium[]): void;
   /**
    * ステージ1の開始時と終わりの表から、未来ステージの開始時の表を作る。
-   * 「ステージ1と同じ使い方が数年続いた」とみなし、ステージ1での変化をモデルの伸び方のまま先へ延ばす
+   * 「ステージ1と同じ使い方が未来の年（既定は2050年）まで続いた」とみなし、ステージ1での変化をモデルの伸び方のまま先へ延ばす（上限つき）
    */
   carryOver(data: GameData, start: ResistanceTable, end: ResistanceTable, yearsLater: number): ResistanceTable;
 }
@@ -27,17 +27,25 @@ const logit = (r: number) => {
 };
 const sigmoid = (z: number) => 1 / (1 + Math.exp(-z));
 
-/** 未来へ延ばす回数（ステージ1の何回分か） */
-function repeats(data: GameData, yearsLater: number): number {
-  return Math.max(0, yearsLater) * data.rules.resistance.carryOver.stagesPerYear;
+/** 未来へ延ばす回数（ステージ1の何回分か）。速さはモデルごとに決めている（rules.json の carryOver） */
+function repeats(data: GameData, yearsLater: number, model: "A" | "B"): number {
+  return Math.max(0, yearsLater) * data.rules.resistance.carryOver.stagesPerYear[model];
+}
+
+/** 未来ステージの年（例：2025 ＋ 25 ＝ 2050） */
+export function futureYear(data: GameData, yearsLater: number): number {
+  return data.rules.resistance.carryOver.dataYear + yearsLater;
 }
 
 /**
  * 表の各値を、開始時 → 終わりの変化を「空間」の中でまっすぐ延ばす。
- * 自然耐性など 100% のものと、変化しなかったものはそのまま
+ * 自然耐性など 100% のものと、変化しなかったものはそのまま。
+ * 上限（carryOver.ceiling）：ステージ1の終わりで rate 未満の組は、rate に届くまで minYears 年以上かかるように、
+ * 延ばす量を「年数 ÷ minYears × （rate までの残り）」で頭打ちにする
  */
 function extrapolate(
   data: GameData,
+  model: "A" | "B",
   start: ResistanceTable,
   end: ResistanceTable,
   yearsLater: number,
@@ -45,7 +53,9 @@ function extrapolate(
   back: (z: number) => number,
   startValue: (r: number) => number = (r) => r,
 ): ResistanceTable {
-  const m = repeats(data, yearsLater);
+  const m = repeats(data, yearsLater, model);
+  const { rate, minYears } = data.rules.resistance.carryOver.ceiling;
+  const zc = forward(rate);
   const out = cloneTable(end);
   for (const [sp, row] of Object.entries(out)) {
     for (const [d, r1] of Object.entries(row)) {
@@ -53,7 +63,13 @@ function extrapolate(
       if (r1 >= 1 || r1 <= r0) continue;
       const z1 = forward(r1);
       const z0 = forward(startValue(r0));
-      row[d] = Math.min(1, Math.max(r1, back(z1 + m * (z1 - z0))));
+      let shift = m * (z1 - z0);
+      // 上限。forward は A では増える向き、B では減る向きなので、向きによらず大きさで比べる
+      if (r1 < rate && minYears > 0) {
+        const allowed = (Math.max(0, yearsLater) / minYears) * Math.abs(zc - z1);
+        if (Math.abs(shift) > allowed) shift = Math.sign(shift) * allowed;
+      }
+      row[d] = Math.min(1, Math.max(r1, back(z1 + shift)));
     }
   }
   return applyLinkageFloor(data, out);
@@ -104,7 +120,7 @@ export const selectionModel: ResistanceModel = {
   },
   carryOver(data, start, end, yearsLater) {
     const minRate = data.rules.resistance.A.minRate;
-    return extrapolate(data, start, end, yearsLater, logit, sigmoid, (r) => Math.max(r, minRate));
+    return extrapolate(data, "A", start, end, yearsLater, logit, sigmoid, (r) => Math.max(r, minRate));
   },
 };
 
@@ -152,6 +168,7 @@ export const gaugeModel: ResistanceModel = {
     // まだ効いている割合（1 − 耐性率）の対数で延ばす（ゲージ1段ごとに同じ割合ずつ減る、の続き）
     return extrapolate(
       data,
+      "B",
       start,
       end,
       yearsLater,

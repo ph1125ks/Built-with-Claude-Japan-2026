@@ -60,6 +60,11 @@ function checkCatalog(data: GameData): void {
   const res = data.rules.resistance;
   if (!["none", "A", "B"].includes(res.model)) errors.push(`耐性モデル ${res.model} はない（none・A・B）`);
   if (!(res.exaggeration > 0)) errors.push("resistance.exaggeration は正の数");
+  const spy = res.carryOver?.stagesPerYear;
+  if (!spy || !(spy.A >= 0) || !(spy.B >= 0)) errors.push("resistance.carryOver.stagesPerYear は A と B の0以上の数");
+  if (!Number.isInteger(res.carryOver?.dataYear)) errors.push("resistance.carryOver.dataYear は年（整数）");
+  const ceil = res.carryOver?.ceiling;
+  if (!ceil || !(ceil.rate > 0 && ceil.rate < 1) || !(ceil.minYears >= 0)) errors.push("resistance.carryOver.ceiling は rate（0〜1）と minYears（0以上）");
   for (const p of data.rules.susceptibility.proxies) {
     if (!data.drugById.has(p.drug)) errors.push(`代用：薬 ${p.drug} がない`);
     for (const b of p.bacteria) if (!data.bacteriumById.has(b)) errors.push(`代用：菌 ${b} がない`);

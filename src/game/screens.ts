@@ -1,6 +1,6 @@
 // 遊ぶ前後の画面（DOM）：タイトル、遊び方、ブリーフィング、結果、まとめ、出典。
 // ボタンは data-action を持ち、app.ts がまとめて受ける。
-import { susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
+import { futureYear, susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
 import { escapeHtml, genericName, modelLabel, pct, yen } from "./format.ts";
 
@@ -28,7 +28,7 @@ export function titleScreen(data: GameData, scenario: ScenarioDef, model: Resist
     <div class="title-art">${miniBugs()}</div>
     <h1>センタクアツ<small>（仮）</small></h1>
     <p class="tagline">あなたの選択が、未来の敵をつくる</p>
-    <p class="lead">細菌から膀胱を守る、抗菌薬のタワーディフェンス。<br>選んだ抗菌薬しだいで耐性菌が増え、「数年後の同じ病棟」で、自分が育てた耐性菌と戦います。</p>
+    <p class="lead">細菌から膀胱を守る、抗菌薬のタワーディフェンス。<br>選んだ抗菌薬しだいで耐性菌が増え、「${escapeHtml(scenario.future.title)}」で、自分が育てた耐性菌と戦います。</p>
     <div class="buttons">
       <button class="primary" data-action="start">はじめる</button>
       <button data-action="howto">遊び方</button>
@@ -108,7 +108,7 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
   const defaultBrief =
     phase === "present"
       ? `${escapeHtml(scenario.region)}の公開データ（JANIS）の耐性率から始まる病棟です。菌の正体が分かるにつれて、薬を選び直せます。`
-      : `ステージ1の終わりの耐性率を引き継ぎ、同じ使い方が ${scenario.future.yearsLater} 年続いたとみなした病棟です。`;
+      : `ステージ1の終わりの耐性率を引き継ぎ、同じ使い方が ${futureYear(data, scenario.future.yearsLater)}年まで（${scenario.future.yearsLater}年間）続いたとみなした病棟です。`;
   // 手札が変わったら書く（ステージごとに手札を決める：SPEC.md 4.9）
   let handNote = "";
   if (phase === "future") {
@@ -123,10 +123,10 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
   }
   return `
   <div class="screen briefing-screen ${phase}">
-    ${phase === "future" ? `<p class="kicker">${scenario.future.yearsLater}年後</p>` : ""}
+    ${phase === "future" ? `<p class="kicker">${futureYear(data, scenario.future.yearsLater)}年</p>` : ""}
     <h2>${head}</h2>
     <p class="brief">${stage.briefing ? escapeHtml(stage.briefing) : defaultBrief}</p>
-    ${phase === "future" ? `<p class="exaggerated">耐性化の速さは、ゲーム用に大きく誇張しています。現実の病棟で、${scenario.future.yearsLater}年でこのとおりになるわけではありません。</p>` : ""}
+    ${phase === "future" ? `<p class="exaggerated">ゲームの中の耐性化の速さは誇張しています。現実の病棟が${futureYear(data, scenario.future.yearsLater)}年にこのとおりになる、という予測ではありません。</p>` : ""}
     ${extra}
     <div class="facts">
       <div><span>手札</span><div class="chips">${handChips(data, stage)}</div></div>
@@ -186,6 +186,49 @@ export function biggestRises(data: GameData, from: ResistanceTable, to: Resistan
     }
   }
   return out.sort((x, y) => y.to - y.from - (x.to - x.from)).slice(0, n);
+}
+
+/** 未来ステージまでの節目の年（10年ごとの区切りと最後の年。例：25年後なら 5・15・25 年後 ＝ 2030・2040・2050年） */
+export function milestoneYears(data: GameData, yearsLater: number): number[] {
+  const base = data.rules.resistance.carryOver.dataYear;
+  const ys: number[] = [];
+  for (let y = 1; y < yearsLater; y++) if ((base + y) % 10 === 0) ys.push(y);
+  ys.push(yearsLater);
+  return ys;
+}
+
+/**
+ * 大きく上がった耐性率の、年ごとの推移の表。tables は milestoneYears と同じ順の、その年の耐性率の表。
+ * 耐性菌が少ないうちはゆっくり、増えると一気に上がる（S 字）ことを見せる
+ */
+export function risesTimeline(
+  data: GameData,
+  rises: ReturnType<typeof biggestRises>,
+  years: number[],
+  tables: ResistanceTable[],
+  usedDrugs = true,
+): string {
+  if (rises.length === 0) return risesList(data, rises, usedDrugs);
+  const base = data.rules.resistance.carryOver.dataYear;
+  const head = [`<th>${base}年<br><small>ステージ1の開始</small></th>`, ...years.map((y) => `<th>${base + y}年</th>`)].join("");
+  const body = rises
+    .map((r) => {
+      const cells = tables.map((t) => {
+        const v = t[r.species]?.[r.drug] ?? 0;
+        const cls = v >= 0.8 ? "poor" : v >= 0.5 ? "mid" : "";
+        return `<td class="${cls}">${pct(v)}</td>`;
+      });
+      return `<tr><th>${escapeHtml(data.bacteriumById.get(r.species)!.name)}の <b>${escapeHtml(data.drugById.get(r.drug)!.abbr)}</b></th><td>${pct(r.from)}</td>${cells.join("")}</tr>`;
+    })
+    .join("");
+  return `<table class="timeline"><thead><tr><th>耐性率</th>${head}</tr></thead><tbody>${body}</tbody></table>
+    <p class="table-note">ゲーム内の値です（耐性化の速さは誇張しています）。予測ではありません。</p>`;
+}
+
+/** 「2050年問題」の注記（研究の推計の数字と、ゲームの値はそこから出したものではないこと） */
+export function year2050Note(data: GameData, yearsLater: number): string {
+  if (futureYear(data, yearsLater) !== 2050) return "";
+  return `<p class="note2050"><b>「2050年問題」</b>：2014年の英国の AMR Review は、対策をとらなければ2050年に薬剤耐性（AMR）による死亡が年1,000万人に達するという大まかな試算を示しました（HIV・結核・マラリアの薬剤耐性を含む）。2024年の世界疾病負荷研究（GBD、Lancet）は、2050年に細菌の薬剤耐性が直接の原因の死亡を191万人、耐性菌の感染に関連した死亡を822万人と予測しています（2つの推計は対象が違うため、そのまま比べることはできません）。このステージの耐性率は、これらの推計から出したものではありません。</p>`;
 }
 
 export function risesList(data: GameData, rises: ReturnType<typeof biggestRises>, usedDrugs = true): string {
@@ -283,7 +326,7 @@ function risesLine(data: GameData, from: ResistanceTable, to: ResistanceTable, d
 
 /**
  * 結果画面。ステージ2では、耐性率の表をステージ1の開始時から数える（from を渡す）。
- * ステージ1 → 2 のあいだの「数年分」の変化も見えるようにするため
+ * ステージ1 → 2 のあいだ（既定は2050年まで）の変化も見えるようにするため
  */
 export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", r: StageResult, from?: ResistanceTable): string {
   const stage = phase === "present" ? scenario.present : scenario.future;
@@ -317,7 +360,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
     </div>
     <p class="foot strong">耐性化の速さは、ゲーム用に大きく誇張しています（${escapeHtml(modelLabel(r.model))}）。</p>
     <div class="buttons">
-      ${phase === "present" ? `<button class="primary" data-action="future">数年後の同じ病棟へ</button><button data-action="restart">ステージ1をやり直す</button>` : `<button class="primary" data-action="final">まとめへ</button>`}
+      ${phase === "present" ? `<button class="primary" data-action="future">${escapeHtml(scenario.future.title)}へ</button><button data-action="restart">ステージ1をやり直す</button>` : `<button class="primary" data-action="final">まとめへ</button>`}
     </div>
   </div>`;
 }
@@ -366,6 +409,8 @@ export function sourcesScreen(data: GameData): string {
           <dd>厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。AMK の用法（1日量を含む）は JAID/JSC 感染症治療ガイド2023。セフジニルの用法は電子添文、LVFX の吸収率はインタビューフォーム（この2つは PMDA 掲載）。</dd>
           <dt>使用日数・スペクトラムの広さ（DASC/DOT）・アンチバイオグラムの使い方</dt>
           <dd>8学会合同抗微生物薬適正使用推進検討委員会「抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版」（日本化学療法学会雑誌 73巻2号）。使用日数と DASC は表4（p.119）の考え方にならい、ASC スコアは表5（p.120。Kakiuchi ら, Clin Infect Dis 2022 の値）。表にない CMZ・AMK・LVFX・CFDN の ASC は未設定です。アンチバイオグラムを初期治療の薬選びに使うことは p.130。</dd>
+          <dt>2050年の設定と、耐性化の速さの決め方</dt>
+          <dd>Review on Antimicrobial Resistance（委員長 Jim O'Neill）「Antimicrobial Resistance: Tackling a crisis for the health and wealth of nations」2014年12月：2050年の推計と、その前提（RAND Europe：15年で耐性率が100%になる、KPMG：耐性率が今より40%上がる（相対か絶対かは本文に書かれていない）。どちらも確かな予測ではない大まかな見積もり。p.6・p.8）。GBD 2021 Antimicrobial Resistance Collaborators. Lancet 2024; 404: 1199–226：2050年の予測（細菌の薬剤耐性が直接の原因の死亡 191万人、関連した死亡 822万人）。ゲームでは、どの菌×薬でも、ステージ1の終わりから耐性率が 90% に届くまで15年以上かかるように上限をかけています（RAND の前提を目安にした）。</dd>
           <dt>自然耐性・値のない組み合わせの扱い</dt>
           <dd>EUCAST「Expected Resistant Phenotypes」v1.2、「Expert Rules v3.2 on Enterococcus spp.」、「Breakpoint tables」v16.1。</dd>
         </dl>
@@ -385,7 +430,7 @@ export function sourcesScreen(data: GameData): string {
         <h3>誇張していること</h3>
         <ul>
           <li>耐性化の速さ：実際の病棟で年単位で起きる変化を、数分のステージに縮めています（${escapeHtml(modelLabel(r.model))}。式と係数は data/rules.json）。</li>
-          <li>ステージ2は、ステージ1と同じ使い方が数年続いたとみなして、耐性率を先へ延ばしています。</li>
+          <li>ステージ2は、ステージ1と同じ使い方が2050年まで続いたとみなして、耐性率を先へ延ばしています。どの菌×薬でも、ステージ1の終わりから耐性率が 90% に届くまで15年以上かかるようにしています（AMR Review の、耐性の仮定が厳しいほうの前提「15年で100%」を目安にした）。ゲームの耐性率は、2050年の予測ではありません。</li>
           <li>菌の体力・速さ・膀胱へのダメージ、薬の強さはゲーム用の値です。</li>
         </ul>
       </section>

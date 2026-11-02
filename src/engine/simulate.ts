@@ -39,7 +39,7 @@ export interface ScenarioRun {
   futureStart: ResistanceTable;
 }
 
-/** いま → 数年後の同じ病棟、を続けて動かす。未来の開始時の耐性率はモデルの carryOver で作る */
+/** いま → 未来の同じ病棟（既定は2050年）、を続けて動かす。未来の開始時の耐性率はモデルの carryOver で作る */
 export function runScenario(opts: {
   data: GameData;
   scenario: ScenarioDef;
