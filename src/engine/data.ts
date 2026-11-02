@@ -5,6 +5,7 @@ import drugsJson from "../../data/catalog/drugs.json";
 import janisJson from "../../data/generated/janis-2025.json";
 import pricesJson from "../../data/generated/prices-2026-11.json";
 import rulesJson from "../../data/rules.json";
+import { linkPlanFor } from "./susceptibility.ts";
 import type { BacteriumDef, DrugClassDef, DrugDef, GameData, JanisData, PriceData, Rules } from "./types.ts";
 
 /** 既定のデータを読む。rules を差し替えたいとき（比較実験など）は overrides で上書きする */
@@ -46,6 +47,19 @@ function checkCatalog(data: GameData): void {
     for (const id of [l.trigger, ...l.alsoResistant]) if (!data.drugById.has(id)) errors.push(`連動：薬 ${id} がない`);
     for (const b of l.bacteria) if (!data.bacteriumById.has(b)) errors.push(`連動：菌 ${b} がない`);
   }
+  if (errors.length === 0) {
+    // 連動は菌ごとに木になっていること（1つの薬に親は1つ、輪がない）
+    for (const b of data.bacteria) {
+      try {
+        linkPlanFor(data, b.id);
+      } catch (e) {
+        errors.push((e as Error).message);
+      }
+    }
+  }
+  const res = data.rules.resistance;
+  if (!["none", "A", "B"].includes(res.model)) errors.push(`耐性モデル ${res.model} はない（none・A・B）`);
+  if (!(res.exaggeration > 0)) errors.push("resistance.exaggeration は正の数");
   for (const p of data.rules.susceptibility.proxies) {
     if (!data.drugById.has(p.drug)) errors.push(`代用：薬 ${p.drug} がない`);
     for (const b of p.bacteria) if (!data.bacteriumById.has(b)) errors.push(`代用：菌 ${b} がない`);

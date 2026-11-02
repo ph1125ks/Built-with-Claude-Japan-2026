@@ -1,10 +1,10 @@
 // ゲームの本体。1ティックずつ進める。描画はこの状態とイベントを読むだけにする。
 import { costPerDose } from "./cost.ts";
 import { bacteriumOf, drugOf } from "./data.ts";
-import { getResistanceModel, type ResistanceModel } from "./resistance.ts";
+import { diffTables, getResistanceModel, type ResistanceModel } from "./resistance.ts";
 import { createRng, type Rng } from "./rng.ts";
 import { validateStage } from "./scenario.ts";
-import { applyLinkageFloor, cloneTable, resistanceTableFor, urineWeights } from "./susceptibility.ts";
+import { applyLinkageFloor, cloneTable, linkPlanFor, resistanceTableFor, urineWeights } from "./susceptibility.ts";
 import type {
   Bacterium,
   Command,
@@ -55,6 +55,8 @@ export interface GameState {
   readyAt: Map<string, number>;
   resistance: ResistanceTable;
   startResistance: ResistanceTable;
+  /** 耐性ゲージ（モデル B）：系統 → たまった量 */
+  gauge: Record<string, number>;
   stats: GameStats;
   collectEvents: boolean;
   nextUid: number;
@@ -83,7 +85,7 @@ export function revealLevelAt(data: GameData, x: number): RevealLevel {
 const LEVEL_ORDER: Record<RevealLevel, number> = { gram: 0, species: 1, susceptibility: 2 };
 
 function emptyStats(): GameStats {
-  return { summons: {}, activeTicks: {}, kills: {}, costSpent: 0, spawned: 0, leaked: 0 };
+  return { summons: {}, activeTicks: {}, kills: {}, costSpent: 0, spawned: 0, leaked: 0, panResistant: 0 };
 }
 
 function inc(rec: Record<string, number>, key: string, by = 1): void {
@@ -133,10 +135,31 @@ export function createGame(opts: GameOptions): GameState {
     readyAt: new Map(),
     resistance,
     startResistance: cloneTable(resistance),
+    gauge: {},
     stats: emptyStats(),
     collectEvents: opts.collectEvents ?? false,
     nextUid: 1,
   };
+}
+
+/**
+ * 耐性モデルを呼び、連動の下限をかけ直し、変化を知らせる。
+ * 下限をかけ直さないと「経口第3世代セフェムが CTRX より効く」逆転が戻る
+ */
+function withModel(
+  state: GameState,
+  events: GameEvent[],
+  info: { cause: "wave" | "gauge"; wave?: number; drugClass?: string },
+  run: () => void,
+): void {
+  if (state.model.id === "none") return;
+  const before = state.collectEvents ? cloneTable(state.resistance) : null;
+  run();
+  applyLinkageFloor(state.data, state.resistance);
+  if (before) {
+    const changes = diffTables(before, state.resistance);
+    if (changes.length) events.push({ type: "resistanceChanged", ...info, changes });
+  }
 }
 
 /** 召喚できるか。できないときは理由を返す */
@@ -180,6 +203,8 @@ function summon(state: GameState, cmd: Command, events: GameEvent[]): void {
   state.stats.costSpent += cost;
   inc(state.stats.summons, drug.id);
   if (state.collectEvents) events.push({ type: "summon", unit: unit.uid, drug: drug.id, lane: cmd.lane, cost, hp: unit.hp });
+  const onSummon = state.model.onSummon;
+  if (onSummon) withModel(state, events, { cause: "gauge", drugClass: drug.class }, () => onSummon(state, drug.id));
 }
 
 function spawn(state: GameState, p: SpawnPlan, events: GameEvent[]): void {
@@ -187,19 +212,19 @@ function spawn(state: GameState, p: SpawnPlan, events: GameEvent[]): void {
   const def = bacteriumOf(data, p.species);
   const row = state.resistance[p.species] ?? {};
   const resistant = new Set<string>();
-  // 個体ごとに、薬ごとの感受性・耐性を決める（いまの耐性率に従う。自然耐性は確率 1）
-  const links = data.rules.linkedResistance.filter((l) => l.bacteria.includes(p.species));
-  const dependent = new Set(links.flatMap((l) => l.alsoResistant));
-  for (const d of data.drugs) if (!dependent.has(d.id) && rng.next() < (row[d.id] ?? 1)) resistant.add(d.id);
-  // 連動（例：ESBL）。trigger に耐性なら必ず耐性。そうでなければ、全体の耐性率が表の値になるように
-  // 条件付きの確率 (r_d − r_t) / (1 − r_t) で決める（表は applyLinkageFloor で r_d ≥ r_t にしてある）
-  for (const link of links) {
-    const rt = row[link.trigger] ?? 0;
-    for (const d of link.alsoResistant) {
-      const rd = row[d] ?? 1;
-      const q = resistant.has(link.trigger) || rt >= 1 ? 1 : Math.max(0, (rd - rt) / (1 - rt));
-      if (rng.next() < q) resistant.add(d);
+  // 個体ごとに、薬ごとの感受性・耐性を決める（いまの耐性率に従う。自然耐性は確率 1）。
+  // 連動（ESBL・CRE）は木の上から順に決める。親に耐性なら子も必ず耐性。そうでなければ、子の全体の耐性率が
+  // 表の値になるように、条件付きの確率 (r_子 − r_親) / (1 − r_親) で決める（表は applyLinkageFloor で r_子 ≥ r_親）
+  const { parent, order } = linkPlanFor(data, p.species);
+  for (const d of order) {
+    const rd = row[d] ?? 1;
+    const par = parent.get(d);
+    let q = rd;
+    if (par !== undefined) {
+      const rp = row[par] ?? 0;
+      q = resistant.has(par) || rp >= 1 ? 1 : Math.max(0, (rd - rp) / (1 - rp));
     }
+    if (rng.next() < q) resistant.add(d);
   }
   const x = data.rules.board.laneLength;
   const b: Bacterium = {
@@ -217,6 +242,7 @@ function spawn(state: GameState, p: SpawnPlan, events: GameEvent[]): void {
   };
   state.bacteria.push(b);
   state.stats.spawned++;
+  if (state.stage.hand.every((h) => resistant.has(h.drug))) state.stats.panResistant++;
   if (state.collectEvents) events.push({ type: "spawn", uid: b.uid, species: b.species, lane: b.lane });
 }
 
@@ -226,7 +252,7 @@ function resolve(state: GameState, b: Bacterium, events: GameEvent[]): void {
   state.waveRemaining[w] = (state.waveRemaining[w] ?? 1) - 1;
   if (state.waveRemaining[w] === 0) {
     const resolved = state.waveResolved[w] ?? [];
-    state.model.onWaveCleared(state, w, resolved);
+    withModel(state, events, { cause: "wave", wave: w }, () => state.model.onWaveCleared(state, w, resolved));
     state.waveResolved[w] = [];
     if (state.collectEvents) events.push({ type: "waveCleared", wave: w });
   }

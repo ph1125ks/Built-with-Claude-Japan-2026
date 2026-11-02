@@ -35,6 +35,8 @@ export function runStage(opts: RunStageOptions): { result: StageResult; state: G
 export interface ScenarioRun {
   present: StageResult;
   future: StageResult;
+  /** 未来ステージの開始時の表（ステージ1の終わりに「数年分」の進みを足したもの） */
+  futureStart: ResistanceTable;
 }
 
 /** いま → 数年後の同じ病棟、を続けて動かす。未来の開始時の耐性率はモデルの carryOver で作る */
@@ -49,7 +51,7 @@ export function runScenario(opts: {
   const model = opts.model ?? getResistanceModel(opts.data.rules.resistance.model);
   const { scenario } = opts;
   const present = runStage({ data: opts.data, stage: scenario.present, region: scenario.region, seed: opts.seed, bot: opts.bot, model });
-  const futureStart = model.carryOver(present.result.resistanceEnd, scenario.future.yearsLater);
+  const futureStart = model.carryOver(opts.data, present.result.resistanceStart, present.result.resistanceEnd, scenario.future.yearsLater);
   const future = runStage({
     data: opts.data,
     stage: scenario.future,
@@ -59,5 +61,5 @@ export function runScenario(opts: {
     resistance: futureStart,
     model,
   });
-  return { present: present.result, future: future.result };
+  return { present: present.result, future: future.result, futureStart };
 }

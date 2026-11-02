@@ -2,7 +2,7 @@
 import { drugOf } from "./data.ts";
 import type { GameState } from "./game.ts";
 import { cloneTable } from "./susceptibility.ts";
-import type { AwareGroup, Outcome, ResistanceTable } from "./types.ts";
+import type { AwareGroup, Outcome, ResistanceModelId, ResistanceTable } from "./types.ts";
 
 export interface StageResult {
   outcome: Outcome;
@@ -12,7 +12,7 @@ export interface StageResult {
   budgetStart: number;
   costSpent: number;
   summons: Record<string, number>;
-  /** 薬ごとの、効いていた日数の合計（レーンごとに数える。DOT に近い考え方） */
+  /** 薬ごとの、盤面にあった（投与していた）日数の合計（レーンごとに数える。DOT に近い考え方。効いたかどうかは問わない） */
   activeDays: Record<string, number>;
   /** 系統ごとの使用割合（activeDays をもとに、合計 1） */
   usageByClass: Record<string, number>;
@@ -23,6 +23,12 @@ export interface StageResult {
   kills: Record<string, number>;
   spawned: number;
   leaked: number;
+  /** 出てきた個体のうち、手札のどの薬にも耐性だったものの割合 */
+  panResistantFraction: number;
+  /** 耐性モデル（none・A・B） */
+  model: ResistanceModelId;
+  /** 耐性ゲージ（モデル B）：系統 → たまった量 */
+  gauge: Record<string, number>;
   resistanceStart: ResistanceTable;
   resistanceEnd: ResistanceTable;
 }
@@ -70,6 +76,9 @@ export function stageResult(state: GameState): StageResult {
     kills: { ...state.stats.kills },
     spawned: state.stats.spawned,
     leaked: state.stats.leaked,
+    panResistantFraction: state.stats.spawned > 0 ? state.stats.panResistant / state.stats.spawned : 0,
+    model: state.model.id,
+    gauge: { ...state.gauge },
     resistanceStart: cloneTable(state.startResistance),
     resistanceEnd: cloneTable(state.resistance),
   };

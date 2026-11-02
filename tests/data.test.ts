@@ -108,7 +108,8 @@ describe("公的な文書に沿った設定（抗微生物薬適正使用の手�
       const t = resistanceTableFor(data, region);
       for (const sp of ["ecoli", "kpneumoniae", "pmirabilis"]) {
         for (const d of ["ABPC", "CEZ", "CFDN_PO", "CFPM"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
-        // セファマイシン系とカルバペネム系は連動させない（ESBL は分解しない）
+        // ESBL の連動はセファマイシン系とカルバペネム系に及ばない（ESBL は分解しない）。
+        // CRE の連動（MEPM が親）は、開始時の表では MEPM の耐性率が CMZ より低いので値を変えない
         expect(t[sp]!.CMZ!).toBeCloseTo(1 - susceptibility(data, region, sp, "CMZ").p, 10);
         expect(t[sp]!.MEPM!).toBeCloseTo(1 - susceptibility(data, region, sp, "MEPM").p, 10);
       }

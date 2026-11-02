@@ -87,7 +87,7 @@ export interface Rules {
     costPerDayByTier: Record<string, number>;
     abstractCostPerDay: Record<string, number>;
   };
-  resistance: { model: ResistanceModelId; exaggeration: number };
+  resistance: ResistanceRules;
   /** 耐性の連動（例：ESBL）。trigger に耐性の個体は alsoResistant にも耐性 */
   linkedResistance: LinkedResistance[];
   stewardship: {
@@ -97,6 +97,39 @@ export interface Rules {
     /** Access 薬の使用割合の目標（WHO） */
     accessTarget: number;
   };
+}
+
+/** 耐性化の設定（data/rules.json の resistance）。式は src/engine/resistance.ts */
+export interface ResistanceRules {
+  model: ResistanceModelId;
+  /** 耐性化の速さを何倍にするか（ゲーム用の誇張）。A・B のどちらにも掛かる */
+  exaggeration: number;
+  /** A：選択圧の再現 */
+  A: {
+    /** 波の中のその菌が全員その薬に十分さらされたときに、耐性のオッズの対数（logit）を上げる量 */
+    logitPerWave: number;
+    /** 1匹がこの秒数さらされたら「十分さらされた」とみなす（短ければ割合で数える） */
+    fullExposureSeconds: number;
+    /** この値未満の耐性率（0% を含む）は、さらされたときにこの値として上げ始める（外から持ち込まれうるとみなす） */
+    minRate: number;
+  };
+  /** B：耐性ゲージ */
+  B: {
+    /** ゲージ1段の大きさ（「広さ × 効いている日数」の合計） */
+    gaugePerStep: number;
+    /** 1段上がるごとに、まだ効いている菌のうち耐性になる割合 */
+    risePerStep: number;
+  };
+  /** 未来ステージへの引き継ぎ：1年あたり、ステージ1と同じ使い方が何回分続いたとみなすか */
+  carryOver: { stagesPerYear: number };
+}
+
+/** 耐性率の変化（結果画面と、遊んでいる途中の知らせに使う） */
+export interface ResistanceChange {
+  species: string;
+  drug: string;
+  from: number;
+  to: number;
 }
 
 export interface LinkedResistance {
@@ -248,6 +281,7 @@ export type GameEvent =
   | { type: "leaked"; uid: number; damage: number }
   | { type: "expired"; unit: number }
   | { type: "waveCleared"; wave: number }
+  | { type: "resistanceChanged"; cause: "wave" | "gauge"; wave?: number; drugClass?: string; changes: ResistanceChange[] }
   | { type: "end"; outcome: "won" | "lost" };
 
 export interface GameStats {
@@ -258,6 +292,8 @@ export interface GameStats {
   costSpent: number;
   spawned: number;
   leaked: number;
+  /** 出てきた個体のうち、手札のどの薬にも耐性だったもの（SPEC.md 9.1 の比べる数値） */
+  panResistant: number;
 }
 
 export interface SpawnPlan {

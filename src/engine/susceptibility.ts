@@ -62,18 +62,65 @@ export function resistanceTableFor(data: GameData, region: string): ResistanceTa
   return applyLinkageFloor(data, table);
 }
 
+/** 菌ごとの連動の木。薬 → その薬に耐性の個体を必ず耐性にさせる薬（親）と、親が先に来る薬の順 */
+export interface LinkPlan {
+  parent: Map<string, string>;
+  order: string[];
+}
+
+const linkPlanCache = new WeakMap<GameData, Map<string, LinkPlan>>();
+
+/**
+ * rules.linkedResistance を菌ごとの木にする。例（腸内細菌目）：MEPM → CTRX → ABPC。
+ * 1つの薬の親は1つだけ（2つあると全体の耐性率を保てないので、読み込み時に止める）。
+ */
+export function linkPlanFor(data: GameData, speciesId: string): LinkPlan {
+  let cache = linkPlanCache.get(data);
+  if (!cache) {
+    cache = new Map();
+    linkPlanCache.set(data, cache);
+  }
+  const hit = cache.get(speciesId);
+  if (hit) return hit;
+  const parent = new Map<string, string>();
+  for (const link of data.rules.linkedResistance) {
+    if (!link.bacteria.includes(speciesId)) continue;
+    for (const d of link.alsoResistant) {
+      const prev = parent.get(d);
+      if (prev && prev !== link.trigger) throw new Error(`連動：${speciesId} の ${d} に親が2つある（${prev} と ${link.trigger}）`);
+      parent.set(d, link.trigger);
+    }
+  }
+  const order: string[] = [];
+  const state = new Map<string, "visiting" | "done">();
+  const visit = (d: string) => {
+    const st = state.get(d);
+    if (st === "done") return;
+    if (st === "visiting") throw new Error(`連動：${speciesId} で ${d} が輪になっている`);
+    state.set(d, "visiting");
+    const p = parent.get(d);
+    if (p) visit(p);
+    state.set(d, "done");
+    order.push(d);
+  };
+  for (const d of data.drugs) visit(d.id);
+  const plan = { parent, order };
+  cache.set(speciesId, plan);
+  return plan;
+}
+
 /**
  * 耐性の連動（rules.linkedResistance）と表を矛盾させない。
- * trigger に耐性の個体は alsoResistant にも耐性なので、alsoResistant の耐性率は trigger の耐性率を下回れない。
- * 例：経口第3世代セフェムの耐性率は、CTRX の耐性率以上になる。表を書き換えて返す。
+ * 親に耐性の個体は子にも耐性なので、子の耐性率は親の耐性率を下回れない（木の上から順にかける）。
+ * 例：経口第3世代セフェムの耐性率は CTRX 以上。CTRX・CMZ・TAZ/PIPC の耐性率は MEPM 以上。表を書き換えて返す。
  */
 export function applyLinkageFloor(data: GameData, table: ResistanceTable): ResistanceTable {
-  for (const link of data.rules.linkedResistance) {
-    for (const sp of link.bacteria) {
-      const row = table[sp];
-      if (!row) continue;
-      const rt = row[link.trigger] ?? 0;
-      for (const d of link.alsoResistant) row[d] = Math.max(row[d] ?? 0, rt);
+  for (const [sp, row] of Object.entries(table)) {
+    if (!data.bacteriumById.has(sp)) continue;
+    const { parent, order } = linkPlanFor(data, sp);
+    for (const d of order) {
+      const p = parent.get(d);
+      if (p !== undefined) row[d] = Math.max(row[d] ?? 0, row[p] ?? 0);
     }
   }
   return table;
