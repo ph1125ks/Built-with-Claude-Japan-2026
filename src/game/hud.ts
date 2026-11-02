@@ -1,7 +1,7 @@
 // 遊んでいる最中の DOM：上の帯（膀胱の耐久・医療費・波）、情報の見え方の帯、レーンの選択、手札のカード、知らせ。
 import { canSummon, costPerDose, type GameEvent, type ResistanceChange } from "../engine/index.ts";
 import { LAYOUT, laneTopY } from "./board.ts";
-import { escapeHtml, genericName, intervalShort, modelLabel, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
+import { cardKeys, escapeHtml, genericName, intervalShort, modelLabel, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
 
 export interface HudOptions {
@@ -10,6 +10,10 @@ export interface HudOptions {
   stageLabel: string;
   /** 遊んでいる途中に開けるアンチバイオグラム（開始時の感性率） */
   antibiogram: string;
+  /** 数字キーを割り当てる薬の順（ステージ1と2の手札を合わせたもの）。ステージをまたいで同じ薬に同じ数字を出す */
+  keyOrder: string[];
+  /** 開発用の表示（耐性モデルの名前） */
+  showDev?: boolean;
   onEnd: () => void;
 }
 
@@ -31,6 +35,8 @@ export class Hud {
   private cache = new Map<string, string>();
   private unsub: () => void;
   private keyHandler: (e: KeyboardEvent) => void;
+  /** 数字キー → 薬 */
+  private drugByKey: Map<number, string>;
   private ended = false;
 
   constructor(private opts: HudOptions) {
@@ -41,9 +47,11 @@ export class Hud {
     const region = s.region;
     const lanesCount = data.rules.board.lanes;
     const zoneW = (LAYOUT.x1 - LAYOUT.x0) / 3;
+    const keys = cardKeys(s.stage.hand.map((h) => h.drug), opts.keyOrder);
+    this.drugByKey = new Map([...keys].map(([d, k]) => [k, d]));
 
     const cardHtml = s.stage.hand
-      .map((h, i) => {
+      .map((h) => {
         const d = data.drugById.get(h.drug)!;
         const cls = data.classById.get(d.class)!;
         const sp = spectrumOf(data, region, d.id);
@@ -52,7 +60,7 @@ export class Hud {
         ).join("");
         const gauge = s.model.id === "B" ? `<div class="gauge"><div class="gbar"><i></i></div><span class="glabel"></span></div>` : "";
         return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color}" title="${escapeHtml(d.name)}">
-          <span class="key">${i + 1}</span>
+          <span class="key">${keys.get(d.id)}</span>
           <div class="abbr${d.abbr.length > 5 ? " long" : ""}">${escapeHtml(d.abbr)}</div>
           <div class="gname">${escapeHtml(genericName(d))}</div>
           <div class="tags"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="route ${d.route}">${routeLabel(d)}</span></div>
@@ -68,7 +76,7 @@ export class Hud {
 
     this.root.innerHTML = `
       <div class="hud">
-        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${escapeHtml(modelLabel(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
+        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${opts.showDev ? `${escapeHtml(modelLabel(s.model.id))}・` : ""}耐性化の速さはゲーム用に誇張</small></div>
         <div class="hud-bladder"><span>膀胱の耐久</span><div class="bar"><i></i></div><b class="num"></b></div>
         <div class="hud-budget"><span>医療費 残り</span><b class="budget"></b><small>/ ${yen(s.stage.budget)}</small></div>
         <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">アンチバイオグラム</button><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>
@@ -134,13 +142,13 @@ export class Hud {
         else this.select(null);
       }
       else if (/^[1-9]$/.test(e.key)) {
-        const h = this.session.state.stage.hand[Number(e.key) - 1];
-        if (h) this.select(h.drug);
+        const drug = this.drugByKey.get(Number(e.key));
+        if (drug) this.select(drug);
       }
     };
     window.addEventListener("keydown", this.keyHandler);
     this.unsub = this.session.onEvents((events) => this.handle(events));
-    this.message("① 下のカードを選ぶ（数字キーでも可）→ ② レーンをクリックして召喚。スペースで一時停止", "hint", 0);
+    this.message("① 下のカードを選ぶ（カード右上の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止", "hint", 0);
     this.frame();
   }
 
@@ -190,6 +198,15 @@ export class Hud {
       return;
     }
     this.session.summon(this.selected, lane);
+    // 一時停止中の召喚は、再開した瞬間に行われる（予約）
+    if (this.session.paused) this.message(`予約：${this.session.state.data.drugById.get(this.selected)?.abbr} をレーン${lane + 1}に。再開すると召喚します`, "hint", 0);
+  }
+
+  /** 最初のステージは止めた状態で始める（試遊の指摘：操作を知る前に菌が来る） */
+  pauseAtStart(): void {
+    if (this.session.paused) return;
+    this.togglePause();
+    this.message("準備ができたら、スペースか「再開」で始まります。止めている間もカードを選んでレーンを予約できます", "hint", 0);
   }
 
   private set(key: string, el: HTMLElement, prop: "text" | "width" | "class", value: string): void {
@@ -268,8 +285,8 @@ export class Hud {
       else if (e.type === "resistanceChanged") {
         const head =
           e.cause === "wave"
-            ? `波${(e.wave ?? 0) + 1}が片付いた。使った薬に耐性の菌が残り（選択圧）、耐性率が上がった`
-            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった`;
+            ? `波${(e.wave ?? 0) + 1}が片付いた。使った薬に耐性の菌が残り（選択圧）、耐性率が上がった${this.anyLinked(e.changes) ? "（※は使っていない薬。使った薬に耐性の菌は、この薬にも効きにくい＝耐性の連動）" : ""}`
+            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった${this.anyLinked(e.changes) ? "（※は使っていない薬。同じ系統の薬と、耐性の連動で上がる）" : ""}`;
         const lines = this.topChanges(e.changes);
         if (lines.length) this.message(`${head}：${lines.join("、")}`, "res");
       } else if (e.type === "end" && !this.ended) {
@@ -279,15 +296,28 @@ export class Hud {
     }
   }
 
-  /** 手札の薬について、上がり幅の大きい順に2つ（0.5ポイント未満は出さない） */
-  private topChanges(changes: ResistanceChange[]): string[] {
-    const s = this.session.state;
-    const hand = new Set(s.stage.hand.map((h) => h.drug));
+  /** 上がった組（topChanges と同じもの）に、このステージでまだ使っていない薬があるか */
+  private anyLinked(changes: ResistanceChange[]): boolean {
+    const used = this.session.state.stats.activeTicks;
+    return this.pickChanges(changes).some((c) => !((used[c.drug] ?? 0) > 0));
+  }
+
+  private pickChanges(changes: ResistanceChange[]): ResistanceChange[] {
+    const hand = new Set(this.session.state.stage.hand.map((h) => h.drug));
     return changes
       .filter((c) => hand.has(c.drug) && c.to - c.from >= 0.005)
       .sort((a, b) => b.to - b.from - (a.to - a.from))
-      .slice(0, 2)
-      .map((c) => `${escapeHtml(s.data.bacteriumById.get(c.species)?.name ?? c.species)}の ${escapeHtml(s.data.drugById.get(c.drug)?.abbr ?? c.drug)} 耐性 ${pct(c.from)} → <b>${pct(c.to)}</b>`);
+      .slice(0, 2);
+  }
+
+  /** 手札の薬について、上がり幅の大きい順に2つ（0.5ポイント未満は出さない）。まだ使っていない薬（連動で上がった）には ※ */
+  private topChanges(changes: ResistanceChange[]): string[] {
+    const s = this.session.state;
+    const used = s.stats.activeTicks;
+    return this.pickChanges(changes).map(
+      (c) =>
+        `${escapeHtml(s.data.bacteriumById.get(c.species)?.name ?? c.species)}の ${escapeHtml(s.data.drugById.get(c.drug)?.abbr ?? c.drug)}${(used[c.drug] ?? 0) > 0 ? "" : "※"} 耐性 ${pct(c.from)} → <b>${pct(c.to)}</b>`,
+    );
   }
 
   private messageTimer = 0;

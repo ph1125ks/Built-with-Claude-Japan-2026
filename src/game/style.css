@@ -541,19 +541,27 @@ button {
   color: #5b2ca0;
 }
 
+/* 一時停止中：盤面の菌の札を隠さないよう、レーンの下の知らせの帯に重ねて出す */
 #play.paused::after {
-  content: "一時停止中（スペースで再開）";
+  content: "一時停止中（スペースで再開）。止めたまま札を読み、カードを選んでレーンを予約できます";
   position: absolute;
-  left: 50%;
-  top: 280px;
-  transform: translateX(-50%);
-  font-size: 24px;
+  left: 150px;
+  right: 34px;
+  top: 500px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  font-size: 13px;
   font-weight: bold;
-  color: var(--accent-dark);
-  background: rgba(255, 255, 255, 0.92);
-  padding: 10px 24px;
-  border-radius: 10px;
+  color: #ffffff;
+  background: var(--accent-dark);
+  border-radius: 4px;
   pointer-events: none;
+}
+
+#play.paused .lanes {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: -3px;
 }
 
 /* ---------- 画面（オーバーレイ） ---------- */
@@ -561,6 +569,25 @@ button {
   display: none;
   background: rgba(43, 29, 36, 0.55);
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 長い画面でもボタンが見えるよう、下に固定する（試遊の指摘：1280×720 で「開始」が見えない） */
+.screen > .buttons:last-child {
+  position: sticky;
+  bottom: 0;
+  margin: 22px -40px -28px;
+  padding: 12px 40px 16px;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 16px 16px;
+  z-index: 2;
+}
+
+.buttons button small {
+  display: block;
+  font-size: 11px;
+  font-weight: normal;
 }
 
 #screen.open {
@@ -859,6 +886,22 @@ button {
   background: #fff;
 }
 
+.timeline-note {
+  margin-bottom: 6px;
+}
+
+.timeline thead small {
+  font-weight: normal;
+  color: var(--muted);
+}
+
+.rises-head small {
+  font-weight: normal;
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
 .rises-head {
   margin-top: 22px !important;
 }
@@ -1040,6 +1083,14 @@ button {
   color: #7f1d1d;
 }
 
+.rtable td.down {
+  background: #dcfce7;
+}
+
+.rtable td.down b {
+  color: #166534;
+}
+
 .foot {
   font-size: 12px;
   color: var(--muted);
@@ -1112,6 +1163,27 @@ button {
 .src-cols ul {
   padding-left: 18px;
   margin: 4px 0;
+}
+
+.glossary {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.glossary dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 14px;
+  margin: 4px 0 0;
+}
+
+.glossary dt {
+  font-weight: bold;
+}
+
+.glossary dd {
+  margin: 0;
 }
 
 .sources-screen .notice {

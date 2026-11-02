@@ -65,6 +65,16 @@ function checkCatalog(data: GameData): void {
   if (!Number.isInteger(res.carryOver?.dataYear)) errors.push("resistance.carryOver.dataYear は年（整数）");
   const cap = res.carryOver?.maxLogitPerYear;
   if (!cap || !(cap.observed > 0) || !(cap.exaggeration > 0)) errors.push("resistance.carryOver.maxLogitPerYear は observed と exaggeration（どちらも正の数）");
+  const dec = res.carryOver?.declineWhenUnused;
+  if (!dec || !(dec.maxLogitPerYear > 0)) errors.push("resistance.carryOver.declineWhenUnused.maxLogitPerYear は正の数");
+  else
+    for (const [sp, row] of Object.entries(dec.logitPerYear ?? {})) {
+      if (!data.bacteriumById.has(sp)) errors.push(`declineWhenUnused：菌 ${sp} がない`);
+      for (const [d, v] of Object.entries(row)) {
+        if (!data.drugById.has(d)) errors.push(`declineWhenUnused：薬 ${d} がない`);
+        if (!(v < 0 && -v <= dec.maxLogitPerYear + 1e-12)) errors.push(`declineWhenUnused：${sp} の ${d} は負の数で、大きさは maxLogitPerYear まで`);
+      }
+    }
   const bal = res.balance;
   if (!bal || !(bal.referenceShare > 0 && bal.referenceShare <= 1) || !(bal.exponent >= 0) || !(bal.minFactor > 0) || !(bal.maxFactor >= bal.minFactor) || !(bal.minDays >= 0))
     errors.push("resistance.balance は referenceShare（0〜1）・exponent（0以上）・minFactor ≤ maxFactor・minDays（0以上）");

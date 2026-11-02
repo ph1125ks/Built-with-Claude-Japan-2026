@@ -2,7 +2,7 @@
 import { knowledgeFor, type Bot } from "./bots.ts";
 import { createGame, step, type GameState } from "./game.ts";
 import { observe } from "./observe.ts";
-import { getResistanceModel, type ResistanceModel } from "./resistance.ts";
+import { getResistanceModel, usedDrugsOf, type ResistanceModel } from "./resistance.ts";
 import { stageResult, type StageResult } from "./results.ts";
 import type { GameData, ResistanceTable, ScenarioDef, StageDef } from "./types.ts";
 
@@ -51,7 +51,13 @@ export function runScenario(opts: {
   const model = opts.model ?? getResistanceModel(opts.data.rules.resistance.model);
   const { scenario } = opts;
   const present = runStage({ data: opts.data, stage: scenario.present, region: scenario.region, seed: opts.seed, bot: opts.bot, model });
-  const futureStart = model.carryOver(opts.data, present.result.resistanceStart, present.result.resistanceEnd, scenario.future.yearsLater);
+  const futureStart = model.carryOver(
+    opts.data,
+    present.result.resistanceStart,
+    present.result.resistanceEnd,
+    scenario.future.yearsLater,
+    usedDrugsOf(present.result.activeDays),
+  );
   const future = runStage({
     data: opts.data,
     stage: scenario.future,

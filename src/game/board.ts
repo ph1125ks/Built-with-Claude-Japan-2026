@@ -39,6 +39,10 @@ interface BugView {
   /** 近い位置での札：獲得耐性（赤）と、自然耐性・効かない扱い（紫）。菌の右に出す */
   tagA: Phaser.GameObjects.Text;
   tagB: Phaser.GameObjects.Text;
+  /** 札を出したいか（重なるときは declutter が隠す） */
+  want: { name: boolean; a: boolean; b: boolean };
+  /** 菌の絵の幅 */
+  w: number;
   level: string;
   jitter: number;
   phase: number;
@@ -195,10 +199,41 @@ export class BoardScene extends Phaser.Scene {
       if (v.level !== b.level) this.updateLevel(v, b, s);
       this.drawHp(v, b);
     }
+    this.declutter(s);
     for (const [uid, v] of this.bugs) {
       if (!alive.has(uid) && !v.dying) {
         v.c.destroy();
         this.bugs.delete(uid);
+      }
+    }
+  }
+
+  /**
+   * 同じレーンで札が重なるときは、膀胱に近い菌の札だけを出す。遠い菌の札は、手前の菌が片付くか離れると出る
+   * （試遊の指摘：菌名と耐性の札が重なって読めない）
+   */
+  private declutter(s: PlaySession): void {
+    const byLane = new Map<number, BugView[]>();
+    for (const b of s.state.bacteria) {
+      const v = this.bugs.get(b.uid);
+      if (!v || v.dying || !(v.want.name || v.want.a || v.want.b)) continue;
+      const list = byLane.get(b.lane);
+      if (list) list.push(v);
+      else byLane.set(b.lane, [v]);
+    }
+    for (const list of byLane.values()) {
+      list.sort((p, q) => p.last.x - q.last.x);
+      let right = -Infinity;
+      for (const v of list) {
+        const half = v.w / 2;
+        const nameHalf = v.want.name ? v.name.width / 2 : 0;
+        const show = v.last.x - Math.max(half, nameHalf) > right + 4;
+        v.name.setVisible(show && v.want.name);
+        v.tagA.setVisible(show && v.want.a);
+        v.tagB.setVisible(show && v.want.b);
+        if (!show) continue;
+        const tagW = Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
+        right = v.last.x + Math.max(half, nameHalf, tagW > 0 ? half + 8 + tagW : 0);
       }
     }
   }
@@ -220,7 +255,7 @@ export class BoardScene extends Phaser.Scene {
     tagA.setVisible(false);
     tagB.setVisible(false);
     c.add([body, hp, name, tagA, tagB]);
-    const v: BugView = { uid: b.uid, c, body, hp, name, tagA, tagB, level: "gram", jitter: ((b.uid * 37) % 29) - 14, phase: b.uid, dying: false, last: { x: c.x, y: c.y } };
+    const v: BugView = { uid: b.uid, c, body, hp, name, tagA, tagB, want: { name: false, a: false, b: false }, w, level: "gram", jitter: ((b.uid * 37) % 29) - 14, phase: b.uid, dying: false, last: { x: c.x, y: c.y } };
     this.bugs.set(b.uid, v);
     if (b.level !== "gram") this.updateLevel(v, b, this.session!);
     return v;
@@ -233,6 +268,7 @@ export class BoardScene extends Phaser.Scene {
     if (b.level === "species" || b.level === "susceptibility") {
       drawBug(v.body, def, true);
       v.name.setText(def.name).setVisible(true);
+      v.want.name = true;
     }
     if (b.level === "susceptibility") {
       const hand = s.state.stage.hand.map((h) => h.drug);
@@ -263,6 +299,8 @@ export class BoardScene extends Phaser.Scene {
       }
       v.tagA.setText(a).setVisible(a !== "");
       v.tagB.setText(bText).setVisible(bText !== "");
+      v.want.a = a !== "";
+      v.want.b = bText !== "";
       // 2行のときは上下に並べる
       const two = a !== "" && bText !== "";
       v.tagA.setY(two ? -10 : 0);

@@ -1,9 +1,10 @@
 // ボットでシナリオを何度も動かし、勝率などをまとめる。
-// 使い方：npm run sim -- --scenario data/stages/dev-uti.json --runs 100 --bot all --model none
+// 使い方：npm run sim -- --scenario data/stages/dev-uti.json --runs 100 --bot all --model none [--cost yakka|abstract]
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import {
   appropriateBot,
+  costPerDose,
   broadBot,
   idleBot,
   loadGameData,
@@ -23,6 +24,7 @@ const { values } = parseArgs({
     runs: { type: "string", default: "100" },
     bot: { type: "string", default: "all" },
     model: { type: "string" },
+    cost: { type: "string" },
     seed: { type: "string", default: "1" },
     region: { type: "string" },
     json: { type: "boolean", default: false },
@@ -31,7 +33,11 @@ const { values } = parseArgs({
 
 const base = loadGameData();
 const modelId = (values.model ?? base.rules.resistance.model) as ResistanceModelId;
-const data = loadGameData({ rules: { resistance: { ...base.rules.resistance, model: modelId } } });
+const costMode = (values.cost ?? base.rules.cost.mode) as "yakka" | "abstract";
+if (costMode !== "yakka" && costMode !== "abstract") throw new Error(`--cost は yakka か abstract（${costMode}）`);
+const data = loadGameData({
+  rules: { resistance: { ...base.rules.resistance, model: modelId }, cost: { ...base.rules.cost, mode: costMode } },
+});
 const scenario = JSON.parse(await readFile(values.scenario!, "utf8")) as ScenarioDef;
 if (values.region) scenario.region = values.region;
 const errors = validateScenario(data, scenario);
@@ -58,6 +64,16 @@ interface Summary {
   presentBladder: number;
   futureBladder: number;
   presentCost: number;
+  futureCost: number;
+  /** 使った医療費の最大（予算が効いているかを見る） */
+  presentCostMax: number;
+  futureCostMax: number;
+  /** 薬ごとの召喚回数の平均（いま・未来） */
+  presentSummons: Record<string, number>;
+  futureSummons: Record<string, number>;
+  /** 予算の残りが、手札でいちばん安い1回分に届かなくなった回の割合（予算切れ） */
+  presentBudgetOut: number;
+  futureBudgetOut: number;
   presentUsage: Record<string, number>;
   presentAccess: number;
   /** 未来ステージで、手札のどの薬にも耐性だった個体の割合 */
@@ -67,6 +83,15 @@ interface Summary {
 
 const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / (xs.length || 1);
 const pct = (x: number) => `${(100 * x).toFixed(0)}%`;
+const meanCounts = (rs: Record<string, number>[]) => {
+  const out: Record<string, number> = {};
+  for (const r of rs) for (const [k, v] of Object.entries(r)) out[k] = (out[k] ?? 0) + v / rs.length;
+  return out;
+};
+
+/** 予算の残りで、手札のどれも召喚できない（予算切れ） */
+const budgetOut = (r: StageResult, hand: { drug: string }[]) =>
+  r.budgetStart - r.costSpent + 1e-9 < Math.min(...hand.map((h) => costPerDose(data, h.drug)));
 
 const summaries: Summary[] = [];
 for (const id of botIds) {
@@ -90,6 +115,13 @@ for (const id of botIds) {
     presentBladder: mean(present.map((r) => r.bladderHp / r.bladderMaxHp)),
     futureBladder: mean(future.map((r) => r.bladderHp / r.bladderMaxHp)),
     presentCost: mean(present.map((r) => r.costSpent)),
+    futureCost: mean(future.map((r) => r.costSpent)),
+    presentCostMax: Math.max(...present.map((r) => r.costSpent)),
+    futureCostMax: Math.max(...future.map((r) => r.costSpent)),
+    presentSummons: meanCounts(present.map((r) => r.summons)),
+    futureSummons: meanCounts(future.map((r) => r.summons)),
+    presentBudgetOut: mean(present.map((r) => (budgetOut(r, scenario.present.hand) ? 1 : 0))),
+    futureBudgetOut: mean(future.map((r) => (budgetOut(r, scenario.future.hand) ? 1 : 0))),
     presentUsage: usage,
     presentAccess: mean(present.map((r) => r.usageByAware.Access)),
     futurePanResistant: mean(future.map((r) => r.panResistantFraction)),
@@ -98,17 +130,32 @@ for (const id of botIds) {
 }
 
 if (values.json) {
-  console.log(JSON.stringify({ scenario: scenario.id, region: scenario.region, model: modelId, runs, summaries }, null, 2));
+  console.log(JSON.stringify({ scenario: scenario.id, region: scenario.region, model: modelId, cost: costMode, runs, seed: seed0, summaries }, null, 2));
 } else {
-  console.log(`シナリオ ${scenario.id}（${scenario.region}）／耐性モデル ${modelId}／各 ${runs} 回`);
-  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\tAccess割合\t未来の全耐性\t1回(ms)\tいまの系統別使用割合");
+  console.log(`シナリオ ${scenario.id}（${scenario.region}）／耐性モデル ${modelId}／医療費 ${costMode}／各 ${runs} 回（種 ${seed0}〜${seed0 + runs - 1}）`);
+  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\t未来医療費\t医療費の最大（いま/未来）\tいま予算切れ\t未来予算切れ\tAccess割合\t未来の全耐性\t1回(ms)\tいまの系統別使用割合");
   for (const s of summaries) {
     const usage = Object.entries(s.presentUsage)
       .sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `${data.classById.get(k)?.name ?? k} ${pct(v)}`)
       .join("、");
     console.log(
-      [s.bot, pct(s.presentWin), pct(s.futureWin), pct(s.presentBladder), pct(s.futureBladder), s.presentCost.toFixed(0), pct(s.presentAccess), pct(s.futurePanResistant), s.msPerRun.toFixed(1), usage].join("\t"),
+      [
+        s.bot,
+        pct(s.presentWin),
+        pct(s.futureWin),
+        pct(s.presentBladder),
+        pct(s.futureBladder),
+        s.presentCost.toFixed(0),
+        s.futureCost.toFixed(0),
+        `${s.presentCostMax.toFixed(0)}/${s.futureCostMax.toFixed(0)}`,
+        pct(s.presentBudgetOut),
+        pct(s.futureBudgetOut),
+        pct(s.presentAccess),
+        pct(s.futurePanResistant),
+        s.msPerRun.toFixed(1),
+        usage,
+      ].join("\t"),
     );
   }
 }

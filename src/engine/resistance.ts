@@ -14,9 +14,10 @@ export interface ResistanceModel {
   onWaveCleared(state: GameState, wave: number, resolved: Bacterium[]): void;
   /**
    * ステージ1の開始時と終わりの表から、未来ステージの開始時の表を作る。
-   * 「ステージ1と同じ使い方が未来の年（既定は2050年）まで続いた」とみなし、ステージ1での変化をモデルの伸び方のまま先へ延ばす（上限つき）
+   * 「ステージ1と同じ使い方が未来の年（既定は2050年）まで続いた」とみなし、ステージ1での変化をモデルの伸び方のまま先へ延ばす（上限つき）。
+   * used：ステージ1で使った薬。渡すと、使わなかった薬は実測で下がっていた組に限って下げる（carryOver.declineWhenUnused）
    */
-  carryOver(data: GameData, start: ResistanceTable, end: ResistanceTable, yearsLater: number): ResistanceTable;
+  carryOver(data: GameData, start: ResistanceTable, end: ResistanceTable, yearsLater: number, used?: ReadonlySet<string>): ResistanceTable;
 }
 
 const EPS = 1e-6;
@@ -38,8 +39,25 @@ export function futureYear(data: GameData, yearsLater: number): number {
 }
 
 /**
+ * 使わなかった薬の下がり方：ステージ1で一度も使わなかった薬（used にない薬）で、ステージ1の中で上がらなかった組は、
+ * 公的な実測で下がっていた組に限り、その組の傾き（オッズの対数、年あたり）で yearsLater 年分下げる。
+ * 傾きの大きさは maxLogitPerYear（実測でいちばん速く下がった組）まで。実測がない組・上がっていた組は下げない
+ */
+function declined(data: GameData, species: string, drug: string, r: number, yearsLater: number): number {
+  const { logitPerYear, maxLogitPerYear } = data.rules.resistance.carryOver.declineWhenUnused;
+  const slope = logitPerYear[species]?.[drug];
+  if (slope === undefined || !(slope < 0) || r <= 0 || r >= 1) return r;
+  return sigmoid(logit(r) + Math.max(slope, -maxLogitPerYear) * Math.max(0, yearsLater));
+}
+
+/** ステージ1で使った薬（使用日数が 0 より大きい薬） */
+export function usedDrugsOf(activeDays: Record<string, number>): Set<string> {
+  return new Set(Object.entries(activeDays).filter(([, v]) => v > 0).map(([d]) => d));
+}
+
+/**
  * 表の各値を、開始時 → 終わりの変化を「空間」の中でまっすぐ延ばす。
- * 自然耐性など 100% のものと、変化しなかったものはそのまま。
+ * 自然耐性など 100% のものと、変化しなかったものはそのまま（ただし、used を渡したときの使わなかった薬は declined で下げる）。
  * 上限（carryOver.maxLogitPerYear）：1年あたりの上がり方を、オッズの対数で「公的な実測でいちばん速く上がった組の傾き
  * × ゲーム用の誇張の倍率」までに抑える
  */
@@ -52,6 +70,7 @@ function extrapolate(
   forward: (r: number) => number,
   back: (z: number) => number,
   startValue: (r: number) => number = (r) => r,
+  used?: ReadonlySet<string>,
 ): ResistanceTable {
   const m = repeats(data, yearsLater, model);
   const { observed, exaggeration } = data.rules.resistance.carryOver.maxLogitPerYear;
@@ -60,7 +79,11 @@ function extrapolate(
   for (const [sp, row] of Object.entries(out)) {
     for (const [d, r1] of Object.entries(row)) {
       const r0 = start[sp]?.[d] ?? r1;
-      if (r1 >= 1 || r1 <= r0) continue;
+      if (r1 >= 1) continue;
+      if (r1 <= r0) {
+        if (used && !used.has(d)) row[d] = declined(data, sp, d, r1, yearsLater);
+        continue;
+      }
       const z1 = forward(r1);
       const z0 = forward(startValue(r0));
       const extrapolated = Math.min(1, Math.max(r1, back(z1 + m * (z1 - z0))));
@@ -133,9 +156,9 @@ export const selectionModel: ResistanceModel = {
       }
     }
   },
-  carryOver(data, start, end, yearsLater) {
+  carryOver(data, start, end, yearsLater, used) {
     const minRate = data.rules.resistance.A.minRate;
-    return extrapolate(data, "A", start, end, yearsLater, logit, sigmoid, (r) => Math.max(r, minRate));
+    return extrapolate(data, "A", start, end, yearsLater, logit, sigmoid, (r) => Math.max(r, minRate), used);
   },
 };
 
@@ -179,7 +202,7 @@ export const gaugeModel: ResistanceModel = {
     }
   },
   onWaveCleared() {},
-  carryOver(data, start, end, yearsLater) {
+  carryOver(data, start, end, yearsLater, used) {
     // まだ効いている割合（1 − 耐性率）の対数で延ばす（ゲージ1段ごとに同じ割合ずつ減る、の続き）
     return extrapolate(
       data,
@@ -189,6 +212,8 @@ export const gaugeModel: ResistanceModel = {
       yearsLater,
       (r) => Math.log(1 - clamp01(r)),
       (z) => 1 - Math.exp(z),
+      undefined,
+      used,
     );
   },
 };

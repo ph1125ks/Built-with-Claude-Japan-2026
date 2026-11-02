@@ -56,6 +56,16 @@ export function spectrumOf(data: GameData, region: string, drugId: string): Spec
   };
 }
 
+/**
+ * 手札のカードの数字キー。ステージ1と2で同じ薬に同じ数字を割り当てる（ステージ2で対応が変わらないように）。
+ * 2つの手札を合わせた薬（ステージ1の順、続いてステージ2にだけある薬）が9種類を超えるときは、手札の順にする。
+ */
+export function cardKeys(hand: string[], allDrugs: string[]): Map<string, number> {
+  const order = [...new Set(allDrugs)];
+  const useAll = order.length <= 9 && hand.every((d) => order.includes(d));
+  return new Map(hand.map((d, i) => [d, useAll ? order.indexOf(d) + 1 : i + 1]));
+}
+
 export const SPECTRUM_LABELS: { key: keyof Spectrum; label: string }[] = [
   { key: "entero", label: "大腸菌など" },
   { key: "pseudomonas", label: "緑膿菌" },

@@ -141,6 +141,12 @@ export interface ResistanceRules {
      * observed は公的な実測（NAOR 2024 の JANIS の推移）で、いちばん速く上がった組の傾き。exaggeration はゲーム用の誇張の倍率
      */
     maxLogitPerYear: { observed: number; exaggeration: number };
+    /**
+     * 使わなかった薬の下がり方（2026-11-03 作者の判断）。ステージ1で一度も使わなかった薬は、未来の年までに、
+     * 公的な実測（NAOR 2024）で耐性率が下がっていた組に限って、その組の傾きで下がる。ステージ1の中では下げない。
+     * logitPerYear：菌 → 薬 → 1年あたりのオッズの対数の変化（負の数）。maxLogitPerYear：下がり方の上限（正の数。実測でいちばん速く下がった組）
+     */
+    declineWhenUnused: { logitPerYear: Record<string, Record<string, number>>; maxLogitPerYear: number };
   };
 }
 

@@ -1,5 +1,6 @@
 // 画面の流れ：タイトル → 遊び方 → ステージ1 → 結果1 → ステージ2（既定は「2050年」）→ 結果2 → まとめ（SPEC.md 3.1）。
-// URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル）、?seed=<数>、?region=<地域>、
+// URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル）、?cost=yakka|abstract（医療費の方式）、
+// ?seed=<数>、?region=<地域>、
 // ?auto=appropriate|broad|random（ボットに自動で遊ばせる。試遊・確認用）
 import {
   appropriateBot,
@@ -9,6 +10,7 @@ import {
   randomBot,
   resistanceTableFor,
   stageResult,
+  usedDrugsOf,
   validateScenario,
   type Bot,
   type GameData,
@@ -20,7 +22,7 @@ import {
 } from "../engine/index.ts";
 import type { BoardScene } from "./board.ts";
 import { Hud } from "./hud.ts";
-import { antibiogramBlock, biggestRises, briefingScreen, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
+import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, dropsNote, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
@@ -31,6 +33,9 @@ type Phase = "title" | "howto" | "brief1" | "play1" | "result1" | "brief2" | "pl
 export interface AppParams {
   stage: string;
   model?: ResistanceModelId;
+  debug?: boolean;
+  /** 医療費の方式（薬価の段階化／抽象コスト）。比べるとき用 */
+  cost?: "yakka" | "abstract";
   seed: number;
   region?: string;
   auto?: string;
@@ -39,9 +44,12 @@ export interface AppParams {
 export function readParams(search: string): AppParams {
   const q = new URLSearchParams(search);
   const model = q.get("model");
+  const cost = q.get("cost");
   return {
     stage: q.get("stage") ?? DEFAULT_STAGE,
     model: model === "A" || model === "B" || model === "none" ? model : undefined,
+    cost: cost === "yakka" || cost === "abstract" ? cost : undefined,
+    debug: q.has("debug"),
     seed: Number(q.get("seed") ?? 20261104) || 20261104,
     region: q.get("region") ?? undefined,
     auto: q.get("auto") ?? undefined,
@@ -60,6 +68,10 @@ export async function loadScenario(id: string): Promise<ScenarioDef> {
 export class App {
   readonly data: GameData;
   readonly model: ResistanceModel;
+  /** 開発用の表示（耐性モデルの名前など）。?model= か ?debug のときだけ出す */
+  private get showDev(): boolean {
+    return this.params.model !== undefined || this.params.debug === true;
+  }
   private phase: Phase = "title";
   private returnTo: Phase = "title";
   private session: PlaySession | null = null;
@@ -81,7 +93,12 @@ export class App {
   ) {
     const base = loadGameData();
     const modelId = params.model ?? base.rules.resistance.model;
-    this.data = loadGameData({ rules: { resistance: { ...base.rules.resistance, model: modelId } } });
+    this.data = loadGameData({
+      rules: {
+        resistance: { ...base.rules.resistance, model: modelId },
+        cost: { ...base.rules.cost, mode: params.cost ?? base.rules.cost.mode },
+      },
+    });
     this.model = getResistanceModel(modelId);
     if (params.region) this.scenario.region = params.region;
     const errors = validateScenario(this.data, this.scenario);
@@ -156,6 +173,12 @@ export class App {
       case "final":
         this.go("final");
         break;
+      case "retry2":
+        // ステージ1の結果はそのまま、ステージ2だけやり直す（展開は変える）
+        this.future = null;
+        this.attempt++;
+        this.go("brief2");
+        break;
       case "restart":
         this.present = this.future = this.futureStart = null;
         this.attempt++;
@@ -185,7 +208,7 @@ export class App {
     switch (phase) {
       case "title":
         this.stopPlay();
-        this.showScreen(titleScreen(data, scenario, this.model.id));
+        this.showScreen(titleScreen(data, scenario, this.model.id, this.showDev));
         break;
       case "howto":
         this.sawHowto = true;
@@ -207,13 +230,16 @@ export class App {
       case "brief2": {
         this.stopPlay();
         const p = this.present!;
-        this.futureStart = this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, scenario.future.yearsLater);
+        // ステージ1で一度も使わなかった薬は、実測で下がっていた組に限って下げる（rules.json の declineWhenUnused）
+        const usedSet = usedDrugsOf(p.activeDays);
+        this.futureStart = this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, scenario.future.yearsLater, usedSet);
         const rises = biggestRises(data, p.resistanceStart, this.futureStart, scenario.future.hand.map((h) => h.drug));
         const used = Object.values(p.summons).reduce((a, b) => a + b, 0) > 0;
         // 節目の年ごとの耐性率（2030・2040・2050年など）。同じ延ばし方で途中の年を計算する
         const years = milestoneYears(data, scenario.future.yearsLater);
-        const tables = years.map((y) => this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, y));
-        const extra = `${year2050Note(data, scenario.future.yearsLater)}<h3 class="rises-head">ステージ1の開始時から、耐性率が大きく上がったもの</h3>${risesTimeline(data, rises, years, tables, used, p.resistanceEnd)}`;
+        const tables = years.map((y) => this.model.carryOver(data, p.resistanceStart, p.resistanceEnd, y, usedSet));
+        const drops = biggestDrops(data, p.resistanceEnd, this.futureStart, scenario.future.hand.map((h) => h.drug));
+        const extra = `${year2050Note(data, scenario.future.yearsLater)}<h3 class="rises-head">ゲーム内の耐性率の推移（予測ではありません）<small>ステージ1の開始時から大きく上がった組</small></h3>${risesTimeline(data, rises, years, tables, used, p.resistanceEnd)}${dropsNote(data, drops)}`;
         this.showScreen(briefingScreen(data, scenario, "future", extra, this.futureStart));
         break;
       }
@@ -246,6 +272,7 @@ export class App {
       autopilot: this.autopilot(),
     });
     session.speed = this.speed;
+    const firstPlay = phase === "present" && this.attempt === 0 && !this.params.auto;
     this.session = session;
     this.board.setSession(session);
     const label = phase === "present" ? `ステージ1　${stage.title}` : `ステージ2　${stage.title}`;
@@ -254,6 +281,8 @@ export class App {
       session,
       stageLabel: label,
       antibiogram: antibiogramBlock(this.data, this.scenario.region, session.state.startResistance, stage.hand.map((h) => h.drug), phase),
+      keyOrder: [...this.scenario.present.hand, ...this.scenario.future.hand].map((h) => h.drug),
+      showDev: this.showDev,
       onEnd: () => {
         const r = stageResult(session.state);
         if (phase === "present") {
@@ -265,5 +294,6 @@ export class App {
         }
       },
     });
+    if (firstPlay) this.hud.pauseAtStart();
   }
 }

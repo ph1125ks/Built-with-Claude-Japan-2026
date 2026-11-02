@@ -178,6 +178,40 @@ describe("未来ステージへの引き継ぎ", () => {
     expect(row.LVFX_PO).toBeCloseTo(start.ecoli!.LVFX_PO!, 12);
     expect(row.AMK).toBeCloseTo(start.ecoli!.AMK!, 12);
   });
+
+  it("使わなかった薬：実測で下がっていた組に限り、その組の傾きで下がる（実測で上がった組・使った薬は下げない）", () => {
+    const logit = (r: number) => Math.log(r / (1 - r));
+    const { logitPerYear } = data.rules.resistance.carryOver.declineWhenUnused;
+    const end = cloneTable(start);
+    for (const model of [selectionModel, gaugeModel]) {
+      const f = model.carryOver(data, start, end, 25, new Set(["AMK"]));
+      // 緑膿菌の MEPM：使っていない・実測で下がった → 傾き × 25年
+      expect(logit(f.paeruginosa!.MEPM!) - logit(start.paeruginosa!.MEPM!), model.id).toBeCloseTo(25 * logitPerYear.paeruginosa!.MEPM!, 6);
+      // 緑膿菌の AMK：実測で下がったが、使った → 下げない
+      expect(f.paeruginosa!.AMK, model.id).toBeCloseTo(start.paeruginosa!.AMK!, 12);
+      // 大腸菌の LVFX：実測で上がった → 下げない
+      expect(f.ecoli!.LVFX_PO, model.id).toBeCloseTo(start.ecoli!.LVFX_PO!, 12);
+      // 自然耐性はそのまま
+      expect(f.paeruginosa!.CTRX, model.id).toBe(1);
+      // used を渡さなければ下げない（ステージ1の中の表などに使う）
+      expect(model.carryOver(data, start, end, 25).paeruginosa!.MEPM, model.id).toBeCloseTo(start.paeruginosa!.MEPM!, 12);
+    }
+  });
+
+  it("使わなかった薬でも、ステージ1の中で上がった組は下げずに延ばす", () => {
+    const end = cloneTable(start);
+    end.paeruginosa!.LVFX_PO = start.paeruginosa!.LVFX_PO! + 0.05;
+    const f = selectionModel.carryOver(data, start, end, 25, new Set());
+    expect(f.paeruginosa!.LVFX_PO!).toBeGreaterThan(end.paeruginosa!.LVFX_PO!);
+  });
+
+  it("下がり方の上限：どの組も、実測でいちばん速く下がった組より速くは下げない", () => {
+    const { logitPerYear, maxLogitPerYear } = data.rules.resistance.carryOver.declineWhenUnused;
+    const all = Object.values(logitPerYear).flatMap((row) => Object.values(row));
+    expect(all.length).toBeGreaterThan(0);
+    for (const v of all) expect(-v).toBeLessThanOrEqual(maxLogitPerYear + 1e-12);
+    expect(Math.max(...all.map((v) => -v))).toBeCloseTo(maxLogitPerYear, 12);
+  });
 });
 
 describe("CRE の連動（個体の耐性の決め方）", () => {
