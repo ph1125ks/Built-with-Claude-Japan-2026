@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costPerDay, costPerDose, loadGameData, resistanceTableFor, stewardshipRank, susceptibility, yakkaTier } from "../src/engine/index.ts";
+import { costPerDay, costPerDose, loadGameData, resistanceTableFor, spectrumUse, stewardshipRank, susceptibility, yakkaTier } from "../src/engine/index.ts";
 
 const data = loadGameData();
 
@@ -134,5 +134,24 @@ describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合�
     expect(amk.dosing.label).toMatch(/15mg\/kg/);
     expect(amk.price.spec).toBe("200mg1管");
     expect(amk.dosing.unitsPerDay).toBeCloseTo((15 * 60) / 200, 10);
+  });
+});
+
+describe("スペクトラムの指標（ASP ガイダンス2024 表4・表5）", () => {
+  it("ASC スコアはガイダンスの表5の値（表にない薬は null）", () => {
+    const asc = Object.fromEntries(data.drugs.map((d) => [d.id, d.asc]));
+    expect(asc).toEqual({ ABPC: 5, CEZ: 3, CMZ: null, CTRX: 6, CFPM: 8, TAZPIPC: 11, MEPM: 12, AMK: null, LVFX_PO: null, CFDN_PO: null });
+  });
+
+  it("ガイダンスの計算例：TAZ/PIPC 5日 → CEZ 5日 なら DASC 70、DASC/DOT 7", () => {
+    expect(spectrumUse(data, { TAZPIPC: 5, CEZ: 5 })).toEqual({ dot: 10, dasc: 70, dascPerDot: 7, ascMissing: [] });
+  });
+
+  it("ASC のない薬を使ったときは DASC を出さない", () => {
+    const r = spectrumUse(data, { MEPM: 2, LVFX_PO: 1 });
+    expect(r.dot).toBe(3);
+    expect(r.dasc).toBeNull();
+    expect(r.dascPerDot).toBeNull();
+    expect(r.ascMissing).toEqual(["LVFX_PO"]);
   });
 });

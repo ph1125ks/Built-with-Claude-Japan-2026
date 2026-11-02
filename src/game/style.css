@@ -908,8 +908,8 @@ button {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
 }
 
 .stats > div {
@@ -1117,4 +1117,99 @@ button {
 .sources-screen .notice {
   margin: 0 0 14px;
   max-width: none;
+}
+
+/* アンチバイオグラム */
+.abg {
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin: 6px auto 0;
+}
+
+.abg th,
+.abg td {
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.abg thead th {
+  background: #f8eef2;
+}
+
+.abg tbody th {
+  text-align: left;
+  background: #fbf6f8;
+}
+
+.abg td.good {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.abg td.mid {
+  background: #fef9c3;
+  color: #713f12;
+}
+
+.abg td.poor {
+  background: #fee2e2;
+  color: #7f1d1d;
+  font-weight: bold;
+}
+
+.abg td.na {
+  color: #b3a3aa;
+  background: #faf7f8;
+  font-size: 11px;
+}
+
+.abg sup {
+  font-size: 9px;
+}
+
+.abg-details {
+  margin: 14px auto 0;
+  max-width: 900px;
+  text-align: left;
+}
+
+.abg-details summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--accent-dark);
+  text-align: center;
+}
+
+.abg-panel {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  transform: translateX(-50%);
+  width: 920px;
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 12px 18px 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.abg-panel[hidden] {
+  display: none;
+}
+
+.abg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+}
+
+.abg-head button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 12px;
 }

@@ -8,8 +8,14 @@
     "aware は WHO の AWaRe 分類（Access／Watch／Reserve）。ゲームでは、ボットが優先して使う順に当てはめる（rules.json の stewardship）。手引きにこの使い方は書かれておらず、ゲームとしての判断。",
     "review.status が「仮」の項目は、公的な文書でまだ確かめられていない。review.check に、何の文書で確かめるかを書く。",
     "janis は JANIS の表の抗菌薬名。price は薬価リストで代表にする成分名（前方一致）と規格（全角を半角にして空白を除いた形）。",
-    "dosing.unitsPerDay は 1日に使う規格単位の数（1日量の薬価 = 単位あたりの薬価 × unitsPerDay）。"
+    "dosing.unitsPerDay は 1日に使う規格単位の数（1日量の薬価 = 単位あたりの薬価 × unitsPerDay）。",
+    "asc は ASC スコア（antibiotic spectrum coverage。抗菌スペクトラムの広さ）。DASC（ASC × 使用日数）と DASC/DOT（使った薬の平均の広さ）の計算に使う（抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版 表4・表5、p.119〜120）。ガイダンスの表にない薬は null"
   ],
+  "ascPending": {
+    "id": "ASC スコア（CMZ・AMK・LVFX・CFDN）",
+    "note": "ASP ガイダンス2024 表5（p.120）にない4剤。Kakiuchi ら（Clin Infect Dis 2022; 75: 567-76、doi:10.1093/cid/ciab1034）と、日本で承認されている薬の ASC を定めた Maeda・Kakiuchi・Muraki（J Infect Chemother 2025; 31: 102667、doi:10.1016/j.jiac.2025.102667）に値があるとみられるが、本文を確かめられていない。値が入るまで、これらの薬を使ったステージの DASC/DOT は出さない",
+    "review": { "status": "仮", "check": ["CMZ・AMK・LVFX・CFDN の ASC スコア（上の2論文の表で確かめる）"] }
+  },
   "drugs": [
     {
       "id": "ABPC",
@@ -17,6 +23,7 @@
       "name": "アンピシリン",
       "class": "penicillin",
       "aware": "Access",
+      "asc": 5,
       "route": "iv",
       "dosesPerDay": 4,
       "bioavailability": null,
@@ -26,7 +33,8 @@
       "dosing": { "label": "1回2g・6時間毎", "unitsPerDay": 4 },
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表2（p.8）「VRE による血流感染症の単剤治療の例（感染性心内膜炎を除く）」のアンピシリン感性（E. faecalis など）の行：1回2g 4〜6時間毎（血流感染症の用量。海外用量を含む）。6時間毎を採った。国内の電子添文は1日1〜4gを1〜2回（同 p.61）",
-        "aware": "手引き 医科・外来編 表2（p.18）"
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）"
       },
       "review": { "status": "確認済み" }
     },
@@ -36,6 +44,7 @@
       "name": "セファゾリン",
       "class": "ceph1",
       "aware": "Access",
+      "asc": 3,
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
@@ -45,7 +54,8 @@
       "dosing": { "label": "1回2g・8時間毎", "unitsPerDay": 3 },
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表1（p.6）：MSSA 菌血症にセファゾリン 1回2g 8時間毎（海外用量を含む）。国内の電子添文の上限は 5g/日で、重症例への 1回2g 8時間毎は審査上認められる（同 p.61）",
-        "aware": "手引き 医科・外来編 表2（p.18）"
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）"
       },
       "review": { "status": "確認済み" }
     },
@@ -55,6 +65,7 @@
       "name": "セフメタゾール",
       "class": "cephamycin",
       "aware": "Watch",
+      "asc": null,
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
@@ -74,6 +85,7 @@
       "name": "セフトリアキソン",
       "class": "ceph3",
       "aware": "Watch",
+      "asc": 6,
       "route": "iv",
       "dosesPerDay": 1,
       "bioavailability": null,
@@ -83,7 +95,8 @@
       "dosing": { "label": "1回2g・24時間毎", "unitsPerDay": 2 },
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）：1回1〜2g 12〜24時間毎。24時間毎（1日1回）を採った",
-        "aware": "手引き 医科・外来編 表2（p.18）"
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）"
       },
       "review": { "status": "確認済み" }
     },
@@ -93,6 +106,7 @@
       "name": "セフェピム",
       "class": "ceph4",
       "aware": "Watch",
+      "asc": 8,
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
@@ -102,7 +116,8 @@
       "dosing": { "label": "1回1g・8時間毎", "unitsPerDay": 3 },
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）・表7（p.26）：1回1〜2g 8時間毎。国内の電子添文の上限 1日4g（同 p.64）に収まる1回1gを採った",
-        "aware": "手引き 医科・外来編 表2（p.18）"
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）"
       },
       "review": { "status": "確認済み" }
     },
@@ -112,6 +127,7 @@
       "name": "タゾバクタム・ピペラシリン",
       "class": "bl-bli",
       "aware": "Watch",
+      "asc": 11,
       "route": "iv",
       "dosesPerDay": 4,
       "bioavailability": null,
@@ -121,7 +137,8 @@
       "dosing": { "label": "1回4.5g・6時間毎", "unitsPerDay": 4 },
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表4（p.14）・表7（p.26）：1回4.5g 6時間毎（海外用量を含む。国内の電子添文では疾患ごとに用量が違う：同 p.65）",
-        "aware": "手引き 医科・外来編 表2（p.18）"
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）"
       },
       "review": { "status": "確認済み" }
     },
@@ -131,6 +148,7 @@
       "name": "メロペネム",
       "class": "carbapenem",
       "aware": "Watch",
+      "asc": 12,
       "route": "iv",
       "dosesPerDay": 3,
       "bioavailability": null,
@@ -141,6 +159,7 @@
       "sources": {
         "dosing": "手引き 薬剤耐性菌感染症編 表3（p.11）・表4（p.14）：1回1g 8時間毎",
         "aware": "手引き 医科・外来編 表2（p.18）",
+        "asc": "ASP ガイダンス2024 表5（p.120）の ASC score（Kakiuchi ら, Clin Infect Dis 2022; 75: 567-76 の値）",
         "stewardship": "他剤で治療できる場合はカルバペネムを温存する（手引き 薬剤耐性菌感染症編 p.65）"
       },
       "review": { "status": "確認済み" }
@@ -151,6 +170,7 @@
       "name": "アミカシン",
       "class": "aminoglycoside",
       "aware": "Access",
+      "asc": null,
       "route": "iv",
       "dosesPerDay": 1,
       "bioavailability": null,
@@ -170,6 +190,7 @@
       "name": "レボフロキサシン（内服）",
       "class": "fluoroquinolone",
       "aware": "Watch",
+      "asc": null,
       "route": "po",
       "dosesPerDay": 1,
       "bioavailability": 0.98,
@@ -191,6 +212,7 @@
       "name": "セフジニル（内服・第3世代セフェム）",
       "class": "ceph3",
       "aware": "Watch",
+      "asc": null,
       "route": "po",
       "dosesPerDay": 3,
       "bioavailability": 0.25,

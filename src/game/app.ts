@@ -7,6 +7,7 @@ import {
   getResistanceModel,
   loadGameData,
   randomBot,
+  resistanceTableFor,
   stageResult,
   validateScenario,
   type Bot,
@@ -19,7 +20,7 @@ import {
 } from "../engine/index.ts";
 import type { BoardScene } from "./board.ts";
 import { Hud } from "./hud.ts";
-import { biggestRises, briefingScreen, finalScreen, howtoScreen, resultScreen, risesList, sourcesScreen, titleScreen } from "./screens.ts";
+import { antibiogramBlock, biggestRises, briefingScreen, finalScreen, howtoScreen, resultScreen, risesList, sourcesScreen, titleScreen } from "./screens.ts";
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
@@ -195,7 +196,7 @@ export class App {
         break;
       case "brief1":
         this.stopPlay();
-        this.showScreen(briefingScreen(data, scenario, "present"));
+        this.showScreen(briefingScreen(data, scenario, "present", "", resistanceTableFor(data, scenario.region)));
         break;
       case "play1":
         this.startStage("present");
@@ -210,7 +211,7 @@ export class App {
         const rises = biggestRises(data, p.resistanceStart, this.futureStart, scenario.future.hand.map((h) => h.drug));
         const used = Object.values(p.summons).reduce((a, b) => a + b, 0) > 0;
         const extra = `<h3 class="rises-head">ステージ1の開始時から、耐性率が大きく上がったもの</h3>${risesList(data, rises, used)}`;
-        this.showScreen(briefingScreen(data, scenario, "future", extra));
+        this.showScreen(briefingScreen(data, scenario, "future", extra, this.futureStart));
         break;
       }
       case "play2":
@@ -249,6 +250,7 @@ export class App {
       root: this.ui.play,
       session,
       stageLabel: label,
+      antibiogram: antibiogramBlock(this.data, this.scenario.region, session.state.startResistance, stage.hand.map((h) => h.drug), phase),
       onEnd: () => {
         const r = stageResult(session.state);
         if (phase === "present") {

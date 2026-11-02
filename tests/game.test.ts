@@ -212,3 +212,12 @@ describe("ESBL の連動（個体の耐性の決め方）", () => {
     expect(ctrxR.filter((b) => !b.resistant.has("CMZ")).length / ctrxR.length).toBeGreaterThan(0.9);
   });
 });
+
+describe("使用日数（DOT にならった数え方）", () => {
+  it("内服薬も、吸収率によらず投与間隔の長さで数える（CFDN 1回 ＝ 1/3 日）", () => {
+    const s = createGame({ data, stage: oneBug("ecoli", { waves: [{ at: 60, lane: 0, species: "ecoli", count: 1, spacing: 0 }] }), region: "全国", seed: 1 });
+    step(s, [{ type: "summon", drug: "CFDN_PO", lane: 1 }]);
+    for (let i = 0; i < intervalTicks(data, "CFDN_PO") + 5; i++) step(s);
+    expect(s.stats.activeTicks.CFDN_PO).toBe(intervalTicks(data, "CFDN_PO"));
+  });
+});

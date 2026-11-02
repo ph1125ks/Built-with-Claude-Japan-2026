@@ -8,6 +8,8 @@ export interface HudOptions {
   root: HTMLElement;
   session: PlaySession;
   stageLabel: string;
+  /** 遊んでいる途中に開けるアンチバイオグラム（開始時の感性率） */
+  antibiogram: string;
   onEnd: () => void;
 }
 
@@ -69,7 +71,7 @@ export class Hud {
         <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${escapeHtml(modelLabel(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
         <div class="hud-bladder"><span>膀胱の耐久</span><div class="bar"><i></i></div><b class="num"></b></div>
         <div class="hud-budget"><span>医療費 残り</span><b class="budget"></b><small>/ ${yen(s.stage.budget)}</small></div>
-        <div class="hud-ctrl"><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>
+        <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">アンチバイオグラム</button><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>
       </div>
       <div class="zones" style="left:${LAYOUT.x0}px;width:${LAYOUT.x1 - LAYOUT.x0}px">
         <span style="width:${zoneW}px">◀ 近い：効かない薬が分かる<small>（薬剤感受性試験）</small></span>
@@ -82,6 +84,7 @@ export class Hud {
       ).join("")}</div>
       <div class="ticker" style="top:${LAYOUT.msgTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;height:${LAYOUT.msgH}px"></div>
       <div class="hand" style="top:${LAYOUT.cardsTop}px">${cardHtml}</div>
+      <div class="abg-panel" hidden><div class="abg-head"><b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
     `;
 
     const q = <T extends HTMLElement>(sel: string) => this.root.querySelector(sel) as T;
@@ -114,6 +117,8 @@ export class Hud {
       });
     });
     this.els.pause.addEventListener("click", () => this.togglePause());
+    q(".abg-open").addEventListener("click", () => this.toggleAntibiogram());
+    q(".abg-close").addEventListener("click", () => this.toggleAntibiogram());
     this.els.speed.addEventListener("click", () => {
       const next = this.session.speed === 1 ? 2 : this.session.speed === 2 ? 4 : 1;
       this.session.speed = next;
@@ -123,7 +128,11 @@ export class Hud {
       if (e.key === " ") {
         e.preventDefault();
         this.togglePause();
-      } else if (e.key === "Escape") this.select(null);
+      } else if (e.key === "a" || e.key === "A") this.toggleAntibiogram();
+      else if (e.key === "Escape") {
+        if (this.abgOpen) this.toggleAntibiogram();
+        else this.select(null);
+      }
       else if (/^[1-9]$/.test(e.key)) {
         const h = this.session.state.stage.hand[Number(e.key) - 1];
         if (h) this.select(h.drug);
@@ -141,7 +150,26 @@ export class Hud {
     this.root.innerHTML = "";
   }
 
+  private abgOpen = false;
+  private pausedBeforeAbg = false;
+
+  /** アンチバイオグラムを開け閉めする。開いている間は一時停止する */
+  private toggleAntibiogram(): void {
+    const panel = this.root.querySelector<HTMLElement>(".abg-panel")!;
+    this.abgOpen = !this.abgOpen;
+    panel.hidden = !this.abgOpen;
+    if (this.abgOpen) {
+      this.pausedBeforeAbg = this.session.paused;
+      this.session.paused = true;
+    } else {
+      this.session.paused = this.pausedBeforeAbg;
+    }
+    this.els.pause.textContent = this.session.paused ? "再開" : "一時停止";
+  }
+
   private togglePause(): void {
+    // アンチバイオグラムを開いている間は止めたまま（閉じると元に戻る）
+    if (this.abgOpen) return;
     this.session.paused = !this.session.paused;
     this.els.pause.textContent = this.session.paused ? "再開" : "一時停止";
     this.root.classList.toggle("paused", this.session.paused);

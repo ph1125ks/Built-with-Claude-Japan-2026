@@ -74,6 +74,7 @@ export function howtoScreen(): string {
           <div><b>近い</b><span>手札のうち効かない薬（薬剤感受性試験）</span></div>
         </div>
         <p>早く広い薬を使うか、菌名や感受性が分かるまで待って狭い薬に切り替えるか（デエスカレーション）を判断します。</p>
+        <p>菌名が分かる前は、<b>アンチバイオグラム</b>（その地域で、菌ごとに感性（S）だった株の割合。右上のボタンか A キー）を見て、効く見込みの高い薬を選べます。</p>
       </section>
       <section>
         <h3>3. 抗菌薬を召喚する</h3>
@@ -101,7 +102,7 @@ function handChips(data: GameData, stage: StageDef): string {
     .join("");
 }
 
-export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = ""): string {
+export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = "", startTable?: ResistanceTable): string {
   const stage = phase === "present" ? scenario.present : scenario.future;
   const head = phase === "present" ? `ステージ1「${escapeHtml(stage.title)}」` : `ステージ2「${escapeHtml(stage.title)}」`;
   const defaultBrief =
@@ -133,8 +134,44 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
       <div><span>敵の波</span><b>${stage.waves.length}</b></div>
     </div>
     ${handNote}
+    ${startTable ? `<details class="abg-details"><summary>アンチバイオグラム（開始時の感性率）を見る</summary>${antibiogramBlock(data, scenario.region, startTable, stage.hand.map((h) => h.drug), phase)}</details>` : ""}
     <div class="buttons"><button class="primary" data-action="play">開始</button></div>
   </div>`;
+}
+
+/**
+ * アンチバイオグラム（菌 × 手札の薬の感性率）。菌名が分かる前に薬を選ぶ手がかり
+ * （ASP ガイダンス2024 p.130。推奨度 A・エビデンスレベル I。ゲームの表は JANIS の地域の集計で、施設ごとの表ではない）。
+ * withN：公開データの株数を、セルにカーソルを置いたときに出す（ステージ1だけ。ステージ2はゲーム内の値なので出さない）
+ */
+export function antibiogramTable(data: GameData, region: string, table: ResistanceTable, drugs: string[], withN: boolean): string {
+  const head = drugs.map((d) => `<th>${escapeHtml(data.drugById.get(d)!.abbr)}</th>`).join("");
+  const body = data.bacteria
+    .map((b) => {
+      const cells = drugs
+        .map((d) => {
+          const v = susceptibility(data, region, b.id, d);
+          if (v.basis === "intrinsic") return `<td class="na" title="自然耐性">自然耐性</td>`;
+          if (v.basis === "fixed" && (table[b.id]?.[d] ?? 0) >= 1) return `<td class="na" title="${escapeHtml(v.note ?? "")}">効かない扱い</td>`;
+          const s = 1 - (table[b.id]?.[d] ?? 1);
+          const cls = s >= 0.8 ? "good" : s >= 0.5 ? "mid" : "poor";
+          const note = withN ? (v.basis === "proxy" ? `${v.note}（n=${v.n}）` : v.n ? `n=${v.n}` : "") : "";
+          return `<td class="${cls}"${note ? ` title="${escapeHtml(note)}"` : ""}>${pct(s)}${withN && v.basis === "proxy" ? "<sup>*</sup>" : ""}</td>`;
+        })
+        .join("");
+      return `<tr><th>${escapeHtml(b.name)}</th>${cells}</tr>`;
+    })
+    .join("");
+  return `<table class="abg"><thead><tr><th>感性率</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+export function antibiogramBlock(data: GameData, region: string, table: ResistanceTable, drugs: string[], phase: "present" | "future"): string {
+  const caption =
+    phase === "present"
+      ? `${escapeHtml(region)}の感性率（JANIS 2025年報、入院検体・すべての検査材料、CLSI 2012）。地域の集計で、施設ごとや尿だけの値ではありません。ゲームで使う値で、ESBL の連動などで調整したものを含みます。* は代用の値。セルにカーソルを置くと株数が出ます。`
+      : "この病棟の感性率。ステージ1の結果から作ったゲーム内の値です（耐性化の速さは誇張しています）。";
+  return `${antibiogramTable(data, region, table, drugs, phase === "present")}
+    <p class="table-note">${caption} 緑＝80%以上、黄＝50〜80%、赤＝50%未満（色の区切りはゲーム用の目安で、実際の薬の選択には使えません）。アンチバイオグラムは、菌名や感受性が分かる前に「効く見込みの高い薬」を選ぶ手がかりです。</p>`;
 }
 
 /** 開始時 → 終わりで大きく上がった組（手札の薬だけ） */
@@ -204,6 +241,32 @@ function outcomeLine(r: StageResult): string {
   return r.outcome === "won" ? `<span class="won">守り切った</span>` : `<span class="lost">膀胱が破られた</span>`;
 }
 
+/** DASC/DOT（使った薬の平均の ASC＝平均の抗菌スペクトラムの広さ）。ASP ガイダンス2024 表4（p.119） */
+function dascValue(data: GameData, r: StageResult): string {
+  if (r.spectrum.dascPerDot !== null) return r.spectrum.dascPerDot.toFixed(1);
+  return "—";
+}
+
+/** ASC の目盛り（データにある値を小さい順に） */
+function ascScale(data: GameData): string {
+  return data.drugs
+    .filter((d) => d.asc !== null)
+    .sort((a, b) => (a.asc ?? 0) - (b.asc ?? 0))
+    .map((d) => `${escapeHtml(d.abbr)} ${d.asc}`)
+    .join("・");
+}
+
+function dascCard(data: GameData, r: StageResult): string {
+  const missing = r.spectrum.ascMissing.map((d) => escapeHtml(data.drugById.get(d)?.abbr ?? d)).join("・");
+  const small =
+    r.spectrum.dascPerDot !== null
+      ? `使った薬の平均の抗菌スペクトラム（ASC。${ascScale(data)}）`
+      : r.spectrum.dot > 0
+        ? `ASC スコアを確かめていない薬（${missing}）を使ったので、まだ出せません`
+        : "抗菌薬を使っていません";
+  return `<div><span>スペクトラムの広さ（DASC/DOT）</span><b>${dascValue(data, r)}</b><small>${small}</small></div>`;
+}
+
 function topClass(data: GameData, r: StageResult): string {
   const top = Object.entries(r.usageByClass).sort((a, b) => b[1] - a[1])[0];
   return top ? `${escapeHtml(data.classById.get(top[0])?.name ?? top[0])} ${pct(top[1])}` : "—";
@@ -239,10 +302,11 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
       <div><span>医療費の合計</span><b>${yen(r.costSpent)}</b><small>/ ${yen(r.budgetStart)}</small></div>
       <div><span>手札のどの薬も効かない菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた菌のうち</small></div>
       <div><span>偏りの指標（仮）</span><b>${r.evennessProvisional === null ? "—" : r.evennessProvisional.toFixed(2)}</b><small>使った系統の偏り（仮の式。作者の指標に差し替える）</small></div>
+      ${dascCard(data, r)}
     </div>
     <div class="cols">
       <section>
-        <h3>系統別の使用割合<small>（投与していた日数）</small></h3>
+        <h3>系統別の使用割合<small>（使用日数。合計 ${r.spectrum.dot.toFixed(1)} 日。DOT にならった数え方）</small></h3>
         ${bars(data, r.usageByClass)}
         <p class="aware-line">Access 薬の割合 <b>${pct(access)}</b>　<small>WHO の目標は、国全体の抗菌薬の使用量のうち Access 薬を ${pct(target)} 以上にすること（手引き 医科・外来編 p.17）。1ステージの割合とは比べる対象が違います。日本は2023年に23.2%（同 歯科編 p.10）。</small></p>
       </section>
@@ -272,6 +336,8 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
         ${row("医療費の合計", (r) => yen(r.costSpent))}
         ${row("いちばん使った系統", (r) => topClass(data, r))}
         ${row("Access 薬の割合", (r) => pct(r.usageByAware.Access))}
+        ${row("使用日数（DOT にならう）", (r) => `${r.spectrum.dot.toFixed(1)} 日`)}
+        ${row("スペクトラムの広さ（DASC/DOT）", (r) => dascValue(data, r))}
         ${row("手札のどの薬も効かない菌", (r) => pct(r.panResistantFraction))}
         <tr><th>大きく上がった耐性率<br><small>（ステージ1の開始 → ステージ2の終わり）</small></th><td colspan="2">${risesLine(data, present.resistanceStart, future.resistanceEnd, drugs)}</td></tr>
       </tbody>
@@ -298,6 +364,8 @@ export function sourcesScreen(data: GameData): string {
           <dd>厚生労働省「薬価基準収載品目リスト及び後発医薬品に関する情報について（令和8年11月1日適用）」を加工して作成（公共データ利用規約 第1.0版）。</dd>
           <dt>投与間隔・AWaRe 分類・吸収率・耐性の連動（ESBL・CRE）</dt>
           <dd>厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。AMK の用法（1日量を含む）は JAID/JSC 感染症治療ガイド2023。セフジニルの用法は電子添文、LVFX の吸収率はインタビューフォーム（この2つは PMDA 掲載）。</dd>
+          <dt>使用日数・スペクトラムの広さ（DASC/DOT）・アンチバイオグラムの使い方</dt>
+          <dd>8学会合同抗微生物薬適正使用推進検討委員会「抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版」（日本化学療法学会雑誌 73巻2号）。使用日数と DASC は表4（p.119）の考え方にならい、ASC スコアは表5（p.120。Kakiuchi ら, Clin Infect Dis 2022 の値）。表にない CMZ・AMK・LVFX・CFDN の ASC は未設定です。アンチバイオグラムを初期治療の薬選びに使うことは p.130。</dd>
           <dt>自然耐性・値のない組み合わせの扱い</dt>
           <dd>EUCAST「Expected Resistant Phenotypes」v1.2、「Expert Rules v3.2 on Enterococcus spp.」、「Breakpoint tables」v16.1。</dd>
         </dl>
@@ -311,6 +379,8 @@ export function sourcesScreen(data: GameData): string {
           <li>腸内細菌目で MEPM が効かない菌は CRE とみなし（単純化）、このゲームのほかの β-ラクタム系の薬（CTRX・CMZ・TAZ/PIPC、ESBL の連動を通して ABPC・CEZ・経口第3世代セフェム・CFPM）も効かないことにしています。LVFX・AMK と、緑膿菌には連動させません。</li>
           <li>経口第3世代セフェム（セフジニル）は CTX の値で代用し、CTRX より効く値にならないようにしています。腸球菌の TAZ/PIPC は ABPC の値で代用し、腸球菌の MEPM は効かない扱いです。</li>
           <li>カードには用量を出していません。投与間隔を「召喚の待ち時間」にしています。医療費は1日量の薬価を5段階にしたものです。</li>
+          <li>使用日数は、1回の召喚で投与間隔の長さを数え、レーンごとに足しています（DOT にならった数え方で、在院日数で補正していません）。DASC/DOT は推奨度・エビデンスレベルの低い指標（C-III）で、もとの ASC スコアは米国の状況で作られたものです（ガイダンス p.118〜121）。</li>
+          <li>アンチバイオグラムは JANIS の地域の集計で、施設ごとの表ではありません。色の区切りはゲーム用の目安です。</li>
         </ul>
         <h3>誇張していること</h3>
         <ul>

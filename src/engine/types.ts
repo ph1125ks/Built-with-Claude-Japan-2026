@@ -37,6 +37,8 @@ export interface DrugDef {
   urineFactor: number;
   /** WHO の AWaRe 分類。ボットの「狭い順」はこれと rules.stewardship で決める */
   aware: AwareGroup;
+  /** ASC スコア（抗菌スペクトラムの広さ。ASP ガイダンス2024 表5）。表にない薬は null */
+  asc: number | null;
   /** JANIS の表の抗菌薬名。null は代用（rules.susceptibility.proxies）だけで決まる */
   janis: string | null;
   price: { list: "injection" | "oral"; ingredient: string; spec: string };
@@ -286,7 +288,10 @@ export type GameEvent =
 
 export interface GameStats {
   summons: Record<string, number>;
-  /** 薬ごとに、レーンで効いていたティック数の合計（使用量の目安。DOT に近い考え方） */
+  /**
+   * 薬ごとに、投与していたティック数の合計（1回の召喚で投与間隔の長さ。レーンごとに足す）。
+   * DOT にならった数え方で、体内の量や吸収率にはよらない（内服薬も投与間隔の長さで数える）
+   */
   activeTicks: Record<string, number>;
   kills: Record<string, number>;
   costSpent: number;

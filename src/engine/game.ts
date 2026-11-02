@@ -57,6 +57,8 @@ export interface GameState {
   startResistance: ResistanceTable;
   /** 耐性ゲージ（モデル B）：系統 → たまった量 */
   gauge: Record<string, number>;
+  /** 投与中の期間（使用日数を数える。召喚からその薬の投与間隔のあいだ） */
+  dosing: { drug: string; until: number }[];
   stats: GameStats;
   collectEvents: boolean;
   nextUid: number;
@@ -136,6 +138,7 @@ export function createGame(opts: GameOptions): GameState {
     resistance,
     startResistance: cloneTable(resistance),
     gauge: {},
+    dosing: [],
     stats: emptyStats(),
     collectEvents: opts.collectEvents ?? false,
     nextUid: 1,
@@ -200,6 +203,7 @@ function summon(state: GameState, cmd: Command, events: GameEvent[]): void {
   const stock = state.stock.get(drug.id);
   if (stock !== null && stock !== undefined) state.stock.set(drug.id, stock - 1);
   state.readyAt.set(`${drug.id}:${cmd.lane}`, state.tick + interval);
+  state.dosing.push({ drug: drug.id, until: state.tick + interval });
   state.stats.costSpent += cost;
   inc(state.stats.summons, drug.id);
   if (state.collectEvents) events.push({ type: "summon", unit: unit.uid, drug: drug.id, lane: cmd.lane, cost, hp: unit.hp });
@@ -314,12 +318,17 @@ export function step(state: GameState, commands: readonly Command[] = []): GameE
   // 4. 抗菌薬の量が減る（投与間隔の長さで 0 になる）
   const remaining: Unit[] = [];
   for (const u of state.units) {
-    inc(state.stats.activeTicks, u.drug);
     u.hp -= u.decayPerTick;
     if (u.hp > 1e-9) remaining.push(u);
     else if (state.collectEvents) events.push({ type: "expired", unit: u.uid });
   }
   state.units = remaining;
+
+  // 使用日数：投与中の期間を数える（内服薬が吸収率のぶん早く消えても、投与間隔のあいだは投与中）
+  if (state.dosing.length) {
+    for (const d of state.dosing) inc(state.stats.activeTicks, d.drug);
+    state.dosing = state.dosing.filter((d) => d.until > state.tick + 1);
+  }
 
   // 5. 菌が進む。近づくほど情報が分かる。膀胱に着いたら耐久を削る
   const stillAlive: Bacterium[] = [];

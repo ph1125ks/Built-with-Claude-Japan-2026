@@ -2,7 +2,35 @@
 import { drugOf } from "./data.ts";
 import type { GameState } from "./game.ts";
 import { cloneTable } from "./susceptibility.ts";
-import type { AwareGroup, Outcome, ResistanceModelId, ResistanceTable } from "./types.ts";
+import type { AwareGroup, GameData, Outcome, ResistanceModelId, ResistanceTable } from "./types.ts";
+
+/** 抗菌薬の使用日数とスペクトラムの指標（ASP ガイダンス2024 表4、p.119） */
+export interface SpectrumUse {
+  /** DOT：使用日数の合計（レーンごとに数える） */
+  dot: number;
+  /** DASC：ASC スコア × 使用日数 の合計。ASC のない薬を使ったときは null */
+  dasc: number | null;
+  /** DASC/DOT：使った薬の平均の ASC（抗菌スペクトラムの広さの平均）。ASC のない薬を使ったときは null */
+  dascPerDot: number | null;
+  /** 使ったが ASC スコアがない薬 */
+  ascMissing: string[];
+}
+
+/** 薬ごとの使用日数から、DOT・DASC・DASC/DOT を出す */
+export function spectrumUse(data: GameData, daysByDrug: Record<string, number>): SpectrumUse {
+  let dot = 0;
+  let dasc = 0;
+  const ascMissing: string[] = [];
+  for (const [drug, days] of Object.entries(daysByDrug)) {
+    if (days <= 0) continue;
+    dot += days;
+    const asc = drugOf(data, drug).asc;
+    if (asc === null) ascMissing.push(drug);
+    else dasc += asc * days;
+  }
+  const ok = ascMissing.length === 0;
+  return { dot, dasc: ok ? dasc : null, dascPerDot: ok && dot > 0 ? dasc / dot : null, ascMissing };
+}
 
 export interface StageResult {
   outcome: Outcome;
@@ -12,8 +40,10 @@ export interface StageResult {
   budgetStart: number;
   costSpent: number;
   summons: Record<string, number>;
-  /** 薬ごとの、盤面にあった（投与していた）日数の合計（レーンごとに数える。DOT に近い考え方。効いたかどうかは問わない） */
+  /** 薬ごとの使用日数（1回の召喚で投与間隔の長さ。レーンごとに足す。DOT にならった数え方で、吸収率や効いたかどうかは問わない） */
   activeDays: Record<string, number>;
+  /** DOT・DASC・DASC/DOT（ASP ガイダンス2024 表4） */
+  spectrum: SpectrumUse;
   /** 系統ごとの使用割合（activeDays をもとに、合計 1） */
   usageByClass: Record<string, number>;
   /** 偏りの指標（仮）。系統別使用割合の均等度（0〜1、1 が均等）。作者の指定する式に差し替える（SPEC.md 4.10） */
@@ -70,6 +100,7 @@ export function stageResult(state: GameState): StageResult {
     costSpent: state.stats.costSpent,
     summons: { ...state.stats.summons },
     activeDays,
+    spectrum: spectrumUse(data, activeDays),
     usageByClass,
     evennessProvisional: evenness,
     usageByAware,
