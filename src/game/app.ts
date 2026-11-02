@@ -1,5 +1,6 @@
 // 画面の流れ：タイトル → 遊び方 → ステージ1 → 結果1 → ステージ2（既定は「2050年」）→ 結果2 → まとめ（SPEC.md 3.1）。
 // URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル）、?cost=yakka|abstract（医療費の方式）、
+// ?budget=<はじめ>,<1日ごと>[,<上限>]（医療費の増え方）、
 // ?seed=<数>、?region=<地域>、
 // ?auto=appropriate|broad|random（ボットに自動で遊ばせる。試遊・確認用）
 import {
@@ -34,6 +35,8 @@ export interface AppParams {
   stage: string;
   model?: ResistanceModelId;
   debug?: boolean;
+  /** 医療費の上書き：はじめの額・1日ごとに増える額・上限（?budget=100,200 や ?budget=100,200,600）。遊び比べる用 */
+  budget?: { start: number; perDay: number; max?: number };
   /** 医療費の方式（薬価の段階化／抽象コスト）。比べるとき用 */
   cost?: "yakka" | "abstract";
   seed: number;
@@ -50,10 +53,18 @@ export function readParams(search: string): AppParams {
     model: model === "A" || model === "B" || model === "none" ? model : undefined,
     cost: cost === "yakka" || cost === "abstract" ? cost : undefined,
     debug: q.has("debug"),
+    budget: parseBudget(q.get("budget")),
     seed: Number(q.get("seed") ?? 20261104) || 20261104,
     region: q.get("region") ?? undefined,
     auto: q.get("auto") ?? undefined,
   };
+}
+
+function parseBudget(v: string | null): AppParams["budget"] {
+  if (!v) return undefined;
+  const [start, perDay, max] = v.split(",").map(Number);
+  if (!(start! > 0) || !(perDay! >= 0)) return undefined;
+  return { start: start!, perDay: perDay!, max: max! > 0 ? max : undefined };
 }
 
 /** 同梱のステージ（data/stages）か、公開用のステージ（stages/<id>.json）を読む */
@@ -101,6 +112,13 @@ export class App {
     });
     this.model = getResistanceModel(modelId);
     if (params.region) this.scenario.region = params.region;
+    if (params.budget) {
+      for (const st of [this.scenario.present, this.scenario.future]) {
+        st.budget = params.budget.start;
+        st.budgetPerDay = params.budget.perDay;
+        st.budgetMax = params.budget.max;
+      }
+    }
     const errors = validateScenario(this.data, this.scenario);
     if (errors.length) throw new Error(`ステージの誤り：\n${errors.join("\n")}`);
     ui.screen.addEventListener("click", (e) => {

@@ -78,7 +78,7 @@ export function howtoScreen(): string {
       </section>
       <section>
         <h3>3. 抗菌薬を召喚する</h3>
-        <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります。</p>
+        <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。</p>
         <ul>
           <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
           <li><b>内服薬</b>は吸収率のぶん弱い状態で出ます。</li>
@@ -100,6 +100,13 @@ function handChips(data: GameData, stage: StageDef): string {
       return `<span class="chip" style="--cls:${color}" title="${escapeHtml(d.name)}">${escapeHtml(d.abbr)}</span>`;
     })
     .join("");
+}
+
+/** ブリーフィングの医療費の欄。時間で増えるステージは「はじめ ◯、1日ごとに +◯」 */
+function budgetFact(stage: StageDef): string {
+  if (!stage.budgetPerDay) return `<div><span>医療費の予算</span><b>${yen(stage.budget)}</b></div>`;
+  const max = stage.budgetMax ? `（ためられるのは ${yen(stage.budgetMax)} まで）` : "";
+  return `<div><span>医療費</span><b>はじめ ${yen(stage.budget)}</b><small>1日（ゲーム内の24秒）ごとに +${yen(stage.budgetPerDay)}${max}</small></div>`;
 }
 
 export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = "", startTable?: ResistanceTable): string {
@@ -130,7 +137,7 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
     ${extra}
     <div class="facts">
       <div><span>手札</span><div class="chips">${handChips(data, stage)}</div></div>
-      <div><span>医療費の予算</span><b>${yen(stage.budget)}</b></div>
+      ${budgetFact(stage)}
       <div><span>敵の波</span><b>${stage.waves.length}</b></div>
     </div>
     ${handNote}
@@ -382,7 +389,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
     <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので、耐性率は変わっていません"}</p>
     <div class="stats">
       <div><span>膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
-      <div><span>医療費の合計</span><b>${yen(r.costSpent)}</b><small>/ ${yen(r.budgetStart)}</small></div>
+      <div><span>医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
       <div><span>手札のどの薬も効かない菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた菌のうち</small></div>
       <div><span>系統の使い分け（仮の指標）</span><b>${r.evennessProvisional === null ? "—" : r.evennessProvisional.toFixed(2)}</b><small>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ</small></div>
       ${dascCard(data, r)}
@@ -515,6 +522,7 @@ const GLOSSARY: [string, string][] = [
   ["β-ラクタム系", "ペニシリン系・セフェム系（セファロスポリン系と、CMZ などのセファマイシン系）・カルバペネム系など、β-ラクタム環という共通の形を持つ薬。"],
   ["β-ラクタマーゼ阻害薬", "β-ラクタム系を分解する酵素（β-ラクタマーゼ）の働きを抑える薬。TAZ/PIPC のタゾバクタムがこれに当たり、系統名の「βラクタマーゼ阻害薬配合ペニシリン」はこの組み合わせのことです。"],
   ["ESBL", "基質特異性拡張型 β-ラクタマーゼ。ペニシリン系や第1〜3世代のセファロスポリン系を分解する酵素で、これを作る菌にはそれらの薬が効きにくくなります。セファマイシン系（CMZ）とカルバペネム系（MEPM）は分解されません。このゲームでは手引き（薬剤耐性菌感染症編 p.12〜13）にならい、ESBL を作る菌には CFPM も効かないことにしています。"],
+  ["耐性の連動", "このゲームで、ある薬に耐性の菌を、仕組みの近いほかの薬にも耐性にすること。CTRX に耐性の腸内細菌目は ESBL とみなして ABPC・CEZ・経口第3世代セフェム・CFPM にも、MEPM に耐性の腸内細菌目は CRE とみなしてほかの β-ラクタム系にも耐性にします。遊んでいる途中の知らせでは、こうして上がった薬（そのステージでまだ使っていない薬）に ※ を付けます。"],
   ["CRE", "カルバペネム耐性腸内細菌目細菌。カルバペネム系の薬（このゲームでは MEPM）に耐性を示す腸内細菌目の菌です。"],
   ["CTX", "セフォタキシム（第3世代セフェム）。手札にはない薬ですが、経口第3世代セフェムの感性率の代用と、国の報告書の耐性率の推移（CTRX の代わり）に使っています。"],
   ["AWaRe 分類", "WHO の抗菌薬の分類。Access は一般的な感染症の第一・第二選択薬の多くを含み、耐性化しても代わりがある群、Watch は耐性化が心配されるため使う場面を限るべき薬、Reserve はほかの薬が効かないときのために取っておく薬です。"],

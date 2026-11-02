@@ -77,7 +77,7 @@ export function rejectLabel(reason: RejectReason): string {
     case "cooldown":
       return "待ち時間中（＝投与間隔）";
     case "budget":
-      return "医療費が足りない";
+      return "医療費が足りない（時間がたつと増えます）";
     case "laneFull":
       return "このレーンは満杯（3つまで）";
     case "noStock":

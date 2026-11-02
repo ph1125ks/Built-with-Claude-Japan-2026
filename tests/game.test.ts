@@ -59,6 +59,28 @@ describe("召喚", () => {
     expect(canSummon(s, "ABPC", 0)).toBe("notInHand");
   });
 
+  it("医療費は時間とともに増える（budgetPerDay）。上限（budgetMax）を超えない", () => {
+    const day = data.rules.time.secondsPerGameDay * tps;
+    const s = createGame({ data, stage: oneBug("efaecalis", { budget: 50, budgetPerDay: 240, budgetMax: 400, waves: [{ at: 999, lane: 0, species: "efaecalis", count: 1, spacing: 0 }] }), region: "全国", seed: 1 });
+    for (let i = 0; i < day; i++) step(s);
+    expect(s.budget).toBeCloseTo(50 + 240, 6);
+    for (let i = 0; i < day; i++) step(s);
+    expect(s.budget).toBeCloseTo(400, 6);
+    expect(s.stats.budgetIncome).toBeCloseTo(350, 6);
+    // 省略すると増えない（これまでどおり）
+    const t = createGame({ data, stage: oneBug("efaecalis", { waves: [{ at: 999, lane: 0, species: "efaecalis", count: 1, spacing: 0 }] }), region: "全国", seed: 1 });
+    for (let i = 0; i < day; i++) step(t);
+    expect(t.budget).toBe(1000);
+  });
+
+  it("医療費が足りないときは召喚できず、増えるのを待てば召喚できる", () => {
+    const cost = costPerDose(data, "MEPM");
+    const s = createGame({ data, stage: oneBug("ecoli", { budget: cost / 2, budgetPerDay: 240 }), region: "全国", seed: 1 });
+    expect(canSummon(s, "MEPM", 0)).toBe("budget");
+    while (s.budget < cost) step(s);
+    expect(canSummon(s, "MEPM", 0)).toBeNull();
+  });
+
   it("待ち時間は投与間隔：1日1回の CTRX は1日分、1日3回の CMZ は1/3日分", () => {
     const day = data.rules.time.secondsPerGameDay * tps;
     expect(intervalTicks(data, "CTRX")).toBe(day);

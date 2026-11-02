@@ -239,7 +239,15 @@ export interface WaveDef {
 export interface StageDef {
   title: string;
   briefing?: string;
+  /** 医療費：はじめに使える額 */
   budget: number;
+  /**
+   * 医療費：1日（rules.time.secondsPerGameDay 秒）ごとに増える額。ティックごとに少しずつ足す。省略すると 0（はじめの額だけ）。
+   * 2026-11-03 作者の希望：最初から上限が決まっているのではなく、時間とともに増えるように
+   */
+  budgetPerDay?: number;
+  /** 医療費：ためておける上限。省略すると上限なし */
+  budgetMax?: number;
   bladderHp: number;
   hand: HandEntry[];
   waves: WaveDef[];
@@ -319,6 +327,10 @@ export interface GameStats {
   activeTicks: Record<string, number>;
   kills: Record<string, number>;
   costSpent: number;
+  /** 時間とともに増えた医療費の合計（budgetPerDay） */
+  budgetIncome: number;
+  /** 医療費が手札でいちばん安い1回分に届かなかったティック数（予算で召喚が止まっていた長さの目安） */
+  budgetShortTicks: number;
   spawned: number;
   leaked: number;
   /** 出てきた個体のうち、手札のどの薬にも耐性だったもの（SPEC.md 9.1 の比べる数値） */

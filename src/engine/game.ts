@@ -87,7 +87,7 @@ export function revealLevelAt(data: GameData, x: number): RevealLevel {
 const LEVEL_ORDER: Record<RevealLevel, number> = { gram: 0, species: 1, susceptibility: 2 };
 
 function emptyStats(): GameStats {
-  return { summons: {}, activeTicks: {}, kills: {}, costSpent: 0, spawned: 0, leaked: 0, panResistant: 0 };
+  return { summons: {}, activeTicks: {}, kills: {}, costSpent: 0, budgetIncome: 0, budgetShortTicks: 0, spawned: 0, leaked: 0, panResistant: 0 };
 }
 
 function inc(rec: Record<string, number>, key: string, by = 1): void {
@@ -168,6 +168,17 @@ function withModel(
     const changes = diffTables(before, state.resistance);
     if (changes.length) events.push({ type: "resistanceChanged", ...info, changes });
   }
+}
+
+/** 手札でいちばん安い1回分の医療費（ステージの中で変わらないので覚えておく） */
+const cheapestCache = new WeakMap<StageDef, number>();
+function cheapestDose(state: GameState): number {
+  let v = cheapestCache.get(state.stage);
+  if (v === undefined) {
+    v = Math.min(...state.stage.hand.map((h) => costPerDose(state.data, h.drug)));
+    cheapestCache.set(state.stage, v);
+  }
+  return v;
 }
 
 /** 召喚できるか。できないときは理由を返す */
@@ -275,8 +286,21 @@ export function step(state: GameState, commands: readonly Command[] = []): GameE
   const { rules } = data;
   const tps = rules.time.ticksPerSecond;
 
+  // 0. 医療費が時間とともに増える（stage.budgetPerDay。上限は budgetMax）
+  const perDay = state.stage.budgetPerDay ?? 0;
+  if (perDay > 0) {
+    const add = perDay / (tps * rules.time.secondsPerGameDay);
+    const max = state.stage.budgetMax ?? Infinity;
+    const next = Math.min(max, state.budget + add);
+    if (next > state.budget) {
+      state.stats.budgetIncome += next - state.budget;
+      state.budget = next;
+    }
+  }
+
   // 1. 召喚
   for (const c of commands) summon(state, c, events);
+  if (state.budget + 1e-9 < cheapestDose(state)) state.stats.budgetShortTicks++;
 
   // 2. 出現
   while (state.spawnIndex < state.spawnPlan.length) {

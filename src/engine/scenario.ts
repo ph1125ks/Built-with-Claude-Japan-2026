@@ -10,6 +10,8 @@ export function validateStage(data: GameData, stage: StageDef, label = "ステ�
   const lanes = data.rules.board.lanes;
   if (!stage.title) e.push(`${label}：title がない`);
   if (!isNum(stage.budget) || stage.budget <= 0) e.push(`${label}：budget は正の数`);
+  if (stage.budgetPerDay !== undefined && (!isNum(stage.budgetPerDay) || stage.budgetPerDay < 0)) e.push(`${label}：budgetPerDay は0以上の数`);
+  if (stage.budgetMax !== undefined && (!isNum(stage.budgetMax) || stage.budgetMax < stage.budget)) e.push(`${label}：budgetMax は budget 以上の数`);
   if (!isNum(stage.bladderHp) || stage.bladderHp <= 0) e.push(`${label}：bladderHp は正の数`);
   if (!Array.isArray(stage.hand) || stage.hand.length === 0) e.push(`${label}：hand が空`);
   const seen = new Set<string>();

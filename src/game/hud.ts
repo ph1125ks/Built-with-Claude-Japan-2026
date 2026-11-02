@@ -78,7 +78,7 @@ export class Hud {
       <div class="hud">
         <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${opts.showDev ? `${escapeHtml(modelLabel(s.model.id))}・` : ""}耐性化の速さはゲーム用に誇張</small></div>
         <div class="hud-bladder"><span>膀胱の耐久</span><div class="bar"><i></i></div><b class="num"></b></div>
-        <div class="hud-budget"><span>医療費 残り</span><b class="budget"></b><small>/ ${yen(s.stage.budget)}</small></div>
+        <div class="hud-budget"><span>医療費 ${s.stage.budgetPerDay ? "使える額" : "残り"}</span><b class="budget"></b><small>${s.stage.budgetPerDay ? `1日ごとに +${yen(s.stage.budgetPerDay)}` : `/ ${yen(s.stage.budget)}`}</small></div>
         <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">アンチバイオグラム</button><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>
       </div>
       <div class="zones" style="left:${LAYOUT.x0}px;width:${LAYOUT.x1 - LAYOUT.x0}px">
@@ -283,12 +283,14 @@ export class Hud {
     for (const e of events) {
       if (e.type === "rejected" && e.reason !== "ended") this.message(`${data.drugById.get(e.drug)?.abbr}：${rejectLabel(e.reason)}`, "warn");
       else if (e.type === "resistanceChanged") {
+        // 知らせの帯は1行なので短くする（※の詳しい説明は用語の説明「耐性の連動」）
         const head =
           e.cause === "wave"
-            ? `波${(e.wave ?? 0) + 1}が片付いた。使った薬に耐性の菌が残り（選択圧）、耐性率が上がった${this.anyLinked(e.changes) ? "（※はこのステージでまだ使っていない薬。使った薬に耐性の菌は、この薬にも効かないことにしている＝耐性の連動（ESBL・CRE））" : ""}`
-            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった${this.anyLinked(e.changes) ? "（※はこのステージでまだ使っていない薬。ゲージは系統ごとなので同じ系統の薬も上がり、耐性の連動でも上がる）" : ""}`;
+            ? `波${(e.wave ?? 0) + 1}が片付いた（選択圧で耐性率が上がった）`
+            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった`;
+        const note = this.anyLinked(e.changes) ? (e.cause === "wave" ? "　※まだ使っていない薬（耐性の連動）" : "　※まだ使っていない薬（同じ系統・耐性の連動）") : "";
         const lines = this.topChanges(e.changes);
-        if (lines.length) this.message(`${head}：${lines.join("、")}`, "res");
+        if (lines.length) this.message(`${head}：${lines.join("、")}${note}`, "res");
       } else if (e.type === "end" && !this.ended) {
         this.ended = true;
         window.setTimeout(() => this.opts.onEnd(), 1400);

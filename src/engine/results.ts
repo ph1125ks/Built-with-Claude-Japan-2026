@@ -38,6 +38,10 @@ export interface StageResult {
   bladderHp: number;
   bladderMaxHp: number;
   budgetStart: number;
+  /** 時間とともに増えた医療費の合計 */
+  budgetIncome: number;
+  /** 医療費が手札でいちばん安い1回分に届かなかった秒数 */
+  budgetShortSeconds: number;
   costSpent: number;
   summons: Record<string, number>;
   /** 薬ごとの使用日数（1回の召喚で投与間隔の長さ。レーンごとに足す。DOT にならった数え方で、吸収率や効いたかどうかは問わない） */
@@ -97,6 +101,8 @@ export function stageResult(state: GameState): StageResult {
     bladderHp: state.bladderHp,
     bladderMaxHp: state.stage.bladderHp,
     budgetStart: state.stage.budget,
+    budgetIncome: state.stats.budgetIncome,
+    budgetShortSeconds: state.stats.budgetShortTicks / data.rules.time.ticksPerSecond,
     costSpent: state.stats.costSpent,
     summons: { ...state.stats.summons },
     activeDays,

@@ -1,12 +1,13 @@
 {
-  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。",
+  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。医療費は 2026-11-03 に「はじめ 100、1日ごとに +200」（仮。作者の希望で時間とともに増える仕組みにした。DEVLOG の試算）。",
   "id": "dev-uti",
   "title": "開発用：尿路（全国）",
   "region": "全国",
   "target": "開発用",
   "present": {
     "title": "いま",
-    "budget": 2400,
+    "budget": 100,
+    "budgetPerDay": 200,
     "bladderHp": 100,
     "hand": [
       { "drug": "ABPC" },
@@ -31,7 +32,8 @@
   "future": {
     "title": "2050年",
     "yearsLater": 25,
-    "budget": 2400,
+    "budget": 100,
+    "budgetPerDay": 200,
     "bladderHp": 100,
     "hand": [
       { "drug": "ABPC" },
