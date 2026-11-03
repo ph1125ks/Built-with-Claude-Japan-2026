@@ -1036,3 +1036,5 @@ xychart-beta
 - **README**：遊ぶ URL、URL で選べるもの、注意書き（SPEC 7.3）、データの出典と利用条件（政府標準利用規約・公共データ利用規約）、開発のコマンド、フォルダの構成。応募フォームにしかない情報は書いていない
 - **公開の手順** `.github/workflows/pages.yml`：main への push で、`npm ci` → `npm test` → `npm run build` → GitHub Pages に公開。公開データの元ファイル（`data/raw/`）はリポジトリにないので、`data:fetch`・`data:build`・`data:verify` は動かさない。作者がリポジトリの Settings → Pages で Source を「GitHub Actions」にする必要がある
 - **確かめたこと**：`data/raw/` を含まない作業ツリーの複製で、`npm ci`・`npm test`（87件）・`npm run build` が通った。ビルドした版をサブパス（`/Built-with-Claude-Japan-2026/`）で開き（`.claude/launch.json` の `pages-preview`）、画面・既定の B・既定ステージのブリーフィングが出て、コンソールにエラーがないことを確かめた
+- 作者の確認（2026-11-03）：公開用ステージのブリーフィングと振り返りの文は「このままでよい」。コードのライセンスは作者が Claude に任せたので、MIT にした（教育用の公開作品でよく使われ、出典の表示を残せば誰でも再利用でき、無保証の条項がある）。`LICENSE` の著作権者は GitHub のアカウント名。公開データ由来のファイルは、それぞれの利用規約のまま（README に分けて書いた）
+- 文の残り：A/B を「11/5 に一つに決める」としていた箇所（`resistance.ts` の冒頭、SPEC 4.7、data/README）を、両方を選べて既定は B、に直した

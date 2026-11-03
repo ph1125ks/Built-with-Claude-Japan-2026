@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "センタクアツ（仮）：抗菌薬の選び方が未来の耐性菌をつくることを体感する、教育用タワーディフェンス",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -25,7 +25,8 @@
   - 使わない薬が実際のプレイでどれだけ下がるかの表（いちばん大きいのは、適正に使って温存した緑膿菌の MEPM 12% → 3%）
 - **薬を5種類足した**（5回目。作者の選択：CAZ・IPM/CS・CTX・内服 AMPC・内服 CEX）。用法・吸収率・AWaRe・自然耐性・代用・薬価を出典つきで足した（5剤とも review は「仮」）。内服 AMPC は ABPC、内服 CEX は CEZ で代用。腸球菌の IPM/CS は効かない扱い。ESBL の連動に CTX・CAZ・AMPC・CEX を足し（プロテウスの CAZ が 4.8% → 29.1%）。仮ステージは「13枚から毎回5枚が使えない（8枚並ぶ）、MEPM と TAZ/PIPC は候補外、2050年は IPM/CS を足した9枚から2枚」。8枚並ぶときはカードを細くして右端に細い「供給制限」の札。DEVLOG「薬を5種類足す」
 - **作者の判断を4つ反映**（6回目。DEVLOG「作者の判断（5剤の監修）」）：腸球菌の IPM/CS は効かない・TAZ/PIPC は ABPC で代用して効く、のままでよい。**MEPM に耐性の腸内細菌目は IPM/CS にも耐性**（CRE の連動に IPM/CS を足した）。2050年までの上限は「根拠のある実測の値」として、定義どおりゲームの組の最速の **肺炎桿菌の CAZ（年 0.144）** にした。腸球菌に内服 AMPC を選ぶのは正しい。連動を足したので、IPM/CS を2050年の手札に入れても、モデル A の乱用ボットの抜け道にならない（39% → 3%）
-- **公開の準備**（10回目。作者の判断：すぐ公開してよい・仮ステージをもとに既定ステージを作る・既定は B）：`.github/workflows/pages.yml`（main への push で `npm ci` → `npm test` → `npm run build` → Pages。`data/raw/` がないので data:verify は動かさない）、README、公開用の既定ステージ `data/stages/uti-zenkoku.json`（手札・医療費・供給制限・波は dev-uti と同じ。ステージ1のブリーフィングと振り返りの文は Claude の案で、**作者の確認待ち**）、`rules.json` の既定の耐性モデルを B に、同梱ステージの検査テスト（`tests/stages.test.ts`：検査を通る・字数・「患者・症例・病棟」と投与量の数値を含まない）。`data/raw/` のない複製で CI と同じ手順（npm ci・test・build）が通ること、サブパス（/Built-with-Claude-Japan-2026/）で開けることを確かめた（`.claude/launch.json` の `pages-preview`）
+- **コードのライセンス**（10回目）：作者が Claude に任せたので MIT にした（`LICENSE`。著作権者は GitHub のアカウント名）。公開データ由来のファイルは、それぞれの利用規約のまま（README に分けて書いた）
+- **公開の準備**（10回目。作者の判断：すぐ公開してよい・仮ステージをもとに既定ステージを作る・既定は B）：`.github/workflows/pages.yml`（main への push で `npm ci` → `npm test` → `npm run build` → Pages。`data/raw/` がないので data:verify は動かさない）、README、公開用の既定ステージ `data/stages/uti-zenkoku.json`（手札・医療費・供給制限・波は dev-uti と同じ。ステージ1のブリーフィングと振り返りの文は Claude の案を作者が確認した）、`rules.json` の既定の耐性モデルを B に、同梱ステージの検査テスト（`tests/stages.test.ts`：検査を通る・字数・「患者・症例・病棟」と投与量の数値を含まない）。`data/raw/` のない複製で CI と同じ手順（npm ci・test・build）が通ること、サブパス（/Built-with-Claude-Japan-2026/）で開けることを確かめた（`.claude/launch.json` の `pages-preview`）
 - **耐性の進み方をタイトル画面で選べるようにした**（9回目。作者の希望：ゲームとしての質は B、現実に即しているのは A で、どちらも捨てがたい）。学生にも見せる。選んだものはブラウザ（localStorage）に覚え、URL の `?model=` が優先。遊んでいる途中の左上に「耐性 A（薬ごと）」などを出す。用語の説明に「耐性の進み方（A・B）」
 - **モデル A で代用の3組をつないだ**（9回目。作者の判断）：内服 AMPC と ABPC、内服 CEX と CEZ、経口第3世代セフェムと CTX は、代用している菌に限り、どちらにさらされても同じだけ上がる（`resistance.A.sharedSelection`。組が `proxies` と一致しないと読み込みで止まる）。仮ステージの数字はほぼ変わらない（A：適正 100%／100%、乱用 83%／3%、全耐性 20%）。腸球菌の TAZ/PIPC（ABPC で代用）はつないでいない（作者が選んだ3組に入っていない。前からの「腸球菌の ABPC → TAZ/PIPC の連動」の論点）
 - **監修待ち11件を質問形式で確認**（8回目。DEVLOG「監修待ちの確認」）：CRE の連動の範囲、内服 AMPC・CEX の代用、CEX・CTX・IPM/CS の用量、使わなかった薬の下がり方、医療費の方式（薬価方式）・代表の薬価（最小値）を確認済みに。AMK の薬価を 200mg 管 × 4 ＋ 100mg 管 × 1 で数えるようにした（`price.plus`。1日 1,607円 → 1,775円、段階は同じ3）。残りは ASC スコアと A/B
@@ -98,7 +99,6 @@
 | 項目 | 期限 | 備考 |
 |---|---|---|
 | 耐性モデルの係数・録画で使うモデル | 11/5 21:00 | A/B は両方選べて既定は B（決定）。MEPM だけを使う録画の操作では、ステージ1の勝率が A 約7割、B 6%（前のセッションの値） |
-| 公開用ステージの文（ブリーフィング・振り返り） | 11/6 | `data/stages/uti-zenkoku.json` の `present.briefing` と `debrief`（Claude の案）。教えたい内容として適切か |
 | 医療費の増え方 | 11/5 21:00 | 方式・区切り・代表の薬価・AMK の数え方は決まった（2026-11-03）。増え方（仮ステージは はじめ 100、+200/日）だけ試遊で |
 | 既定ステージの作り（①＋③にするか） | 11/6 | 上の試算の表 |
 | CMZ・AMK・LVFX・CFDN・CTX・CAZ・IPM/CS・AMPC・CEX の ASC スコア | 11/5 | DASC/DOT に要る。Kakiuchi ら CID 2022、Maeda・Kakiuchi・Muraki J Infect Chemother 2025 の表の値を作者に確かめてもらう。入るまで「—」（まとめ画面に理由を出す） |
