@@ -230,10 +230,11 @@ describe("CRE の連動（個体の耐性の決め方）", () => {
   const table = s.startResistance.ecoli!;
   const rate = (drug: string) => bugs.filter((b) => b.resistant.has(drug)).length / bugs.length;
 
-  it("MEPM に耐性の個体は、ほかの β-ラクタム系すべてに耐性", () => {
+  it("MEPM に耐性の個体は、ほかの β-ラクタム系すべてに耐性（IPM/CS を含む：作者の決定 2026-11-03）", () => {
     const cre = bugs.filter((b) => b.resistant.has("MEPM"));
     expect(cre.length).toBeGreaterThan(1000);
-    for (const b of cre) for (const d of ["CTRX", "CMZ", "TAZPIPC", "ABPC", "CEZ", "CFDN_PO", "CFPM"]) expect(b.resistant.has(d)).toBe(true);
+    for (const b of cre)
+      for (const d of ["IPMCS", "CTRX", "CMZ", "TAZPIPC", "ABPC", "AMPC_PO", "CEZ", "CEX_PO", "CTX", "CAZ", "CFDN_PO", "CFPM"]) expect(b.resistant.has(d), d).toBe(true);
   });
 
   it("LVFX と AMK は連動させない（MEPM に耐性でも、効く個体が多い）", () => {

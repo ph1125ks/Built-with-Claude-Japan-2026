@@ -144,8 +144,8 @@ describe("公的な文書に沿った設定（抗微生物薬適正使用の手�
         // CRE の連動（MEPM が親）は、開始時の表では MEPM の耐性率が CMZ より低いので値を変えない
         expect(t[sp]!.CMZ!).toBeCloseTo(1 - susceptibility(data, region, sp, "CMZ").p, 10);
         expect(t[sp]!.MEPM!).toBeCloseTo(1 - susceptibility(data, region, sp, "MEPM").p, 10);
-        // IPM/CS は CRE の連動に入れない（IMP-6 型はイミペネムに感性：手引き 薬剤耐性菌感染症編 p.16）
-        expect(t[sp]!.IPMCS!).toBeCloseTo(1 - susceptibility(data, region, sp, "IPMCS").p, 10);
+        // IPM/CS は CRE の連動（MEPM が親）に入れた（作者の決定）。耐性率は MEPM を下回らない（ほとんどの地域では値は変わらない）
+        expect(t[sp]!.IPMCS!).toBeCloseTo(Math.max(1 - susceptibility(data, region, sp, "IPMCS").p, t[sp]!.MEPM!), 10);
       }
     }
   });
