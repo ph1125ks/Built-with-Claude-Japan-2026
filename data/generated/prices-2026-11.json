@@ -242,12 +242,53 @@
   "AMK": {
    "ingredient": "アミカシン",
    "spec": "200mg1管",
-   "unitsPerDay": 4.5,
+   "unitsPerDay": 4,
    "min": 357,
    "max": 686,
    "brand": 610,
-   "yenPerDayMin": 1606.5,
-   "yenPerDayBrand": 2745,
+   "plus": [
+    {
+     "spec": "100mg1管",
+     "units": 1,
+     "min": 347,
+     "max": 453,
+     "brand": 347,
+     "products": [
+      {
+       "product": "アミカシン硫酸塩100mg注射液",
+       "brand": false,
+       "price": 347,
+       "transitional": null
+      },
+      {
+       "product": "アミカシン硫酸塩注射液100mg「日医工」",
+       "brand": true,
+       "price": 347,
+       "transitional": null
+      },
+      {
+       "product": "アミカシン硫酸塩注100mg「NP」",
+       "brand": false,
+       "price": 453,
+       "transitional": null
+      },
+      {
+       "product": "アミカシン硫酸塩注射液100mg「明治」",
+       "brand": false,
+       "price": 453,
+       "transitional": null
+      },
+      {
+       "product": "アミカシン硫酸塩注射液100mg「SW」",
+       "brand": false,
+       "price": 348,
+       "transitional": null
+      }
+     ]
+    }
+   ],
+   "yenPerDayMin": 1775,
+   "yenPerDayBrand": 2787,
    "products": [
     {
      "product": "アミカシン硫酸塩200mg注射液",

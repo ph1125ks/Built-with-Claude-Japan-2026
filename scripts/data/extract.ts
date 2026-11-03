@@ -56,7 +56,11 @@ export type Counts = Record<(typeof COUNT_KEYS)[number], number | null>;
 
 interface CatalogFiles {
   bacteria: { id: string; janis: string }[];
-  drugs: { id: string; dosing: { unitsPerDay: number }; price: { list: "injection" | "oral"; ingredient: string; spec: string } }[];
+  drugs: {
+    id: string;
+    dosing: { unitsPerDay: number };
+    price: { list: "injection" | "oral"; ingredient: string; spec: string; plus?: { spec: string; units: number }[] };
+  }[];
 }
 
 async function readCatalog(): Promise<CatalogFiles> {
@@ -151,25 +155,36 @@ export async function extractPrices() {
   const catalog = await readCatalog();
   const priceRows = { injection: await readPrices(YAKKA_INJECTION), oral: await readPrices(YAKKA_ORAL) };
   const drugs: Record<string, { yenPerDayMin: number; yenPerDayBrand: number | null } & Record<string, unknown>> = {};
-  for (const d of catalog.drugs) {
-    const products = priceRows[d.price.list].filter(
-      (p) => p.ingredient.startsWith(d.price.ingredient.normalize("NFKC")) && p.spec === d.price.spec,
-    );
-    if (products.length === 0) throw new Error(`薬価が見つからない：${d.id}（${d.price.ingredient} ${d.price.spec}）`);
+  const find = (d: CatalogFiles["drugs"][number], spec: string) => {
+    const products = priceRows[d.price.list].filter((p) => p.ingredient.startsWith(d.price.ingredient.normalize("NFKC")) && p.spec === spec);
+    if (products.length === 0) throw new Error(`薬価が見つからない：${d.id}（${d.price.ingredient} ${spec}）`);
     const values = products.map((p) => p.price);
-    const brand = products.find((p) => p.brand)?.price ?? null;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    return { products, min: Math.min(...values), max: Math.max(...values), brand: products.find((p) => p.brand)?.price ?? null };
+  };
+  const listOf = (products: Awaited<ReturnType<typeof readPrices>>) =>
+    products.map(({ product, brand, price, transitional }) => ({ product, brand, price, transitional }));
+  for (const d of catalog.drugs) {
+    const main = find(d, d.price.spec);
+    // 1日量を別の規格と組み合わせる薬（AMK など）。組み合わせの各規格で、最小値・先発品の値を足す
+    const plus = (d.price.plus ?? []).map((x) => ({ ...x, ...find(d, x.spec) }));
+    const sumMin = main.min * d.dosing.unitsPerDay + plus.reduce((s, x) => s + x.min * x.units, 0);
+    const brandParts = [main.brand, ...plus.map((x) => x.brand)];
+    const sumBrand = brandParts.some((b) => b === null)
+      ? null
+      : main.brand! * d.dosing.unitsPerDay + plus.reduce((s, x) => s + x.brand! * x.units, 0);
     drugs[d.id] = {
       ingredient: d.price.ingredient,
       spec: d.price.spec,
       unitsPerDay: d.dosing.unitsPerDay,
-      min,
-      max,
-      brand,
-      yenPerDayMin: Math.round(min * d.dosing.unitsPerDay * 10) / 10,
-      yenPerDayBrand: brand === null ? null : Math.round(brand * d.dosing.unitsPerDay * 10) / 10,
-      products: products.map(({ product, brand, price, transitional }) => ({ product, brand, price, transitional })),
+      min: main.min,
+      max: main.max,
+      brand: main.brand,
+      ...(plus.length
+        ? { plus: plus.map((x) => ({ spec: x.spec, units: x.units, min: x.min, max: x.max, brand: x.brand, products: listOf(x.products) })) }
+        : {}),
+      yenPerDayMin: Math.round(sumMin * 10) / 10,
+      yenPerDayBrand: sumBrand === null ? null : Math.round(sumBrand * 10) / 10,
+      products: listOf(main.products),
     };
   }
   return {

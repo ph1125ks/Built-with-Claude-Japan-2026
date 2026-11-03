@@ -41,7 +41,8 @@ export interface DrugDef {
   asc: number | null;
   /** JANIS の表の抗菌薬名。null は代用（rules.susceptibility.proxies）だけで決まる */
   janis: string | null;
-  price: { list: "injection" | "oral"; ingredient: string; spec: string };
+  /** 薬価リストで代表にする成分名と規格。plus は、1日量を別の規格と組み合わせるとき（例：AMK 900mg ＝ 200mg × 4 ＋ 100mg × 1） */
+  price: { list: "injection" | "oral"; ingredient: string; spec: string; plus?: { spec: string; units: number }[] };
   dosing: { label: string; unitsPerDay: number };
 }
 

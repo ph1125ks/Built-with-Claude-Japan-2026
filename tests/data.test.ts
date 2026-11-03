@@ -155,7 +155,7 @@ describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合�
   const amk = data.drugById.get("AMK")! as unknown as {
     dosesPerDay: number;
     dosing: { label: string; unitsPerDay: number };
-    price: { spec: string };
+    price: { spec: string; plus?: { spec: string; units: number }[] };
     sources: Record<string, string>;
   };
 
@@ -164,10 +164,16 @@ describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合�
     expect(amk.dosesPerDay).toBe(1);
   });
 
-  it("1日量 15mg/kg × 体重60kg ＝ 900mg を、200mg 規格の単位数に直している", () => {
+  it("1日量 15mg/kg × 体重60kg ＝ 900mg を、実際に使う管の組み合わせ（200mg × 4 ＋ 100mg × 1）で数える", () => {
     expect(amk.dosing.label).toMatch(/15mg\/kg/);
     expect(amk.price.spec).toBe("200mg1管");
-    expect(amk.dosing.unitsPerDay).toBeCloseTo((15 * 60) / 200, 10);
+    const mg = (spec: string) => Number(spec.match(/^(\d+)mg/)![1]);
+    const total = mg(amk.price.spec) * amk.dosing.unitsPerDay + (amk.price.plus ?? []).reduce((s, x) => s + mg(x.spec) * x.units, 0);
+    expect(total).toBe(15 * 60);
+    expect(amk.price.plus).toEqual([{ spec: "100mg1管", units: 1 }]);
+    // 1日の薬価 ＝ 200mg 管の最小値 × 4 ＋ 100mg 管の最小値 × 1
+    const p = data.prices.drugs.AMK! as unknown as { min: number; plus: { min: number }[]; yenPerDayMin: number };
+    expect(p.yenPerDayMin).toBeCloseTo(p.min * 4 + p.plus[0]!.min, 6);
   });
 });
 
