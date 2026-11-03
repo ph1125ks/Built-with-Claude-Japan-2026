@@ -272,7 +272,7 @@ export class App {
         break;
       case "howto":
         this.sawHowto = true;
-        this.showScreen(howtoScreen());
+        this.showScreen(howtoScreen(data));
         break;
       case "sources":
         this.showScreen(sourcesScreen(data));

@@ -1,9 +1,10 @@
 // 盤面の描画（Phaser）。エンジンの状態を読んで描くだけで、ゲームのルールは持たない。
 // 操作（カードとレーンの選択）は DOM（hud.ts）で受ける。座標は 1280×720 を基準にし、カメラの拡大で高解像度に描く。
 import Phaser from "phaser";
-import { susceptibility, type Bacterium, type GameEvent } from "../engine/index.ts";
+import { loadGameData, susceptibility, type Bacterium, type GameEvent } from "../engine/index.ts";
 import { bugExtent, drawBug } from "./bugs.ts";
 import type { PlaySession } from "./session.ts";
+import { drugSoldierSvg, soldierKey } from "./soldiers.ts";
 
 export const W = 1280;
 export const H = 720;
@@ -25,8 +26,13 @@ export const LAYOUT = {
 
 export const laneTopY = (lane: number) => LAYOUT.laneTop + lane * LAYOUT.laneH;
 const bugY = (lane: number) => laneTopY(lane) + 86;
-const unitY = (lane: number) => laneTopY(lane) + 26;
-const unitX = (slot: number) => LAYOUT.x0 + 52 + slot * 80;
+const unitY = (lane: number) => laneTopY(lane) + 36;
+const unitX = (slot: number) => LAYOUT.x0 + 48 + slot * 84;
+/** 盤面の兵士の大きさ（px）と、兵士の中心・名札の中心の高さ（unitY から） */
+const SOLDIER = 60;
+const SOLDIER_Y = -4;
+const PLATE_Y = 36;
+const PLATE_W = 60;
 
 const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif';
 
@@ -52,7 +58,12 @@ interface BugView {
 
 interface UnitView {
   uid: number;
+  /** 兵士の絵の入れ物（菌より下の層） */
   c: Phaser.GameObjects.Container;
+  /** 名札の入れ物（菌の名前と耐性の札より上の層） */
+  p: Phaser.GameObjects.Container;
+  /** 兵士の絵（soldiers.ts の SVG をテクスチャにしたもの） */
+  body: Phaser.GameObjects.Image;
   bar: Phaser.GameObjects.Graphics;
   slot: number;
   lane: number;
@@ -81,6 +92,18 @@ export class BoardScene extends Phaser.Scene {
     this.R = data.R;
   }
 
+  /** 抗菌薬の兵士の絵を、カタログの全部の薬についてテクスチャにする（盤面の解像度に合わせて描く） */
+  preload(): void {
+    const data = loadGameData();
+    const urls: string[] = [];
+    for (const d of data.drugs) {
+      const url = URL.createObjectURL(new Blob([drugSoldierSvg(data, d, 64)], { type: "image/svg+xml" }));
+      urls.push(url);
+      this.load.svg(soldierKey(d.id), url, { scale: (SOLDIER * this.R) / 64 });
+    }
+    this.load.once("complete", () => urls.forEach((u) => URL.revokeObjectURL(u)));
+  }
+
   create(): void {
     const cam = this.cameras.main;
     cam.setOrigin(0, 0);
@@ -103,7 +126,10 @@ export class BoardScene extends Phaser.Scene {
     this.unsubscribe?.();
     this.unsubscribe = null;
     for (const v of this.bugs.values()) v.c.destroy();
-    for (const v of this.units.values()) v.c.destroy();
+    for (const v of this.units.values()) {
+      v.c.destroy();
+      v.p.destroy();
+    }
     this.bugs.clear();
     this.units.clear();
     this.fx.removeAll(true);
@@ -324,20 +350,40 @@ export class BoardScene extends Phaser.Scene {
 
   private syncUnits(s: PlaySession, delta: number): void {
     const data = s.state.data;
-    const alive = new Set<number>();
     const full = data.rules.units.fullHp;
+    // 先に消えた兵士を片付ける（同じ描画のあいだに召喚された兵士が、空いた場所に入れるように）
+    const alive = new Set(s.state.units.map((u) => u.uid));
+    for (const [uid, v] of this.units) {
+      if (!alive.has(uid)) {
+        this.tweens.add({
+          targets: [v.c, v.p],
+          alpha: 0,
+          scale: 0.6,
+          duration: 260,
+          onComplete: () => {
+            v.c.destroy();
+            v.p.destroy();
+          },
+        });
+        this.units.delete(uid);
+      }
+    }
     for (const u of s.state.units) {
-      alive.add(u.uid);
       let v = this.units.get(u.uid);
       if (!v) v = this.createUnit(u.uid, u.drug, u.lane);
       const f = Math.max(0, u.hp / full);
+      // 体内の薬の量（名札の下の帯）
       const bar = v.bar;
+      const bw = PLATE_W - 10;
       bar.clear();
-      bar.fillStyle(0x000000, 0.15);
-      bar.fillRoundedRect(-32, 14, 64, 6, 3);
+      bar.fillStyle(0x000000, 0.13);
+      bar.fillRoundedRect(-bw / 2, PLATE_Y + 3.5, bw, 4, 2);
       bar.fillStyle(v.color, 1);
-      bar.fillRoundedRect(-32, 14, Math.max(2, 64 * f), 6, 3);
-      v.c.setAlpha(0.55 + 0.45 * Math.min(1, f * 3));
+      bar.fillRoundedRect(-bw / 2, PLATE_Y + 3.5, Math.max(2, bw * f), 4, 2);
+      const alpha = 0.55 + 0.45 * Math.min(1, f * 3);
+      v.c.setAlpha(alpha);
+      v.p.setAlpha(alpha);
+      v.body.y = SOLDIER_Y + Math.sin(this.time.now / 320 + v.uid) * 0.8;
       // 弾（見た目だけ。効き目はエンジンが毎ティック計算している）
       if (!s.paused) {
         v.fireIn -= delta * s.speed;
@@ -345,12 +391,6 @@ export class BoardScene extends Phaser.Scene {
           v.fireIn = 420 + Math.random() * 160;
           this.fire(v, u.drug, s);
         }
-      }
-    }
-    for (const [uid, v] of this.units) {
-      if (!alive.has(uid)) {
-        this.tweens.add({ targets: v.c, alpha: 0, scale: 0.6, duration: 260, onComplete: () => v.c.destroy() });
-        this.units.delete(uid);
       }
     }
   }
@@ -362,21 +402,27 @@ export class BoardScene extends Phaser.Scene {
     const used = new Set([...this.units.values()].filter((u) => u.lane === lane).map((u) => u.slot));
     let slot = 0;
     while (used.has(slot)) slot++;
+    // 兵士の絵は菌（深さ 10〜11）より下：膀胱の近くで、菌の名前と耐性の札を兵士の絵で隠さない。
+    // 名札だけは菌の札より上：どの薬の兵士かが、菌が近づいても読める（試遊の指摘）
     const c = this.add.container(unitX(slot), unitY(lane));
-    c.setDepth(20);
+    c.setDepth(8);
+    const p = this.add.container(unitX(slot), unitY(lane));
+    p.setDepth(30);
+    const body = this.add.image(0, SOLDIER_Y, soldierKey(drugId)).setDisplaySize(SOLDIER, SOLDIER);
+    // 名札：略号と、下に体内の薬の量の帯
     const g = this.add.graphics();
-    g.fillStyle(0xffffff, 1);
-    g.fillRoundedRect(-34, -16, 68, 30, 9);
-    g.lineStyle(2.5, color, 1);
-    g.strokeRoundedRect(-34, -16, 68, 30, 9);
-    g.fillStyle(color, 1);
-    g.fillRoundedRect(-34, -16, 10, 30, { tl: 9, bl: 9, tr: 0, br: 0 });
-    const label = this.text(5, -1, drug.abbr, drug.abbr.length > 5 ? 11 : 14, "#1f2937", { fontStyle: "bold" }).setOrigin(0.5);
+    g.fillStyle(0xffffff, 0.94);
+    g.fillRoundedRect(-PLATE_W / 2, PLATE_Y - 9, PLATE_W, 19, 6);
+    g.lineStyle(1.6, color, 1);
+    g.strokeRoundedRect(-PLATE_W / 2, PLATE_Y - 9, PLATE_W, 19, 6);
+    const label = this.text(0, PLATE_Y - 2.5, drug.abbr, drug.abbr.length > 5 ? 10.5 : 12, "#1f2937", { fontStyle: "bold" }).setOrigin(0.5);
     const bar = this.add.graphics();
-    c.add([g, label, bar]);
+    c.add(body);
+    p.add([g, label, bar]);
     c.setScale(0.4);
-    this.tweens.add({ targets: c, scale: 1, duration: 260, ease: "Back.Out" });
-    const v: UnitView = { uid, c, bar, slot, lane, fireIn: 120, color };
+    p.setScale(0.4);
+    this.tweens.add({ targets: [c, p], scale: 1, duration: 260, ease: "Back.Out" });
+    const v: UnitView = { uid, c, p, body, bar, slot, lane, fireIn: 120, color };
     this.units.set(uid, v);
     return v;
   }
@@ -388,7 +434,9 @@ export class BoardScene extends Phaser.Scene {
     const tv = this.bugs.get(target.uid);
     if (!tv) return;
     const resisted = target.resistant.has(drugId);
-    const dot = this.add.circle(v.c.x + 30, v.c.y + 4, 4, v.color, 1);
+    // 兵士が少し前に出る
+    this.tweens.add({ targets: v.body, x: 3, duration: 90, yoyo: true, ease: "Quad.Out" });
+    const dot = this.add.circle(v.c.x + 24, v.c.y - 16, 4, v.color, 1);
     dot.setStrokeStyle(1.2, 0xffffff, 1);
     this.fx.add(dot);
     const tx = tv.last.x;
@@ -451,7 +499,8 @@ export class BoardScene extends Phaser.Scene {
         case "summon": {
           const drug = data.drugById.get(e.drug);
           if (drug?.bioavailability != null) {
-            this.float(unitX(2) + 110, unitY(e.lane), `内服：吸収率 ${Math.round(drug.bioavailability * 100)}% のぶん弱く出る`, "#0f766e", 13);
+            // 3つめの兵士の右に出す
+            this.float(unitX(2) + 170, unitY(e.lane), `内服：吸収率 ${Math.round(drug.bioavailability * 100)}% のぶん弱く出る`, "#0f766e", 13);
           }
           break;
         }

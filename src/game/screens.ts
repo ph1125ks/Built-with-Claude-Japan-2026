@@ -3,6 +3,7 @@
 import { futureYear, susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
 import { escapeHtml, genericName, modelLabel, pct, yen } from "./format.ts";
+import { drugSoldierSvg } from "./soldiers.ts";
 
 const css = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 const GN = css(GRAM_COLORS.negative.fill);
@@ -61,7 +62,41 @@ function miniBugs(): string {
   </svg>`;
 }
 
-export function howtoScreen(): string {
+/** 遊び方の「兵士の姿」の見本：系統ごとに代表の薬を1つ（カタログにない薬は飛ばす） */
+const LEGEND: [string, string, string][] = [
+  ["ABPC", "ペニシリン系", "剣だけ"],
+  ["TAZPIPC", "β-ラクタマーゼ阻害薬との合剤", "剣＋盾"],
+  ["CEZ", "第1世代セフェム", "革の胸当て"],
+  ["CMZ", "セファマイシン系", "鉄の胸当て"],
+  ["CTRX", "第3世代セフェム", "全身の鎧"],
+  ["CFPM", "第4世代セフェム", "金の縁・羽飾り"],
+  ["MEPM", "カルバペネム系", "機械兵"],
+  ["AMK", "アミノグリコシド系", "槌"],
+  ["LVFX_PO", "キノロン系", "弓"],
+];
+
+function soldierLegend(data: GameData): string {
+  const figs = LEGEND.filter(([id]) => data.drugById.has(id))
+    .map(([id, cls, look]) => {
+      const d = data.drugById.get(id)!;
+      return `<figure>${drugSoldierSvg(data, d, 58)}<figcaption><b>${escapeHtml(d.abbr)}</b><span>${escapeHtml(cls)}</span><small>${escapeHtml(look)}</small></figcaption></figure>`;
+    })
+    .join("");
+  return `
+      <section class="soldier-legend">
+        <h3>4. 兵士の姿は、抗菌薬の系統</h3>
+        <div class="legend-row">${figs}</div>
+        <ul>
+          <li>剣を持つのは β-ラクタム系です（機械兵のカルバペネム系も剣を持っています）。盾は、菌が作る「β-ラクタム系の薬を壊す酵素（β-ラクタマーゼ）」の多くを抑える薬を配合した印です。</li>
+          <li>セフェム系は、世代が上がるほど鎧が豪華になります（おおまかに、効くグラム陰性菌の種類が増えます）。ただし得意・不得意があります。第3世代はグラム陽性菌への効き目が第1世代より弱く、セファマイシン系の CMZ（第2世代の段）は ESBL に分解されないので、第3・第4世代が効かない菌に効くことがあります。</li>
+          <li>胸や盾の紋章は、緑膿菌にも効く見込みがある薬（カードの「緑膿菌」と同じ、ゲーム内の目安）。足元のカプセルは内服薬で、吸収率が低いほど小さく、早く消えます。</li>
+          <li>同じ系統・同じ世代の薬は同じ姿です（見分けは名札の略号で）。服の色は系統の色で、菌の色（ピンク＝陰性、紫＝陽性）とは関係ありません。</li>
+        </ul>
+        <p class="caution"><b>姿が立派でも、強い薬・良い薬という意味ではありません。</b>鎧はセフェム系の世代の印で、ほかの系統の広さは表していません（鎧のない弓の LVFX や、機械兵のカルバペネム系は、効く範囲がとても広い薬です）。どの薬も使えば耐性菌が選ばれて残りますが、効く範囲の広い薬は、ねらった菌だけでなくほかの多くの菌にも選択圧をかけるので、使いすぎると耐性菌が増えやすくなります。</p>
+      </section>`;
+}
+
+export function howtoScreen(data: GameData): string {
   return `
   <div class="screen howto-screen">
     <h2>遊び方</h2>
@@ -100,6 +135,7 @@ export function howtoScreen(): string {
         <p class="small">カードの <b>Access</b>・<b>Watch</b> は WHO の AWaRe 分類（Access は一般的な感染症の第一・第二選択薬の多くを含む群、Watch は耐性化が心配されるため使う場面を限るべき薬）。「大腸菌など（大腸菌・肺炎桿菌・プロテウス）・緑膿菌・腸球菌」は、この地域のデータで効く見込みがあるかのゲーム内の目安で、実際の薬の選び方の根拠にはなりません。</p>
       </section>
     </div>
+    ${soldierLegend(data)}
     <div class="buttons"><button class="primary" data-action="start">はじめる</button><button data-action="title">タイトルへ</button></div>
   </div>`;
 }
@@ -110,7 +146,7 @@ function handChips(data: GameData, stage: StageDef, short: readonly string[] = [
       const d = data.drugById.get(h.drug)!;
       const color = data.classById.get(d.class)?.color ?? "#64748b";
       const out = short.includes(d.id);
-      return `<span class="chip${out ? " short" : ""}" style="--cls:${color}" title="${escapeHtml(d.name)}${out ? "（供給制限で今回は使えません）" : ""}">${escapeHtml(d.abbr)}</span>`;
+      return `<span class="chip${out ? " short" : ""}" style="--cls:${color}" title="${escapeHtml(d.name)}${out ? "（供給制限で今回は使えません）" : ""}">${drugSoldierSvg(data, d, 26)}${escapeHtml(d.abbr)}</span>`;
     })
     .join("");
 }
@@ -534,7 +570,7 @@ export function sourcesScreen(data: GameData): string {
       <h3>用語の説明</h3>
       <dl>${GLOSSARY.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join("")}</dl>
     </section>
-    <p class="muted">薬の名前は略号と一般名だけを使っています（${escapeHtml(drugNames(data))}）。細菌の絵はすべてコードで描いています。フォントは端末に入っているものを使います。</p>
+    <p class="muted">薬の名前は略号と一般名だけを使っています（${escapeHtml(drugNames(data))}）。細菌と兵士（抗菌薬）の絵はすべてコードで描いています。フォントは端末に入っているものを使います。</p>
     <div class="buttons"><button class="primary" data-action="back">戻る</button></div>
   </div>`;
 }
@@ -561,6 +597,7 @@ const GLOSSARY: [string, string][] = [
   ["DOT（使用日数）", "抗菌薬を使った日数を、薬ごとに数えたもの。このゲームでは、1回の召喚で投与間隔の長さを数えます。"],
   ["ASC スコア・DASC/DOT", "ASC スコアは、薬が効く菌の範囲（スペクトラム）の広さを点数にしたもの（米国の状況で作られた点数）。DASC は ASC スコア × 使用日数の合計で、DASC/DOT はそれを使用日数で割った、使った薬の広さの平均です。"],
   ["効かない扱い", "このゲームで効かないことにしている組み合わせ（腸球菌の MEPM と IPM/CS）。EUCAST の自然耐性の表にはありませんが、MEPM は判定の基準の表で「その菌の治療には適さない」とされ、IPM/CS は公開データに値がなく、EUCAST の基準でも通常量で感性（S）とは判定されません。感受性試験の中間（I）や判定不能も、このゲームでは効かない扱いです。"],
+  ["兵士の姿", "このゲームで、抗菌薬の系統を表した姿。剣は β-ラクタム系（機械兵のカルバペネム系も剣を持つ）、盾は β-ラクタマーゼ阻害薬を配合した TAZ/PIPC、機械兵はカルバペネム系、槌は AMK（アミノグリコシド系）、弓は LVFX（キノロン系）です。鎧はセフェム系の世代だけの印で（第1世代は革の胸当て、セファマイシン系の CMZ は第2世代の段で鉄の胸当て、第3世代は全身の鎧、第4世代は金の縁と羽飾り）、世代が上がるほど、おおまかに効くグラム陰性菌の種類が増えます（第3世代はグラム陽性菌への効き目が第1世代より弱い、CMZ は ESBL に分解されないなど、得意・不得意があります）。ほかの系統の広さは表していません（鎧のない LVFX も、効く範囲がとても広い薬です）。姿が立派でも、強い・良いという意味ではありません。範囲の広い薬を使いすぎると、耐性菌が増えやすくなります。胸や盾の紋章は緑膿菌にも効く見込み（カードの「緑膿菌」と同じ、ゲーム内の目安）、足元のカプセルは内服で、絵の面積は吸収率に合わせています。"],
   ["デエスカレーション", "菌名や感受性が分かったあとに、効く範囲の狭い薬に切り替えたり、要らなくなった薬をやめたりすること（狭域化）。"],
   ["グラム染色・薬剤感受性試験", "グラム染色は、菌を色（陰性はピンク〜赤、陽性は紫）と形で分ける検査。薬剤感受性試験は、どの薬が効くかを調べる検査です。"],
   ["手引き", "厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。"],

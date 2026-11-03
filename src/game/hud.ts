@@ -3,6 +3,7 @@ import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type 
 import { LAYOUT, laneTopY } from "./board.ts";
 import { cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
+import { drugSoldierSvg } from "./soldiers.ts";
 
 export interface HudOptions {
   root: HTMLElement;
@@ -71,10 +72,14 @@ export class Hud {
         ).join("");
         const gauge = s.model.id === "B" ? `<div class="gauge"><div class="gbar"><i></i></div><span class="glabel"></span></div>` : "";
         return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color}" title="${escapeHtml(d.name)}">
-          <span class="key">${keys.get(d.id)}</span>
-          <div class="abbr${d.abbr.length > 5 ? " long" : ""}">${escapeHtml(d.abbr)}</div>
+          <div class="card-head">
+            <div class="portrait">${drugSoldierSvg(data, d, 36)}<span class="key">${keys.get(d.id)}</span></div>
+            <div class="card-head-text">
+              <div class="abbr${d.abbr.length > 5 ? " long" : ""}">${escapeHtml(d.abbr)}</div>
+              <div class="tags"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="route ${d.route}">${routeLabel(d)}</span></div>
+            </div>
+          </div>
           <div class="gname">${escapeHtml(genericName(d))}</div>
-          <div class="tags"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="route ${d.route}">${routeLabel(d)}</span></div>
           <div class="cls">${escapeHtml(cls.name)}</div>
           <div class="meta"><span>医療費 <b>${yen(costPerDose(data, d.id))}</b></span><span>待ち <b>${waitSeconds(data, d).toFixed(0)}秒</b></span></div>
           <div class="interval">${escapeHtml(intervalShort(d))}${d.bioavailability != null ? `・吸収率 <b>${Math.round(d.bioavailability * 100)}%</b>` : ""}</div>
