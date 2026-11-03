@@ -178,21 +178,28 @@ describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合�
 });
 
 describe("スペクトラムの指標（ASP ガイダンス2024 表4・表5）", () => {
-  it("ASC スコアはガイダンスの表5の値（表にない薬は null）", () => {
+  it("ASC スコアは Kakiuchi ら（CID 2022）Table 1 の値、そこにない CMZ は Maeda ら（JIC 2025）Table 1 の値", () => {
     const asc = Object.fromEntries(data.drugs.map((d) => [d.id, d.asc]));
     expect(asc).toEqual({
-      ...{ ABPC: 5, CEZ: 3, CMZ: null, CTRX: 6, CFPM: 8, TAZPIPC: 11, MEPM: 12, AMK: null, LVFX_PO: null, CFDN_PO: null },
-      // 2026-11-03 に足した5剤は表5にない
-      ...{ CTX: null, CAZ: null, IPMCS: null, AMPC_PO: null, CEX_PO: null },
+      // ASP ガイダンス2024 表5 にもある6剤（同じ値）
+      ...{ ABPC: 5, CEZ: 3, CTRX: 6, CFPM: 8, TAZPIPC: 11, MEPM: 12 },
+      // 2026-11-03 に作者が論文を用意して入れた9剤
+      ...{ CMZ: 7, AMK: 8, LVFX_PO: 12, CFDN_PO: 4, CTX: 6, CAZ: 6, IPMCS: 12, AMPC_PO: 5, CEX_PO: 3 },
     });
+    for (const d of data.drugs) {
+      const src = (d as unknown as { sources: Record<string, string> }).sources.asc;
+      expect(src, `${d.id} の ASC の出典`).toMatch(d.id === "CMZ" ? /Maeda/ : /Kakiuchi/);
+    }
   });
 
   it("ガイダンスの計算例：TAZ/PIPC 5日 → CEZ 5日 なら DASC 70、DASC/DOT 7", () => {
     expect(spectrumUse(data, { TAZPIPC: 5, CEZ: 5 })).toEqual({ dot: 10, dasc: 70, dascPerDot: 7, ascMissing: [] });
   });
 
-  it("ASC のない薬を使ったときは DASC を出さない", () => {
-    const r = spectrumUse(data, { MEPM: 2, LVFX_PO: 1 });
+  it("ASC のない薬を使ったときは DASC を出さない（教員モードで ASC のない薬を足したときのため）", () => {
+    const lv = data.drugById.get("LVFX_PO")!;
+    const noAsc = { ...data, drugById: new Map(data.drugById).set("LVFX_PO", { ...lv, asc: null }) };
+    const r = spectrumUse(noAsc, { MEPM: 2, LVFX_PO: 1 });
     expect(r.dot).toBe(3);
     expect(r.dasc).toBeNull();
     expect(r.dascPerDot).toBeNull();

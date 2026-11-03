@@ -500,7 +500,7 @@ export function sourcesScreen(data: GameData): string {
           <dt>投与間隔・AWaRe 分類・吸収率・耐性の連動（ESBL・CRE）</dt>
           <dd>厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。AMK・IPM/CS・CTX の用法（1日量を含む）は JAID/JSC 感染症治療ガイド2023（CTX は尿路感染症の章に成人の用量がないため、市中肺炎の章）。セフジニルの用法は電子添文、LVFX の吸収率はインタビューフォーム（この2つは PMDA 掲載）。内服の AMPC・CEX の用法は、手引き 歯科編の表と、手引きに引かれた電子添文の範囲から選んでいます。</dd>
           <dt>使用日数・スペクトラムの広さ（DASC/DOT）・アンチバイオグラムの使い方</dt>
-          <dd>8学会合同抗微生物薬適正使用推進検討委員会「抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版」（日本化学療法学会雑誌 73巻2号）。使用日数と DASC は表4（p.119）の考え方にならい、ASC スコアは表5（p.120。Kakiuchi ら, Clin Infect Dis 2022 の値）。表にない CMZ・AMK・LVFX・CFDN・CTX・CAZ・IPM/CS・AMPC・CEX の ASC は未設定です。アンチバイオグラムを初期治療の薬選びに使うことは p.130。</dd>
+          <dd>8学会合同抗微生物薬適正使用推進検討委員会「抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版」（日本化学療法学会雑誌 73巻2号）。使用日数と DASC は表4（p.119）の考え方にならい、ASC スコアは表5（p.120。Kakiuchi ら, Clin Infect Dis 2022 の値）。表にない薬の ASC は、元の論文（Kakiuchi ら, Clin Infect Dis 2022 の表1）の値、そこにもない CMZ は、同じ方法で日本の承認薬に定めた Maeda ら（J Infect Chemother 2025 の表1）の値です。アンチバイオグラムを初期治療の薬選びに使うことは p.130。</dd>
           <dt>2050年の注記</dt>
           <dd>Review on Antimicrobial Resistance（委員長 Jim O'Neill）「Antimicrobial Resistance: Tackling a crisis for the health and wealth of nations」2014年12月：2050年の推計と、その前提（RAND Europe：15年で耐性率が100%になる、KPMG：耐性率が今より40%上がる（相対か絶対かは本文に書かれていない）。どちらも確かな予測ではない大まかな見積もり。p.6・p.8）。GBD 2021 Antimicrobial Resistance Collaborators. Lancet 2024; 404: 1199–226：2050年の予測（細菌の薬剤耐性が直接の原因の死亡 191万人、関連した死亡 822万人）。この2つは2050年の注記にだけ使っています。</dd>
           <dt>2050年までの耐性化の速さ</dt>

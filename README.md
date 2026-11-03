@@ -15,7 +15,7 @@ URL で選べるもの：
 | 指定 | 内容 |
 |---|---|
 | `?stage=uti-zenkoku` | ステージ（既定は「尿路（全国）」。開発用の仮ステージは `dev-uti`） |
-| `?model=A` / `?model=B` | 耐性の進み方（A：薬ごと／B：系統ごと）。タイトル画面でも選べる（既定は B） |
+| `?model=A` / `?model=B` | 耐性の進み方（A：薬ごと／B：系統ごと）。タイトル画面でも選べる（既定は A） |
 | `?seed=数` | 乱数の種。同じ種と同じ操作なら、毎回同じ展開になる |
 | `?region=府県名` | 公開データの地域（全国、近畿の7府県） |
 
@@ -57,7 +57,7 @@ npm install
 npm run dev        # 手元で遊ぶ（http://localhost:5173）
 npm test           # エンジンの単体テストとボットの基準テスト
 npm run build      # 公開用のビルド（dist/）
-npm run sim -- --runs 200 --model B   # ボットでシミュレーション
+npm run sim -- --runs 200 --model A   # ボットでシミュレーション
 ```
 
 公開データの取り込み直し（`npm run data:fetch` → `npm run data:build` → `npm run data:verify`）の手順は [.claude/skills/janis-import/SKILL.md](.claude/skills/janis-import/SKILL.md) にあります。元の Excel（`data/raw/`）はリポジトリに入れていません。
