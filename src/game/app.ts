@@ -99,9 +99,10 @@ export async function loadScenario(id: string): Promise<ScenarioDef> {
 export class App {
   data!: GameData;
   model!: ResistanceModel;
-  /** 開発用の表示（耐性モデルの名前など）。?model= か ?debug のときだけ出す */
+  /** 開発用の表示（ステージの名前など）。?debug のときだけ出す */
   private get showDev(): boolean {
-    return this.params.model !== undefined || this.params.debug === true;
+    // 耐性モデルはタイトル画面で選べる学生向けの選択なので、?model= では開発用の表示を出さない（録画で ?model= を固定しても画面がきれいなまま）
+    return this.params.debug === true;
   }
   private phase: Phase = "title";
   private returnTo: Phase = "title";
