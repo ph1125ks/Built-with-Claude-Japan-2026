@@ -1,0 +1,69 @@
+{
+  "_comment": "公開用の既定ステージ（2026-11-03、作者の判断：教員モードを後回しにしたので、調整済みの仮ステージ dev-uti から手で作った。教員モードができたら作り直せる）。手札・医療費・供給制限・波は dev-uti と同じ。ブリーフィング（ステージ1）と振り返りの文は Claude の案で、作者の確認待ち",
+  "id": "uti-zenkoku",
+  "title": "尿路（全国）",
+  "region": "全国",
+  "target": "病院実務実習の薬学生・院内の新人研修・講義",
+  "learningGoal": "グラム染色 → 菌名 → 感受性と分かることが増えるにつれて、狭い薬に切り替える。広域薬に頼ると、2050年に効く薬がなくなる",
+  "debrief": "広く効く薬（カルバペネム系やキノロン系）ばかり使うと、その場は勝てても、2050年には手札のどの薬も効かない菌が増えます。菌の正体が分かるにつれて狭い薬に切り替え、温存すべき薬を取っておくと、2050年でも戦えます。供給制限で狭い薬が使えない回は、ほかの狭い薬を探してみましょう。このゲームは公開データの耐性率から始まりますが、耐性化の速さはゲーム用に大きく誇張しています。実際の薬の選び方は、施設のアンチバイオグラムや国の手引きなどにもとづいて決められます。",
+  "present": {
+    "title": "いま",
+    "briefing": "全国の公開データ（JANIS 2025年報）の耐性率から始まります。遠くの菌はグラム染色の見た目しか分かりません。近づくと菌名が、さらに近づくと効かない薬が分かります。アンチバイオグラムを手がかりに効く見込みの高い薬で守り、正体が分かったら、狭い薬に切り替えられます。",
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      { "drug": "ABPC" },
+      { "drug": "AMPC_PO" },
+      { "drug": "CEZ" },
+      { "drug": "CEX_PO" },
+      { "drug": "CMZ" },
+      { "drug": "CTRX" },
+      { "drug": "CTX" },
+      { "drug": "CAZ" },
+      { "drug": "CFDN_PO" },
+      { "drug": "CFPM" },
+      { "drug": "LVFX_PO" },
+      { "drug": "TAZPIPC" },
+      { "drug": "MEPM" }
+    ],
+    "shortage": { "count": 5, "candidates": ["ABPC", "AMPC_PO", "CEZ", "CEX_PO", "CMZ", "CTRX", "CTX", "CAZ", "CFDN_PO", "CFPM", "LVFX_PO"] },
+    "waves": [
+      { "at": 2, "lane": "random", "species": "auto", "count": 4, "spacing": 2.0 },
+      { "at": 22, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
+      { "at": 45, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 70, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 95, "lane": "random", "species": "auto", "count": 7, "spacing": 1.5 },
+      { "at": 120, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 },
+      { "at": 145, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 }
+    ]
+  },
+  "future": {
+    "title": "2050年",
+    "yearsLater": 25,
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      { "drug": "ABPC" },
+      { "drug": "AMPC_PO" },
+      { "drug": "CMZ" },
+      { "drug": "CTRX" },
+      { "drug": "CAZ" },
+      { "drug": "LVFX_PO" },
+      { "drug": "TAZPIPC" },
+      { "drug": "MEPM" },
+      { "drug": "IPMCS" }
+    ],
+    "shortage": { "count": 2 },
+    "waves": [
+      { "at": 2, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
+      { "at": 22, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },
+      { "at": 45, "lane": "random", "species": "auto", "count": 7, "spacing": 1.6 },
+      { "at": 70, "lane": "random", "species": "auto", "count": 7, "spacing": 1.6 },
+      { "at": 95, "lane": "random", "species": "auto", "count": 8, "spacing": 1.5 },
+      { "at": 120, "lane": "random", "species": "auto", "count": 9, "spacing": 1.4 },
+      { "at": 145, "lane": "random", "species": "auto", "count": 9, "spacing": 1.4 }
+    ]
+  }
+}

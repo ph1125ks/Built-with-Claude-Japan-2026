@@ -47,7 +47,8 @@ function storeModel(id: ResistanceModelId): void {
     // 保存できない環境（プライベートブラウズなど）では覚えない
   }
 }
-const DEFAULT_STAGE = "dev-uti";
+/** URL でステージを指定しないときに開くステージ（公開用。開発用の仮ステージは ?stage=dev-uti） */
+const DEFAULT_STAGE = "uti-zenkoku";
 
 type Phase = "title" | "howto" | "brief1" | "play1" | "result1" | "brief2" | "play2" | "result2" | "final" | "sources";
 
