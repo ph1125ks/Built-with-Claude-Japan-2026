@@ -94,12 +94,17 @@ export function rejectLabel(reason: RejectReason): string {
 export function modelLabel(id: ResistanceModelId): string {
   switch (id) {
     case "A":
-      return "耐性モデル A（選択圧の再現）";
+      return "耐性の進み方 A（薬ごと：選択圧の再現）";
     case "B":
-      return "耐性モデル B（耐性ゲージ）";
+      return "耐性の進み方 B（系統ごと：耐性ゲージ）";
     case "none":
       return "耐性化なし（確認用）";
   }
+}
+
+/** 遊んでいる途中に出す短い名前 */
+export function modelShort(id: ResistanceModelId): string {
+  return id === "A" ? "耐性 A（薬ごと）" : id === "B" ? "耐性 B（系統ごと）" : "耐性化なし";
 }
 
 export function escapeHtml(s: string): string {

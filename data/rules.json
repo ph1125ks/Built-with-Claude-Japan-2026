@@ -157,7 +157,13 @@
     "A": {
       "logitPerWave": 0.25,
       "fullExposureSeconds": 2,
-      "minRate": 0.001
+      "minRate": 0.001,
+      "sharedSelection": [
+        { "drugs": ["ABPC", "AMPC_PO"], "bacteria": ["ecoli", "pmirabilis", "efaecalis"] },
+        { "drugs": ["CEZ", "CEX_PO"], "bacteria": ["ecoli", "kpneumoniae", "pmirabilis"] },
+        { "drugs": ["CTX", "CFDN_PO"], "bacteria": ["ecoli", "kpneumoniae", "pmirabilis"] }
+      ],
+      "_sharedSelection": "2026-11-03 作者の判断：モデル A では、公開データで同じ値を使っている組（代用の組：内服 AMPC と ABPC、内服 CEX と CEZ、経口第3世代セフェムと CTX）を、代用している菌に限ってつなぐ。組のどちらにさらされても同じ薬にさらされたとみなし、組の薬を同じだけ上げる。A は使った薬にさらされた菌だけを上げるので、つながないと、同じ耐性を表しているはずの組の片方だけが上がってしまう。モデル B は系統ごとのゲージなので、もともとつながっている。腸球菌の TAZ/PIPC（ABPC で代用）は、作者が選んだ3組に入っていないのでつないでいない"
     },
     "balance": {
       "referenceShare": 0.25,

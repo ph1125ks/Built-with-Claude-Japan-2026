@@ -113,6 +113,12 @@ export function balanceFactor(state: GameState, drugClass: string): number {
   return Math.min(maxFactor, Math.max(minFactor, f));
 }
 
+/** モデル A で、この菌でこの薬と同じ耐性として扱う薬（代用の組。組がなければその薬だけ） */
+export function sharedGroup(data: GameData, species: string, drug: string): string[] {
+  const g = data.rules.resistance.A.sharedSelection?.find((x) => x.bacteria.includes(species) && x.drugs.includes(drug));
+  return g ? [...g.drugs] : [drug];
+}
+
 /** 耐性化しない（比較の基準。エンジンの確認用） */
 export const noResistanceModel: ResistanceModel = {
   id: "none",
@@ -148,8 +154,10 @@ export const selectionModel: ResistanceModel = {
       for (const d of data.drugs) {
         const r = row[d.id] ?? 1;
         if (r >= 1) continue; // 自然耐性・効かない扱い
+        // 代用の組（AMPC と ABPC など）は、どちらにさらされても同じ薬にさらされたとみなす
+        const group = sharedGroup(data, sp, d.id);
         let exposed = 0;
-        for (const b of bugs) exposed += Math.min(1, (b.exposure[d.id] ?? 0) / fullTicks);
+        for (const b of bugs) exposed += Math.min(1, group.reduce((s, g) => s + (b.exposure[g] ?? 0), 0) / fullTicks);
         if (exposed <= 0) continue;
         const shift = exaggeration * A.logitPerWave * (exposed / bugs.length) * balanceFactor(state, d.class);
         row[d.id] = sigmoid(logit(Math.max(r, A.minRate)) + shift);

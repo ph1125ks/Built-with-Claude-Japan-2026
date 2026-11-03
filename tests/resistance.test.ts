@@ -56,6 +56,30 @@ describe("耐性モデル A（選択圧の再現）", () => {
     expect(s.resistance.kpneumoniae).toEqual(before.kpneumoniae);
   });
 
+  it("代用の組（内服 AMPC と ABPC など）は、どちらにさらされても同じだけ上がる（代用している菌だけ。2026-11-03 作者の判断）", () => {
+    const s = createGame({
+      data,
+      stage: stage([{ at: 0, lane: 0, species: "ecoli", count: 3, spacing: 0.5 }], ["AMPC_PO", "ABPC", "CEX_PO", "CEZ", "CTX", "CFDN_PO"]),
+      region: "全国",
+      seed: 3,
+    });
+    const before = cloneTable(s.resistance);
+    expect(before.ecoli!.AMPC_PO).toBeCloseTo(before.ecoli!.ABPC!, 12);
+    runToEnd(s, (st) => {
+      if (st.tick % (tps * 8) === 0) step(st, [{ type: "summon", drug: "AMPC_PO", lane: 0 }]);
+    });
+    // AMPC だけを使っても、ABPC も同じだけ上がる
+    expect(s.resistance.ecoli!.AMPC_PO!).toBeGreaterThan(before.ecoli!.AMPC_PO!);
+    expect(s.resistance.ecoli!.ABPC!).toBeCloseTo(s.resistance.ecoli!.AMPC_PO!, 12);
+    // ほかの組は変わらない
+    for (const d of ["CEZ", "CEX_PO", "CTX", "CFDN_PO"]) expect(s.resistance.ecoli![d], d).toBeCloseTo(before.ecoli![d]!, 12);
+  });
+
+  it("代用の組は、susceptibility.proxies で代用している組でなければ読み込みで止まる", () => {
+    const bad = { ...base.rules.resistance, A: { ...base.rules.resistance.A, sharedSelection: [{ drugs: ["ABPC", "AMPC_PO"] as [string, string], bacteria: ["kpneumoniae"] }] } };
+    expect(() => loadGameData({ rules: { resistance: bad } })).toThrow(/代用の組/);
+  });
+
   it("上げ幅は logit で 誇張係数 × logitPerWave × さらされた割合", () => {
     const s = createGame({ data, stage: stage([{ at: 0, lane: 0, species: "ecoli", count: 1, spacing: 0 }]), region: "全国", seed: 1 });
     const r0 = s.resistance.ecoli!.CMZ!;

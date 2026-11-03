@@ -1,7 +1,7 @@
 // 遊んでいる最中の DOM：上の帯（膀胱の耐久・医療費・波）、情報の見え方の帯、レーンの選択、手札のカード、知らせ。
 import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
 import { LAYOUT, laneTopY } from "./board.ts";
-import { cardKeys, escapeHtml, genericName, intervalShort, modelLabel, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
+import { cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
 
 export interface HudOptions {
@@ -87,7 +87,7 @@ export class Hud {
 
     this.root.innerHTML = `
       <div class="hud">
-        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${opts.showDev ? `${escapeHtml(modelLabel(s.model.id))}・` : ""}耐性化の速さはゲーム用に誇張</small></div>
+        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${escapeHtml(modelShort(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
         <div class="hud-bladder"><span>膀胱の耐久</span><div class="bar"><i></i></div><b class="num"></b></div>
         <div class="hud-budget"><span>医療費 ${s.stage.budgetPerDay ? "使える額" : "残り"}</span><b class="budget"></b><small>${s.stage.budgetPerDay ? `1日ごとに +${yen(s.stage.budgetPerDay)}` : `/ ${yen(s.stage.budget)}`}</small></div>
         <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">アンチバイオグラム</button><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>

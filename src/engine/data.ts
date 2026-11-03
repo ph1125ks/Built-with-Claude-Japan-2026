@@ -82,6 +82,18 @@ function checkCatalog(data: GameData): void {
     if (!data.drugById.has(p.drug)) errors.push(`代用：薬 ${p.drug} がない`);
     for (const b of p.bacteria) if (!data.bacteriumById.has(b)) errors.push(`代用：菌 ${b} がない`);
   }
+  // モデル A の代用の組：組の薬はどちらもカードにあり、片方がもう片方の値で代用されている菌だけを対象にする
+  for (const g of res.A?.sharedSelection ?? []) {
+    const [a, b] = g.drugs;
+    for (const id of g.drugs) if (!data.drugById.has(id)) errors.push(`代用の組：薬 ${id} がない`);
+    for (const sp of g.bacteria) {
+      if (!data.bacteriumById.has(sp)) errors.push(`代用の組：菌 ${sp} がない`);
+      const ok = data.rules.susceptibility.proxies.some(
+        (p) => p.bacteria.includes(sp) && ((p.drug === a && p.useJanis === b) || (p.drug === b && p.useJanis === a)),
+      );
+      if (!ok) errors.push(`代用の組：${sp} の ${a}・${b} は、susceptibility.proxies で代用している組ではない`);
+    }
+  }
   if (errors.length) throw new Error(`カタログの誤り：\n${errors.join("\n")}`);
 }
 

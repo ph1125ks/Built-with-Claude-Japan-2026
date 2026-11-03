@@ -115,6 +115,11 @@ export interface ResistanceRules {
     fullExposureSeconds: number;
     /** この値未満の耐性率（0% を含む）は、さらされたときにこの値として上げ始める（外から持ち込まれうるとみなす） */
     minRate: number;
+    /**
+     * 公開データで同じ値を使っている薬の組（代用の組）。bacteria の菌では、組のどちらにさらされても同じ薬にさらされたとみなし、
+     * 組の薬を同じだけ上げる（2026-11-03 作者の判断）。組は susceptibility.proxies の useJanis と一致していること
+     */
+    sharedSelection?: { drugs: [string, string]; bacteria: string[] }[];
   };
   /**
    * 系統の偏り：1つの系統が使用日数の referenceShare を超えて使われると選択圧が強まり、下回ると弱まる。

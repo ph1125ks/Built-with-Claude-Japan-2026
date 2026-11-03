@@ -1,5 +1,5 @@
 // 画面の流れ：タイトル → 遊び方 → ステージ1 → 結果1 → ステージ2（既定は「2050年」）→ 結果2 → まとめ（SPEC.md 3.1）。
-// URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル）、?cost=yakka|abstract（医療費の方式）、
+// URL で選べるもの：?stage=<id>（ステージ）、?model=A|B|none（耐性モデル。タイトル画面でも A/B を選べる）、?cost=yakka|abstract（医療費の方式）、
 // ?budget=<はじめ>,<1日ごと>[,<上限>]（医療費の増え方）、
 // ?seed=<数>、?region=<地域>、
 // ?auto=appropriate|broad|random（ボットに自動で遊ばせる。試遊・確認用）
@@ -29,6 +29,24 @@ import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, dropsNote
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
+
+/** タイトル画面で選んだ耐性モデルを、このブラウザで覚えておく（見る人ごとの便利機能。読めなくても動く） */
+const MODEL_KEY = "sentakuatsu.model";
+function storedModel(): ResistanceModelId | undefined {
+  try {
+    const v = localStorage.getItem(MODEL_KEY);
+    return v === "A" || v === "B" ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function storeModel(id: ResistanceModelId): void {
+  try {
+    localStorage.setItem(MODEL_KEY, id);
+  } catch {
+    // 保存できない環境（プライベートブラウズなど）では覚えない
+  }
+}
 const DEFAULT_STAGE = "dev-uti";
 
 type Phase = "title" | "howto" | "brief1" | "play1" | "result1" | "brief2" | "play2" | "result2" | "final" | "sources";
@@ -79,8 +97,8 @@ export async function loadScenario(id: string): Promise<ScenarioDef> {
 }
 
 export class App {
-  readonly data: GameData;
-  readonly model: ResistanceModel;
+  data!: GameData;
+  model!: ResistanceModel;
   /** 開発用の表示（耐性モデルの名前など）。?model= か ?debug のときだけ出す */
   private get showDev(): boolean {
     return this.params.model !== undefined || this.params.debug === true;
@@ -111,15 +129,8 @@ export class App {
     private board: BoardScene,
     private ui: { screen: HTMLElement; play: HTMLElement },
   ) {
-    const base = loadGameData();
-    const modelId = params.model ?? base.rules.resistance.model;
-    this.data = loadGameData({
-      rules: {
-        resistance: { ...base.rules.resistance, model: modelId },
-        cost: { ...base.rules.cost, mode: params.cost ?? base.rules.cost.mode },
-      },
-    });
-    this.model = getResistanceModel(modelId);
+    // 耐性モデル：URL の指定 → タイトル画面で前に選んだもの → rules.json の既定
+    this.setModel(params.model ?? storedModel() ?? loadGameData().rules.resistance.model);
     if (params.region) this.scenario.region = params.region;
     if (params.budget) {
       for (const st of [this.scenario.present, this.scenario.future]) {
@@ -136,6 +147,18 @@ export class App {
     });
     board.events.on("update", () => this.hud?.frame());
     this.go("title");
+  }
+
+  /** 耐性モデルを切り替える（タイトル画面で選んだとき）。データとモデルを作り直す */
+  private setModel(id: ResistanceModelId): void {
+    const base = loadGameData();
+    this.data = loadGameData({
+      rules: {
+        resistance: { ...base.rules.resistance, model: id },
+        cost: { ...base.rules.cost, mode: this.params.cost ?? base.rules.cost.mode },
+      },
+    });
+    this.model = getResistanceModel(id);
   }
 
   /** 確認用：いまのステージを、実時間を待たずに seconds 秒ぶん進める（画面が隠れていると描画の時計が遅くなるため） */
@@ -178,6 +201,14 @@ export class App {
       case "start":
         this.go(this.sawHowto ? "brief1" : "howto");
         break;
+      case "model-A":
+      case "model-B": {
+        const id = action === "model-A" ? "A" : "B";
+        this.setModel(id);
+        storeModel(id);
+        this.go("title");
+        break;
+      }
       case "howto":
         this.go("howto");
         break;
