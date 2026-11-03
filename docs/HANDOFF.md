@@ -7,7 +7,7 @@
 - 企画と仕様は確定（SPEC.md・DEMO.md）。提出は **2026-11-08（日）20:00 JST**
 - SPEC.md の日程で **11/3・11/4・11/5 分（Claude の実装）は終わっている**（前倒し）。次は **11/6 分（教員モード）**。11/5 21:00 までの作者の判断（耐性モデル・医療費の方式）がまだ
 - テスト 87 件すべて通過。`npm run data:verify` は問題なし（監修待ちは 1 件：耐性モデルの係数）
-- まだないもの：教員モード（後回し。2026-11-03 作者の判断）、録画の仕組み。**GitHub Pages で公開を始めた**（10回目）：https://ph1125ks.github.io/Built-with-Claude-Japan-2026/ 。作者が Settings → Pages の Source を「GitHub Actions」にしてから、最初の公開が動く
+- まだないもの：教員モード（後回し。2026-11-03 作者の判断）、録画の仕組み。**GitHub Pages で公開した**（2026-11-03）：https://ph1125ks.github.io/Built-with-Claude-Japan-2026/ 。作者が Settings → Pages の Source を「GitHub Actions」にし、push したあとの最初の実行（build・deploy）が成功。公開された画面で、既定の A・既定ステージ「尿路（全国）」・ブリーフィング・供給制限の知らせが出て、コンソールにエラーがないことを確かめた。以後は main に push するたびに自動で公開される（push は作者が行う）
 
 ### このセッション（2026-11-03 未明 2回目）でしたこと
 
