@@ -27,13 +27,14 @@ describe("供給制限（遊ぶたびに手札の何枚かが使えない）", (
     expect(seen.size).toBeGreaterThan(10);
   });
 
-  it("決めた枚数だけ、候補の中から選ぶ（仮ステージでは MEPM は候補外）", () => {
+  it("決めた枚数だけ、候補の中から選ぶ（仮ステージでは MEPM と TAZ/PIPC は候補外）", () => {
     const candidates = present.shortage!.candidates!;
     for (let s = 1; s <= 100; s++) {
       const short = drawShortage(data, present, "全国", s);
       expect(short).toHaveLength(present.shortage!.count);
       for (const d of short) expect(candidates).toContain(d);
       expect(short).not.toContain("MEPM");
+      expect(short).not.toContain("TAZPIPC");
     }
   });
 
@@ -69,7 +70,7 @@ describe("供給制限（遊ぶたびに手札の何枚かが使えない）", (
 
   it("検査：枚数が手札以上・候補が手札にない・画面に9枚以上並ぶ、は誤り", () => {
     const bad = (shortage: StageDef["shortage"], hand = present.hand) => validateStage(data, { ...present, hand, shortage });
-    expect(bad({ count: 9 }).join()).toMatch(/shortage.count/);
+    expect(bad({ count: present.hand.length }).join()).toMatch(/shortage.count/);
     expect(bad({ count: 1, candidates: ["AMK"] }).join()).toMatch(/候補 AMK が手札にない/);
     expect(bad(undefined, [...present.hand]).join()).toMatch(/8枚まで/);
   });
@@ -77,8 +78,8 @@ describe("供給制限（遊ぶたびに手札の何枚かが使えない）", (
   it("シミュレーターは使えなかった薬を返し、その薬は召喚されない", () => {
     for (let s = 1; s <= 10; s++) {
       const r = runScenario({ data, scenario, seed: s, bot: appropriateBot() });
-      expect(r.shortage.present).toHaveLength(2);
-      expect(r.shortage.future).toHaveLength(1);
+      expect(r.shortage.present).toHaveLength(present.shortage!.count);
+      expect(r.shortage.future).toHaveLength(scenario.future.shortage!.count);
       for (const d of r.shortage.present) expect(r.present.summons[d] ?? 0).toBe(0);
       for (const d of r.shortage.future) expect(r.future.summons[d] ?? 0).toBe(0);
     }

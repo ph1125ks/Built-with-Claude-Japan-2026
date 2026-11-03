@@ -19,11 +19,13 @@ export interface HudOptions {
   onEnd: () => void;
 }
 
-/** 供給制限で使えない薬の札（カードの列の右端。並べられる枚数に余りがあるときだけ） */
+/** 供給制限で使えない薬の札（カードの列の右端）。カードが8枚並ぶときは、カードを少し細くして細い札にする */
 function shortCard(data: GameData, short: string[], cards: number): string {
-  if (short.length === 0 || cards >= MAX_CARDS) return "";
+  if (short.length === 0) return "";
   const chips = short.map((d) => `<span>${escapeHtml(data.drugById.get(d)?.abbr ?? d)}</span>`).join("");
-  return `<div class="card short-card" title="供給制限：今回は使えません（遊ぶたびに変わります）"><b>供給制限</b><small>今回は使えません</small><div class="short-list">${chips}</div><small>遊ぶたびに変わります</small></div>`;
+  const title = "供給制限：今回は使えません（遊ぶたびに変わります）";
+  if (cards >= MAX_CARDS) return `<div class="card short-card compact" title="${title}"><b>供給制限</b><small>今回は<br>使えない</small><div class="short-list">${chips}</div></div>`;
+  return `<div class="card short-card" title="${title}"><b>供給制限</b><small>今回は使えません</small><div class="short-list">${chips}</div><small>遊ぶたびに変わります</small></div>`;
 }
 
 export class Hud {
@@ -100,7 +102,7 @@ export class Hud {
         (_, i) => `<div class="lane" data-lane="${i}" style="top:${laneTopY(i)}px;height:${LAYOUT.laneH}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px"><span class="lane-msg"></span></div>`,
       ).join("")}</div>
       <div class="ticker" style="top:${LAYOUT.msgTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;height:${LAYOUT.msgH}px"></div>
-      <div class="hand" style="top:${LAYOUT.cardsTop}px">${cardHtml}${shortCard(data, opts.shortDrugs ?? [], s.stage.hand.length)}</div>
+      <div class="hand${(opts.shortDrugs ?? []).length && s.stage.hand.length >= MAX_CARDS ? " tight" : ""}" style="top:${LAYOUT.cardsTop}px">${cardHtml}${shortCard(data, opts.shortDrugs ?? [], s.stage.hand.length)}</div>
       <div class="abg-panel" hidden><div class="abg-head"><b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
     `;
 

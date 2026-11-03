@@ -1,5 +1,5 @@
 {
-  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。医療費は 2026-11-03 に「はじめ 100、1日ごとに +200」（仮。作者の希望で時間とともに増える仕組みにした。DEVLOG の試算）。供給制限（2026-11-03、作者の希望）：いまは9枚の候補から毎回2枚（MEPM は候補外。乱用の誘惑と録画シーン3を残すため）、2050年は6枚から1枚が使えない（仮）。AMK は Access なので適正ボットが最優先で使い、7割を占めたので候補に入れていない。",
+  "_comment": "開発用の仮ステージ（エンジンとシミュレーターの確認用）。公開する既定ステージは 11/6 に教員モードで作る。医療費は 2026-11-03 に「はじめ 100、1日ごとに +200」（仮。作者の希望で時間とともに増える仕組みにした。DEVLOG の試算）。供給制限（2026-11-03、作者の希望）：いまは13枚の候補から毎回5枚が使えない（8枚並ぶ）。MEPM は候補外（乱用の誘惑と録画シーン3を残すため）、TAZ/PIPC も候補外（使えない回は適正ボットがカルバペネム系でつなぎ、2050年に効かなくなるため）。2050年は6枚から1枚（仮）。CAZ・CTX・内服 AMPC・内服 CEX は 2026-11-03 に作者の希望で足した。IPM/CS はカタログにあるが仮ステージには入れていない（2050年の手札に入れると、モデル A では乱用ボットが2050年に39%勝つ。DEVLOG）。AMK は Access なので適正ボットが最優先で使い、7割を占めたので候補に入れていない。",
   "id": "dev-uti",
   "title": "開発用：尿路（全国）",
   "region": "全国",
@@ -11,16 +11,20 @@
     "bladderHp": 100,
     "hand": [
       { "drug": "ABPC" },
+      { "drug": "AMPC_PO" },
       { "drug": "CEZ" },
+      { "drug": "CEX_PO" },
       { "drug": "CMZ" },
       { "drug": "CTRX" },
+      { "drug": "CTX" },
+      { "drug": "CAZ" },
       { "drug": "CFDN_PO" },
+      { "drug": "CFPM" },
       { "drug": "LVFX_PO" },
       { "drug": "TAZPIPC" },
-      { "drug": "MEPM" },
-      { "drug": "CFPM" }
+      { "drug": "MEPM" }
     ],
-    "shortage": { "count": 2, "candidates": ["ABPC", "CEZ", "CMZ", "CTRX", "CFDN_PO", "LVFX_PO", "TAZPIPC", "CFPM"] },
+    "shortage": { "count": 5, "candidates": ["ABPC", "AMPC_PO", "CEZ", "CEX_PO", "CMZ", "CTRX", "CTX", "CAZ", "CFDN_PO", "CFPM", "LVFX_PO"] },
     "waves": [
       { "at": 2, "lane": "random", "species": "auto", "count": 4, "spacing": 2.0 },
       { "at": 22, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },

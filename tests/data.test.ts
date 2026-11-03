@@ -46,6 +46,35 @@ describe("効く確率の決め方", () => {
     expect(susceptibility(data, "全国", "efaecalis", "MEPM")).toMatchObject({ basis: "fixed", p: 0 });
   });
 
+  it("2026-11-03 に足した薬：内服 AMPC は ABPC、内服 CEX は CEZ で代用し、腸球菌の IPM/CS は効かない扱い", () => {
+    for (const [sp, drug, from] of [
+      ["ecoli", "AMPC_PO", "ABPC"],
+      ["pmirabilis", "AMPC_PO", "ABPC"],
+      ["efaecalis", "AMPC_PO", "ABPC"],
+      ["ecoli", "CEX_PO", "CEZ"],
+      ["kpneumoniae", "CEX_PO", "CEZ"],
+      ["pmirabilis", "CEX_PO", "CEZ"],
+    ] as const) {
+      const v = susceptibility(data, "全国", sp, drug);
+      expect(v.basis, `${sp} × ${drug}`).toBe("proxy");
+      expect(v.p).toBeCloseTo(susceptibility(data, "全国", sp, from).p, 10);
+    }
+    for (const [sp, drug] of [
+      ["kpneumoniae", "AMPC_PO"],
+      ["paeruginosa", "AMPC_PO"],
+      ["paeruginosa", "CEX_PO"],
+      ["paeruginosa", "CTX"],
+      ["efaecalis", "CEX_PO"],
+      ["efaecalis", "CTX"],
+      ["efaecalis", "CAZ"],
+    ] as const)
+      expect(susceptibility(data, "全国", sp, drug).basis, `${sp} × ${drug}`).toBe("intrinsic");
+    expect(susceptibility(data, "全国", "efaecalis", "IPMCS")).toMatchObject({ basis: "fixed", p: 0 });
+    // プロテウスの IPM/CS は JANIS の値（イミペネムの活性がもともと低い）
+    expect(susceptibility(data, "全国", "pmirabilis", "IPMCS")).toMatchObject({ basis: "data" });
+    expect(susceptibility(data, "全国", "pmirabilis", "IPMCS").p).toBeLessThan(0.6);
+  });
+
   it("どの地域でも、すべての菌×薬の組み合わせの扱いが決まっている（値がない組み合わせを残さない）", () => {
     for (const region of data.janis.regions) {
       for (const b of data.bacteria) {
@@ -94,24 +123,29 @@ describe("公的な文書に沿った設定（抗微生物薬適正使用の手�
 
   it("AWaRe 分類：Access → Watch → 温存すべき系統（カルバペネム・キノロン）の順に優先する", () => {
     const rank = (id: string) => stewardshipRank(data, id);
-    for (const a of ["ABPC", "CEZ", "AMK"]) for (const w of ["CMZ", "CTRX", "CFPM", "TAZPIPC", "LVFX_PO", "CFDN_PO"]) expect(rank(a)).toBeLessThan(rank(w));
-    for (const w of ["CMZ", "CTRX", "CFPM", "TAZPIPC", "CFDN_PO"]) {
+    const access = ["ABPC", "AMPC_PO", "CEZ", "CEX_PO", "AMK"];
+    const watch = ["CMZ", "CTX", "CTRX", "CAZ", "CFPM", "TAZPIPC", "CFDN_PO"];
+    for (const a of access) for (const w of [...watch, "LVFX_PO", "MEPM", "IPMCS"]) expect(rank(a)).toBeLessThan(rank(w));
+    for (const w of watch) {
       expect(rank(w)).toBeLessThan(rank("MEPM"));
+      expect(rank(w)).toBeLessThan(rank("IPMCS"));
       expect(rank(w)).toBeLessThan(rank("LVFX_PO"));
     }
     // 手引きの表では CMZ と CTRX は同じ Watch（どちらが狭いかは決めない）
     expect(rank("CMZ")).toBe(rank("CTRX"));
   });
 
-  it("ESBL の連動：腸内細菌目では、ABPC・CEZ・経口第3世代セフェム・CFPM の耐性率は CTRX 以上", () => {
+  it("ESBL の連動：腸内細菌目では、ペニシリン系・第1〜3世代セフェム・CFPM の耐性率は CTRX 以上", () => {
     for (const region of data.janis.regions) {
       const t = resistanceTableFor(data, region);
       for (const sp of ["ecoli", "kpneumoniae", "pmirabilis"]) {
-        for (const d of ["ABPC", "CEZ", "CFDN_PO", "CFPM"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
+        for (const d of ["ABPC", "AMPC_PO", "CEZ", "CEX_PO", "CTX", "CAZ", "CFDN_PO", "CFPM"]) expect(t[sp]![d]!, `${region} ${sp} ${d}`).toBeGreaterThanOrEqual(t[sp]!.CTRX!);
         // ESBL の連動はセファマイシン系とカルバペネム系に及ばない（ESBL は分解しない）。
         // CRE の連動（MEPM が親）は、開始時の表では MEPM の耐性率が CMZ より低いので値を変えない
         expect(t[sp]!.CMZ!).toBeCloseTo(1 - susceptibility(data, region, sp, "CMZ").p, 10);
         expect(t[sp]!.MEPM!).toBeCloseTo(1 - susceptibility(data, region, sp, "MEPM").p, 10);
+        // IPM/CS は CRE の連動に入れない（IMP-6 型はイミペネムに感性：手引き 薬剤耐性菌感染症編 p.16）
+        expect(t[sp]!.IPMCS!).toBeCloseTo(1 - susceptibility(data, region, sp, "IPMCS").p, 10);
       }
     }
   });
@@ -140,7 +174,11 @@ describe("AMK（作者の判断で JAID/JSC 感染症治療ガイド2023 に合�
 describe("スペクトラムの指標（ASP ガイダンス2024 表4・表5）", () => {
   it("ASC スコアはガイダンスの表5の値（表にない薬は null）", () => {
     const asc = Object.fromEntries(data.drugs.map((d) => [d.id, d.asc]));
-    expect(asc).toEqual({ ABPC: 5, CEZ: 3, CMZ: null, CTRX: 6, CFPM: 8, TAZPIPC: 11, MEPM: 12, AMK: null, LVFX_PO: null, CFDN_PO: null });
+    expect(asc).toEqual({
+      ...{ ABPC: 5, CEZ: 3, CMZ: null, CTRX: 6, CFPM: 8, TAZPIPC: 11, MEPM: 12, AMK: null, LVFX_PO: null, CFDN_PO: null },
+      // 2026-11-03 に足した5剤は表5にない
+      ...{ CTX: null, CAZ: null, IPMCS: null, AMPC_PO: null, CEX_PO: null },
+    });
   });
 
   it("ガイダンスの計算例：TAZ/PIPC 5日 → CEZ 5日 なら DASC 70、DASC/DOT 7", () => {

@@ -370,6 +370,150 @@
      "transitional": null
     }
    ]
+  },
+  "CTX": {
+   "ingredient": "セフォタキシムナトリウム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 3,
+   "min": 497,
+   "max": 799,
+   "brand": 799,
+   "yenPerDayMin": 1491,
+   "yenPerDayBrand": 2397,
+   "products": [
+    {
+     "product": "セフォタックス注射用1g",
+     "brand": true,
+     "price": 799,
+     "transitional": null
+    },
+    {
+     "product": "クラフォラン注射用1g",
+     "brand": true,
+     "price": 497,
+     "transitional": null
+    }
+   ]
+  },
+  "CAZ": {
+   "ingredient": "セフタジジム",
+   "spec": "1g1瓶",
+   "unitsPerDay": 6,
+   "min": 395,
+   "max": 686,
+   "brand": null,
+   "yenPerDayMin": 2370,
+   "yenPerDayBrand": null,
+   "products": [
+    {
+     "product": "セフタジジム1g静注用",
+     "brand": false,
+     "price": 424,
+     "transitional": null
+    },
+    {
+     "product": "セフタジジム静注用1g「NP」",
+     "brand": false,
+     "price": 686,
+     "transitional": null
+    },
+    {
+     "product": "セフタジジム静注用1g「CHM」",
+     "brand": false,
+     "price": 395,
+     "transitional": null
+    },
+    {
+     "product": "セフタジジム静注用1g「VTRS」",
+     "brand": false,
+     "price": 686,
+     "transitional": null
+    }
+   ]
+  },
+  "IPMCS": {
+   "ingredient": "イミペネム",
+   "spec": "500mg1瓶",
+   "unitsPerDay": 3,
+   "min": 853,
+   "max": 901,
+   "brand": 901,
+   "yenPerDayMin": 2559,
+   "yenPerDayBrand": 2703,
+   "products": [
+    {
+     "product": "チエクール点滴用0.5g",
+     "brand": false,
+     "price": 853,
+     "transitional": null
+    },
+    {
+     "product": "チエナム点滴静注用0.5g",
+     "brand": true,
+     "price": 901,
+     "transitional": null
+    }
+   ]
+  },
+  "AMPC_PO": {
+   "ingredient": "アモキシシリン水和物",
+   "spec": "250mg1カプセル",
+   "unitsPerDay": 3,
+   "min": 10.8,
+   "max": 15.3,
+   "brand": 15.3,
+   "yenPerDayMin": 32.4,
+   "yenPerDayBrand": 45.9,
+   "products": [
+    {
+     "product": "サワシリンカプセル250",
+     "brand": true,
+     "price": 15.3,
+     "transitional": null
+    },
+    {
+     "product": "アモキシシリンカプセル250mg「日医工」",
+     "brand": false,
+     "price": 11.2,
+     "transitional": null
+    },
+    {
+     "product": "アモキシシリンカプセル250mg「トーワ」",
+     "brand": false,
+     "price": 11.2,
+     "transitional": null
+    },
+    {
+     "product": "アモキシシリンカプセル250mg「TCK」",
+     "brand": false,
+     "price": 10.8,
+     "transitional": null
+    }
+   ]
+  },
+  "CEX_PO": {
+   "ingredient": "セファレキシン",
+   "spec": "250mg1カプセル",
+   "unitsPerDay": 4,
+   "min": 31.5,
+   "max": 31.5,
+   "brand": 31.5,
+   "yenPerDayMin": 126,
+   "yenPerDayBrand": 126,
+   "products": [
+    {
+     "product": "セファレキシンカプセル250mg「トーワ」",
+     "brand": false,
+     "price": 31.5,
+     "transitional": null
+    },
+    {
+     "product": "ケフレックスカプセル250mg",
+     "brand": true,
+     "price": 31.5,
+     "transitional": null
+    }
+   ]
   }
  }
 }

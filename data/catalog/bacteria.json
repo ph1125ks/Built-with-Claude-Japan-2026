@@ -27,11 +27,11 @@
       "janis": "Klebsiella pneumoniae",
       "gram": "negative",
       "look": { "shape": "rod", "arrangement": "single", "size": 1.2, "capsule": true, "flagella": false },
-      "intrinsicResistance": ["ABPC"],
+      "intrinsicResistance": ["ABPC", "AMPC_PO"],
       "hp": 130,
       "speed": 40,
       "bladderDamage": 12,
-      "sources": { "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 1 Rule 1.7（p.3）：Klebsiella pneumoniae complex はアンピシリン・アモキシシリン、チカルシリンに R" },
+      "sources": { "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 1 Rule 1.7（p.3）：Klebsiella pneumoniae complex はアンピシリン・アモキシシリン、チカルシリンに R。同じ表のセファゾリン・セファレキシンの列は空欄" },
       "review": { "status": "確認済み" }
     },
     {
@@ -55,13 +55,13 @@
       "janis": "Pseudomonas aeruginosa",
       "gram": "negative",
       "look": { "shape": "slender-rod", "arrangement": "single", "size": 1.0, "capsule": false, "flagella": true },
-      "intrinsicResistance": ["ABPC", "CEZ", "CMZ", "CTRX", "CFDN_PO"],
+      "intrinsicResistance": ["ABPC", "AMPC_PO", "CEZ", "CEX_PO", "CMZ", "CTX", "CTRX", "CFDN_PO"],
       "hp": 120,
       "speed": 45,
       "bladderDamage": 12,
       "sources": {
         "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 2 Rule 2.7（p.5）：アンピシリン・アモキシシリン、セフォタキシム・セフトリアキソンなどに R。表の見出しで、ブドウ糖非発酵菌は第1・第2世代セファロスポリンにも耐性とされる。EUCAST Breakpoint Tables v16.1 の Pseudomonas spp.（印刷 p.22）では、セファゾリン、セフォキシチン（セファマイシン系）、セフロキシム、CTX、CTRX、経口第3世代のセフィキシム・セフポドキシム・セフチブテンがすべて「-」（治療に適さない：注8、印刷 p.4）",
-        "notes": "CMZ とセフジニルそのものは EUCAST の表にない。同じ系統（セファマイシン系のセフォキシチン、経口第3世代セフェム）が「-」であることから耐性とした"
+        "notes": "CMZ とセフジニルそのものは EUCAST の表にない。同じ系統（セファマイシン系のセフォキシチン、経口第3世代セフェム）が「-」であることから耐性とした。2026-11-03 に足した AMPC（Rule 2.7 のアンピシリン・アモキシシリン）、CTX（Rule 2.7 のセフォタキシム）、CEX（表の見出しの第1世代セファロスポリン。Breakpoint Tables v16.1 の緑膿菌の表でもセファレキシンは「-」：印刷 p.22）も耐性。CAZ と IPM/CS は Rule 2.7 の列が空欄で、JANIS の値を使う"
       },
       "review": { "status": "確認済み" }
     },
@@ -72,12 +72,13 @@
       "janis": "Enterococcus faecalis",
       "gram": "positive",
       "look": { "shape": "coccus", "arrangement": "chain", "size": 0.9, "capsule": false, "flagella": false },
-      "intrinsicResistance": ["CEZ", "CMZ", "CTRX", "CFPM", "CFDN_PO", "AMK"],
+      "intrinsicResistance": ["CEZ", "CEX_PO", "CMZ", "CTX", "CTRX", "CAZ", "CFPM", "CFDN_PO", "AMK"],
       "hp": 90,
       "speed": 35,
       "bladderDamage": 8,
       "sources": {
-        "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 4 Rule 4.7（p.7）：セファロスポリン（セフタジジムを含む）とアミノグリコシド（低レベル耐性：脚注1）に R。併用での相乗効果は、細胞壁合成阻害薬に感性でアミノグリコシドの高度耐性がない株に限られ、Breakpoint Tables v16.1（印刷 p.41 注2）で相乗効果を見込めるとされるのはゲンタマイシン（スクリーニング陰性のとき）で、AMK では保証されない。ゲームは単剤だけを扱うので、耐性とする。EUCAST Breakpoint Tables v16.1 の腸球菌の表（印刷 p.40〜41）でも、セファロスポリンはすべて「-」、アミノグリコシドは単剤では耐性と注記"
+        "intrinsicResistance": "EUCAST Expected Resistant Phenotypes v1.2 Table 4 Rule 4.7（p.7）：セファロスポリン（セフタジジムを含む）とアミノグリコシド（低レベル耐性：脚注1）に R。併用での相乗効果は、細胞壁合成阻害薬に感性でアミノグリコシドの高度耐性がない株に限られ、Breakpoint Tables v16.1（印刷 p.41 注2）で相乗効果を見込めるとされるのはゲンタマイシン（スクリーニング陰性のとき）で、AMK では保証されない。ゲームは単剤だけを扱うので、耐性とする。EUCAST Breakpoint Tables v16.1 の腸球菌の表（印刷 p.40〜41）でも、セファロスポリンはすべて「-」、アミノグリコシドは単剤では耐性と注記。2026-11-03 に足した CTX・CAZ・CEX も同じ Rule 4.7 で耐性（CAZ は列が明記されている）",
+        "notes": "AMPC は自然耐性ではなく、ABPC で代用する（rules.json の proxies）。IPM/CS は自然耐性の表になく JANIS にも値がないので、効かない扱いにしている（同）"
       },
       "review": { "status": "確認済み" }
     }

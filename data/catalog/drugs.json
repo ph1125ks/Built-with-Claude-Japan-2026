@@ -3,6 +3,7 @@
     "抗菌薬カードの一覧。医学的な値は公的な文書に沿って決め、sources に出典（文書名とページ）を書く。",
     "「手引き」は厚生労働省「抗微生物薬適正使用の手引き 第四版」。編の名前とページは data/README.md の出典を参照。",
     "投与回数と1日量は、手引きの治療例の表に合わせる（2026-11-02 作者決定）。手引きの表には海外用量を含む。例外として AMK だけは、作者の判断で JAID/JSC 感染症治療ガイド2023 の尿路感染症の章に合わせた。",
+    "2026-11-03 に作者の希望で CAZ・IPM/CS・CTX・内服 AMPC・内服 CEX を足した（供給制限で手札が毎回変わるように）。手引きに表がない薬は、JAID/JSC 感染症治療ガイド2023 の尿路感染症の章（IPM/CS）、それにもなければ同ガイドのほかの章（CTX は市中肺炎）、内服薬は手引き 歯科編 表11 と電子添文に合わせた。5剤とも review は「仮」",
     "用量の採り方：手引きの表の範囲の中に国内の電子添文の上限に収まる値があればそれを採り、なければ表の値を採る。",
     "手引きの表は、MSSA 菌血症・VRE 菌血症・ESBL・AmpC・カルバペネム耐性緑膿菌など特定の場面の治療例で、尿路感染症の用量の表ではない。",
     "aware は WHO の AWaRe 分類（Access／Watch／Reserve）。ゲームでは、ボットが優先して使う順に当てはめる（rules.json の stewardship）。手引きにこの使い方は書かれておらず、ゲームとしての判断。",
@@ -12,9 +13,9 @@
     "asc は ASC スコア（antibiotic spectrum coverage。抗菌スペクトラムの広さ）。DASC（ASC × 使用日数）と DASC/DOT（使った薬の平均の広さ）の計算に使う（抗微生物薬適正使用支援プログラム実践のためのガイダンス 2024年度改訂版 表4・表5、p.119〜120）。ガイダンスの表にない薬は null"
   ],
   "ascPending": {
-    "id": "ASC スコア（CMZ・AMK・LVFX・CFDN）",
-    "note": "ASP ガイダンス2024 表5（p.120）にない4剤。Kakiuchi ら（Clin Infect Dis 2022; 75: 567-76、doi:10.1093/cid/ciab1034）と、日本で承認されている薬の ASC を定めた Maeda・Kakiuchi・Muraki（J Infect Chemother 2025; 31: 102667、doi:10.1016/j.jiac.2025.102667）に値があるとみられるが、本文を確かめられていない。値が入るまで、これらの薬を使ったステージの DASC/DOT は出さない",
-    "review": { "status": "仮", "check": ["CMZ・AMK・LVFX・CFDN の ASC スコア（上の2論文の表で確かめる）"] }
+    "id": "ASC スコア（CMZ・AMK・LVFX・CFDN・CTX・CAZ・IPM/CS・AMPC・CEX）",
+    "note": "ASP ガイダンス2024 表5（p.120）にない9剤（CTX・CAZ・IPM/CS・AMPC・CEX は 2026-11-03 に足したカード）。Kakiuchi ら（Clin Infect Dis 2022; 75: 567-76、doi:10.1093/cid/ciab1034）と、日本で承認されている薬の ASC を定めた Maeda・Kakiuchi・Muraki（J Infect Chemother 2025; 31: 102667、doi:10.1016/j.jiac.2025.102667）に値があるとみられるが、本文を確かめられていない。値が入るまで、これらの薬を使ったステージの DASC/DOT は出さない",
+    "review": { "status": "仮", "check": ["CMZ・AMK・LVFX・CFDN・CTX・CAZ・IPM/CS・AMPC・CEX の ASC スコア（上の2論文の表で確かめる）"] }
   },
   "drugs": [
     {
@@ -227,6 +228,112 @@
         "background": "経口第3世代セフェムは日本で使用量が多く（手引き 医科・入院編 p.10）、国の行動計画で2020年比40%削減が目標（同 歯科編 p.4）"
       },
       "review": { "status": "確認済み", "note": "代表をセフジニルにすることは作者が決定（2026-11-02）。感受性は CTX で代用しているので、セフジニルに固有の値ではない" }
+    },
+    {
+      "id": "CTX",
+      "abbr": "CTX",
+      "name": "セフォタキシム",
+      "class": "ceph3",
+      "aware": "Watch",
+      "asc": null,
+      "route": "iv",
+      "dosesPerDay": 3,
+      "bioavailability": null,
+      "urineFactor": 1.0,
+      "janis": "CTX",
+      "price": { "list": "injection", "ingredient": "セフォタキシムナトリウム", "spec": "1g1瓶" },
+      "dosing": { "label": "1回1g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引きに治療例の表がなく、JAID/JSC 感染症治療ガイド2023 Ⅺ 尿路感染症にも成人の用量がない（小児だけ）。同ガイド Ⅶ 呼吸器感染症 A-1 市中肺炎（印刷 p.106）：1回1〜2g・1日2〜3回（添付文書最大4g/日。表の印 † は保険適用外）。上限に収まる値のうち、1回1g 8時間毎（1日3g）を採った（EUCAST Breakpoint Tables v16.1 の標準用量 1g×3 と同じ：印刷 p.8）",
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "stewardship": "第3世代セファロスポリンは CTRX・CTX・CAZ を指し、感性なら CAZ より CTRX・CTX を優先する（手引き 薬剤耐性菌感染症編 p.15 図2 ※1）。手引きは CTX 耐性を ESBL の目印にしている（同 p.9）"
+      },
+      "review": { "status": "仮", "check": ["用法：尿路感染症の成人用量が手引き・JAID の尿路感染症の章にないため、JAID の市中肺炎の用量（1回1g 8時間毎）を採ったこと"] }
+    },
+    {
+      "id": "CAZ",
+      "abbr": "CAZ",
+      "name": "セフタジジム",
+      "class": "ceph3",
+      "aware": "Watch",
+      "asc": null,
+      "route": "iv",
+      "dosesPerDay": 3,
+      "bioavailability": null,
+      "urineFactor": 1.0,
+      "janis": "CAZ",
+      "price": { "list": "injection", "ingredient": "セフタジジム", "spec": "1g1瓶" },
+      "dosing": { "label": "1回2g・8時間毎", "unitsPerDay": 6 },
+      "sources": {
+        "dosing": "手引き 薬剤耐性菌感染症編 表7（p.26）「カルバペネム耐性緑膿菌感染症の治療例」のセフタジジムの行：1回2g 8時間毎（海外用量を含む）。国内の電子添文の上限は1日4g で、表の値（1日6g）はこれを超える。表に上限に収まる値がないので表の値を採った（CEZ と同じ扱い）。1回2g 8時間毎は発熱性好中球減少症で審査上認められる（同 付録 p.76）。参考：JAID/JSC 感染症治療ガイド2023 Ⅺ 尿路感染症 C-4 複雑性腎盂腎炎（p.292）などは1回1〜2g・1日3回（表の印 † は保険適用外。添付文書最大4g/日）",
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "stewardship": "第3世代セファロスポリンに感性なら CAZ より CTRX・CTX を優先する（手引き 薬剤耐性菌感染症編 p.15 図2 ※1）。既存の β-ラクタム系に感性なら、カルバペネム系より優先する（同 付録 p.76）"
+      },
+      "review": { "status": "仮", "check": ["用法：手引き 表7 の値（1回2g 8時間毎、1日6g）は国内の電子添文の上限（1日4g）を超える。CEZ と同じく表の値を採ったこと（ほかの案：JAID Ⅺ C-4 の尿路感染症の用量 1回1〜2g・1日3回から1回1g 8時間毎。1日の薬価は 2,370円 → 1,185円で、医療費の段階が4 → 3になる）"] }
+    },
+    {
+      "id": "IPMCS",
+      "abbr": "IPM/CS",
+      "name": "イミペネム・シラスタチン",
+      "class": "carbapenem",
+      "aware": "Watch",
+      "asc": null,
+      "route": "iv",
+      "dosesPerDay": 3,
+      "bioavailability": null,
+      "urineFactor": 1.0,
+      "janis": "IPM/CS",
+      "price": { "list": "injection", "ingredient": "イミペネム", "spec": "500mg1瓶" },
+      "dosing": { "label": "1回0.5g・8時間毎", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引きに単剤の治療例の表がない（表5・表7 はレレバクタム配合剤だけ）。JAID/JSC 感染症治療ガイド2023 Ⅺ 尿路感染症 C-4 複雑性腎盂腎炎の第二選択（p.292）：1回0.5〜1g・1日2〜3回（添付文書最大2g/日。表の印 † は保険適用外）。上限に収まる値のうち、MEPM と同じ投与間隔の1回0.5g 8時間毎（1日1.5g）を採った",
+        "aware": "手引き 医科・外来編 表2（p.18）",
+        "stewardship": "他剤で治療できる場合はカルバペネムを温存する（手引き 薬剤耐性菌感染症編 p.65）",
+        "notes": "プロテウスなど（Morganellaceae）には、イミペネムの活性がもともと低い（EUCAST Breakpoint Tables v16.1 腸内細菌目 注2、印刷 p.17。基準は S≤0.001・R>4）。自然耐性の表（Expected Resistant Phenotypes v1.2 Table 1）には載っていないので、JANIS の値（全国のプロテウスで S 55.2%、I が多い）をそのまま使う。国内の CPE に多い IMP-6 型はほぼ全例がイミペネムに感性で、MEPM とイミペネムの結果は一方向に決まらない（手引き 薬剤耐性菌感染症編 p.16）ため、CRE の連動（MEPM が親）には入れない"
+      },
+      "review": { "status": "仮", "check": ["用法：JAID の範囲（1回0.5〜1g・1日2〜3回）から、1回0.5g 8時間毎を採ったこと", "CRE の連動に入れないこと（反対の根拠：MEPM 耐性で届け出られる CRE の約2/3が CPE（手引き 薬剤耐性菌感染症編 付録 p.67）、国内の IMP 型で最も多いのは IMP-1 型で IMP-6 型は2番目（p.16）、IPM・MEPM の両方に非感性の株もある（p.19）。連動させないと、MEPM 耐性の腸内細菌目にも IPM/CS は約99%効く扱いになる）"] }
+    },
+    {
+      "id": "AMPC_PO",
+      "abbr": "AMPC",
+      "name": "アモキシシリン（内服）",
+      "class": "penicillin",
+      "aware": "Access",
+      "asc": null,
+      "route": "po",
+      "dosesPerDay": 3,
+      "bioavailability": 0.92,
+      "urineFactor": 1.0,
+      "janis": null,
+      "price": { "list": "oral", "ingredient": "アモキシシリン水和物", "spec": "250mg1カプセル" },
+      "dosing": { "label": "1回250mg・1日3回", "unitsPerDay": 3 },
+      "sources": {
+        "dosing": "手引き 歯科編 表11（p.24）：1回250mg または 500mg・1日3〜4回。国内の電子添文は成人1回250mg・1日3〜4回（適宜増減。同 歯科編 表2 p.8）。電子添文に収まる1回250mg を採り、投与回数は JAID/JSC 感染症治療ガイド2023 Ⅺ 尿路感染症 D 無症候性細菌尿（p.295。1回500mg・1日3回）に合わせて1日3回にした",
+        "bioavailability": "手引き 歯科編 表9（p.21）：アモキシシリン 74〜92%。範囲の上限 0.92 を採った（セフジニルと同じ採り方）。医科・入院編 表9（p.38）にも吸収率が良好な経口薬として載っている",
+        "aware": "手引き 医科・外来編 表2（p.18）、歯科編 表4（p.11）"
+      },
+      "review": { "status": "仮", "check": ["用法：電子添文の1回250mg・1日3〜4回のうち1日3回を採ったこと", "感受性を ABPC で代用すること（rules.json の proxies）", "ゲームは強さを吸収率でしか変えないので、1回250mg の内服でも注射の ABPC 1回2g の 92% の強さになり、適正ボットは腸球菌に内服 AMPC を選ぶ。教えたい形か"] }
+    },
+    {
+      "id": "CEX_PO",
+      "abbr": "CEX",
+      "name": "セファレキシン（内服・第1世代セフェム）",
+      "class": "ceph1",
+      "aware": "Access",
+      "asc": null,
+      "route": "po",
+      "dosesPerDay": 4,
+      "bioavailability": 0.9,
+      "urineFactor": 1.0,
+      "janis": null,
+      "price": { "list": "oral", "ingredient": "セファレキシン", "spec": "250mg1カプセル" },
+      "dosing": { "label": "1回250mg・6時間毎", "unitsPerDay": 4 },
+      "sources": {
+        "dosing": "手引き 歯科編 表11（p.24）：錠剤・カプセルは1回250〜500mg・1日4回。国内の電子添文は成人1回250mg・6時間ごと（重症例などは1回500mg。同 歯科編 表2 p.8）。電子添文の通常量の1回250mg 6時間毎を採った",
+        "bioavailability": "手引き 歯科編 表9（p.21）：セファレキシン 90%。医科・入院編 表9（p.38）にも吸収率が良好な経口薬として載り、同 p.37 に静注の CEZ から経口の CEX へ変える例がある",
+        "aware": "手引き 医科・外来編 表2（p.18）、歯科編 表4（p.11）"
+      },
+      "review": { "status": "仮", "check": ["用法：1回250〜500mg のうち電子添文の通常量の250mg を採ったこと", "感受性を CEZ で代用すること（rules.json の proxies）"] }
     }
   ]
 }

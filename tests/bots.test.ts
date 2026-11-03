@@ -72,7 +72,7 @@ describe("速さ", () => {
 });
 
 describe("適正ボットの選び方（AWaRe の順）", () => {
-  it("腸球菌と分かったら、効く見込みの高い Access の ABPC を選ぶ", () => {
+  it("腸球菌と分かったら、効く見込みの高い Access のペニシリン系（ABPC か内服 AMPC）を選ぶ", () => {
     const stage = { ...scenario.present, waves: [{ at: 0, lane: 0, species: "efaecalis", count: 1, spacing: 0 }] };
     const state = createGame({ data, stage, region: "全国", seed: 1 });
     const k = knowledgeFor(state);
@@ -82,7 +82,10 @@ describe("適正ボットの選び方（AWaRe の順）", () => {
     while (state.bacteria[0] && state.bacteria[0].level === "gram") step(state);
     expect(state.bacteria[0]?.level).toBe("species");
     const cmds = bot.decide(observe(state), k);
-    expect(cmds).toEqual([{ type: "summon", drug: "ABPC", lane: 0 }]);
+    expect(cmds).toHaveLength(1);
+    expect(["ABPC", "AMPC_PO"]).toContain((cmds[0] as { drug: string }).drug);
+    // 同じ Access・同じカバー率（AMPC は ABPC で代用）なら、安いほう（内服 AMPC）を選ぶ
+    expect(cmds[0]).toEqual({ type: "summon", drug: "AMPC_PO", lane: 0 });
   });
 
   it("乱用ボットは、手札で最も温存すべき薬（MEPM）から使う", () => {
