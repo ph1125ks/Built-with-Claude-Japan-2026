@@ -93,7 +93,7 @@
 
 ### Claude の作業の候補
 
-1. **録画の準備**（SPEC 11/7）：録画用の操作シナリオ（`?auto=demo-abuse`・`demo-proper`）と自動録画（`scripts/record-demo.ts`）はできた（DEVLOG「録画の準備」）。種は 570。耐性モデルの係数や医療費を変えたら、`npx tsx scripts/demo-seeds.ts` で種を選び直し、`tests/demo.test.ts` が通ることを確かめてから撮り直す。耐性モデル A の係数を変えたので（DEVLOG「耐性モデル A の係数を決める」）、撮り直しが要る
+1. **録画の準備**（SPEC 11/7）：録画用の操作シナリオ（`?auto=demo-abuse`・`demo-proper`）と自動録画（`scripts/record-demo.ts`）はできた（DEVLOG「録画の準備」）。種は 570。耐性モデルの係数や医療費を変えたら、`npx tsx scripts/demo-seeds.ts` で種を選び直し、`tests/demo.test.ts` が通ることを確かめてから撮り直す。耐性モデル A の係数を変えたあと（DEVLOG「耐性モデル A の係数を決める」）、タイトル・乱用・適正の3本を撮り直した（`recordings/`。Git には入れない）。次は仮の動画（録画・字幕・音声をつなぐ）
 2. **仮の動画**（SPEC 11/7）と、**動画の合成・提出フォームの文案**（11/8）
 3. **教員モード**（SPEC 5 章。作者の判断で後回し。始めるのは作者が言ったとき）
    - 手元の Node サーバー（`server/`）
