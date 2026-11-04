@@ -10,8 +10,9 @@
   "board": {
     "lanes": 3,
     "laneLength": 1000,
-    "revealSpeciesBelow": 0.6667,
-    "revealSusceptibilityBelow": 0.3333,
+    "_revealComment": "情報が分かる位置（膀胱からの距離の割合）。2026-11-04 作者の判断で「そろう作り」の①（情報の距離）を入れた：菌名 0.6667 → 0.8333、感受性 0.3333 → 0.6667。グラム染色 → 菌名 → 感受性の順は変えず、検査の結果が出るまでの距離だけを変える（DEVLOG「既定ステージを『そろう作り』の①＋③にするかの再試算」）",
+    "revealSpeciesBelow": 0.8333,
+    "revealSusceptibilityBelow": 0.6667,
     "maxUnitsPerLane": 3
   },
   "units": {

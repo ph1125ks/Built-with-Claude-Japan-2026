@@ -126,6 +126,9 @@ export class App {
   private sawHowto = false;
   /** 速さ（×1・×2・×4）はステージをまたいで引き継ぐ */
   private speed = 1;
+  /** タイトル画面の後ろで、ボットが遊んでいる盤面（見せるだけ。結果はどこにも残さない） */
+  private attract: PlaySession | null = null;
+  private attractRound = 0;
 
   constructor(
     private scenario: ScenarioDef,
@@ -145,11 +148,15 @@ export class App {
     }
     const errors = validateScenario(this.data, this.scenario);
     if (errors.length) throw new Error(`ステージの誤り：\n${errors.join("\n")}`);
+    ui.screen.addEventListener("scroll", this.updateScrollHint, { passive: true });
+    // 遊び方の「アンチバイオグラムを見る」などで高さが変わったときも確かめ直す
+    ui.screen.addEventListener("toggle", this.updateScrollHint, true);
     ui.screen.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
       if (btn) this.act(btn.dataset.action!);
     });
     board.events.on("update", () => this.hud?.frame());
+    board.events.on("wave", () => this.hud?.waveFlash());
     this.go("title");
   }
 
@@ -215,6 +222,8 @@ export class App {
         const id = action === "model-A" ? "A" : "B";
         this.setModel(id);
         storeModel(id);
+        // 後ろの盤面も、選んだ耐性の進み方で遊び直す
+        this.stopPlay();
         this.go("title");
         break;
       }
@@ -258,14 +267,46 @@ export class App {
     this.ui.screen.innerHTML = html ?? "";
     this.ui.screen.classList.toggle("open", html !== null);
     this.ui.screen.scrollTop = 0;
+    this.updateScrollHint();
   }
+
+  /** 画面の下にまだ続きがあるとき、ボタンの帯の上に合図を出す（style.css の can-scroll。試遊の指摘） */
+  private updateScrollHint = (): void => {
+    const el = this.ui.screen;
+    el.classList.toggle("can-scroll", el.classList.contains("open") && el.scrollHeight - el.scrollTop - el.clientHeight > 40);
+  };
 
   private stopPlay(): void {
     if (this.session) this.speed = this.session.speed;
     this.hud?.destroy();
     this.hud = null;
     this.session = null;
+    this.attract = null;
     this.board.setSession(null);
+  }
+
+  /**
+   * タイトル画面の後ろの盤面で、適正ボットに遊ばせる（最近のゲームによくある「デモ画面」。2026-11-04）。
+   * 学生の結果や耐性率には何も残さない。ステージが終わったら、少し待って次の回を始める
+   */
+  private startAttract(): void {
+    if (this.attract || this.session) return;
+    const seed = 4242 + this.attractRound * 17;
+    const stage = withShortage(this.scenario.present, drawShortage(this.data, this.scenario.present, this.scenario.region, seed));
+    const s = new PlaySession({ data: this.data, stage, region: this.scenario.region, seed, model: this.model, autopilot: appropriateBot() });
+    // 待ち時間を短く見せる（試遊の指摘：何も起きない時間が長い）
+    s.speed = 2;
+    this.attract = s;
+    this.board.setSession(s);
+    s.onEvents((events) => {
+      if (!events.some((e) => e.type === "end")) return;
+      window.setTimeout(() => {
+        if (this.attract !== s) return;
+        this.attract = null;
+        this.attractRound++;
+        this.startAttract();
+      }, 2600);
+    });
   }
 
   private go(phase: Phase): void {
@@ -274,12 +315,14 @@ export class App {
     const { data, scenario } = this;
     switch (phase) {
       case "title":
-        this.stopPlay();
+        if (this.session) this.stopPlay();
         this.showScreen(titleScreen(data, scenario, this.model.id, this.showDev));
+        this.startAttract();
         break;
       case "howto":
         this.sawHowto = true;
         this.showScreen(howtoScreen(data));
+        this.startAttract();
         break;
       case "sources":
         this.showScreen(sourcesScreen(data));
@@ -341,7 +384,10 @@ export class App {
       autopilot: this.autopilot(),
     });
     session.speed = this.speed;
-    const firstPlay = phase === "present" && this.attempt === 0 && !this.params.auto;
+    // ステージ1の最初の回と、ステージ2は止めた状態で始める（試遊の指摘：ステージ2が、変わった手札を読む前に始まっていた）
+    const firstPlay = (phase === "future" || this.attempt === 0) && !this.params.auto;
+    const presentHand = new Set(this.scenario.present.hand.map((h) => h.drug));
+    const newDrugs = phase === "future" ? stage.hand.map((h) => h.drug).filter((d) => !presentHand.has(d)) : [];
     this.session = session;
     this.board.setSession(session);
     const label = phase === "present" ? `ステージ1　${stage.title}` : `ステージ2　${stage.title}`;
@@ -353,6 +399,11 @@ export class App {
       keyOrder: [...this.scenario.present.hand, ...this.scenario.future.hand].map((h) => h.drug),
       showDev: this.showDev,
       shortDrugs: this.short[phase],
+      newDrugs,
+      onPreview: (drug, lane) => {
+        this.board.preview(drug, lane);
+        return this.board.nextSlot(lane);
+      },
       onEnd: () => {
         const r = stageResult(session.state);
         if (phase === "present") {
@@ -364,6 +415,7 @@ export class App {
         }
       },
     });
-    if (firstPlay) this.hud.pauseAtStart();
+    if (firstPlay) this.hud.pauseAtStart(newDrugs.length ? "。手札が変わっています（新しい薬のカードに「追加」）" : "");
+    this.board.banner(phase === "present" ? "ステージ1　" + stage.title : "ステージ2　" + stage.title, phase === "present" ? "細菌から膀胱を守る" : "自分が育てた耐性菌と戦う", phase === "present" ? "#3be0c6" : "#ff6352", 1500);
   }
 }

@@ -5,6 +5,7 @@ import type { BacteriumDef, DrugDef, GameData } from "../../engine/index.ts";
 import { lookOf } from "../soldiers.ts";
 import { bugSprite, cardSprite, ditherKeep, soldierSprite, type PixelDrug, type PixelStyle, type Sprite } from "./engine.js";
 import c32 from "./styles/c32.js";
+import { icon, type IconName } from "./icons.ts";
 
 export type { PixelStyle, Sprite } from "./engine.js";
 
@@ -82,14 +83,19 @@ export function toCanvas(s: Sprite, z = 1): HTMLCanvasElement {
 
 const imgCache = new Map<string, string>();
 
-function img(key: string, make: () => Sprite, z: number): string {
+function img(key: string, make: () => Sprite, z: number, cls = ""): string {
   let url = imgCache.get(key);
   const s = make();
   if (!url) {
     url = toCanvas(s, z).toDataURL("image/png");
     imgCache.set(key, url);
   }
-  return `<img class="px" src="${url}" width="${s.w * z}" height="${s.h * z}" alt="" draggable="false">`;
+  return `<img class="px${cls ? ` ${cls}` : ""}" src="${url}" width="${s.w * z}" height="${s.h * z}" alt="" draggable="false">`;
+}
+
+/** 飾りのアイコン（pixel/icons.ts）。z は整数倍の拡大 */
+export function iconImg(name: IconName, z = 2, cls = "ico"): string {
+  return img(`icon|${name}|${z}`, () => icon(name), z, cls);
 }
 
 /**

@@ -3,7 +3,7 @@
 import { futureYear, susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
 import { escapeHtml, genericName, modelLabel, pct, yen } from "./format.ts";
-import { SOLID_AT, bugImg, levelForAmount, soldierImg } from "./pixel/index.ts";
+import { SOLID_AT, iconImg, levelForAmount, soldierImg } from "./pixel/index.ts";
 
 const css = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 const GN = css(GRAM_COLORS.negative.fill);
@@ -24,19 +24,23 @@ export function notice(data: GameData): string {
 }
 
 export function titleScreen(data: GameData, scenario: ScenarioDef, model: ResistanceModelId, showDev = false): string {
+  // 背景の盤面では、ボットが遊んでいる（app.ts の attract）。左に寄せて、右に盤面が見えるようにする
   return `
   <div class="screen title-screen">
-    <div class="title-art" aria-hidden="true">${titleArt(data)}</div>
-    <h1>センタクアツ<small>（仮）</small></h1>
+    <div class="title-logo"><h1>センタクアツ<small>（仮）</small></h1></div>
     <p class="tagline">あなたの選択が、未来の敵をつくる</p>
     <p class="lead">細菌から膀胱を守る、抗菌薬のタワーディフェンス。<br>選んだ抗菌薬しだいで耐性菌が増え、「${escapeHtml(scenario.future.title)}」で、自分が育てた耐性菌と戦います。</p>
-    <div class="buttons">
-      <button class="primary" data-action="start">はじめる</button>
-      <button data-action="howto">遊び方</button>
-      <button data-action="sources">出典と注意</button>
+    <div class="title-main">
+      <div class="buttons">
+        <button class="primary" data-action="start">はじめる</button>
+        <button data-action="howto">遊び方</button>
+        <button data-action="sources">出典と注意</button>
+      </div>
+      <div class="title-side-col">
+        ${modelPicker(model)}
+        ${notice(data)}
+      </div>
     </div>
-    ${modelPicker(model)}
-    ${notice(data)}
     <p class="meta">使うデータ：${escapeHtml(scenario.region)}（JANIS 2025年報）${showDev ? `／ステージ：${escapeHtml(scenario.title)}／${escapeHtml(modelLabel(model))}` : ""}</p>
   </div>`;
 }
@@ -46,17 +50,10 @@ function modelPicker(model: ResistanceModelId): string {
   const opt = (id: "A" | "B", title: string, text: string) =>
     `<button class="model-opt${model === id ? " on" : ""}" data-action="model-${id}" aria-pressed="${model === id}"><b>${id}：${title}</b><small>${text}</small></button>`;
   return `<div class="model-pick" role="group" aria-label="耐性の進み方">
-    <span class="model-pick-label">耐性の進み方</span>
+    <span class="model-pick-label">耐性の進み方<small>迷ったら A のままで大丈夫です</small></span>
     ${opt("A", "薬ごと", "使った薬にさらされた菌の中で、その薬に耐性の菌が残って増える")}
     ${opt("B", "系統ごと", "同じ系統の薬を使うほど、その系統の薬がまとめて効かなくなる")}
   </div>`;
-}
-
-/** タイトルの絵：盤面と同じドット絵の兵士と細菌が向かい合う（2026-11-04 ドット絵にそろえた。試遊の指摘） */
-function titleArt(data: GameData): string {
-  const soldiers = ["ABPC", "CTRX", "MEPM"].filter((id) => data.drugById.has(id)).map((id) => soldierImg(data, data.drugById.get(id)!, "lane"));
-  const bugs = ["ecoli", "kpneumoniae", "efaecalis"].filter((id) => data.bacteriumById.has(id)).map((id) => bugImg(data.bacteriumById.get(id)!));
-  return `<div class="title-side">${soldiers.join("")}</div><div class="title-side bugs">${bugs.join("")}</div>`;
 }
 
 /** 遊び方の「兵士の姿」の見本：系統ごとに代表の薬を1つ（カタログにない薬は飛ばす） */
@@ -121,12 +118,12 @@ export function howtoScreen(data: GameData): string {
       <section>
         <h3>1. 膀胱を守る</h3>
         <svg viewBox="0 0 260 120" width="260" height="120" aria-hidden="true">
-          <rect x="6" y="10" width="54" height="100" rx="22" fill="#fde68a" stroke="#d4a017" stroke-width="2"/>
+          <rect x="6" y="10" width="54" height="100" rx="22" fill="#f6bd34" stroke="#df5f93" stroke-width="4"/>
           <text x="33" y="66" font-size="13" text-anchor="middle" fill="#7c4a03" font-weight="bold">膀胱</text>
-          ${[30, 60, 90].map((y) => `<line x1="64" y1="${y}" x2="254" y2="${y}" stroke="#e6d3dc"/>`).join("")}
-          <rect x="200" y="38" width="30" height="13" rx="6.5" fill="${GN}" stroke="#9d1f52"/>
-          <path d="M190 45 L150 45" stroke="#9d1f52" stroke-width="2" marker-end="url(#ar)"/>
-          <defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M10 0 L0 5 L10 10z" fill="#9d1f52"/></marker></defs>
+          ${[30, 60, 90].map((y) => `<line x1="64" y1="${y}" x2="254" y2="${y}" stroke="#8f2f5f" stroke-width="3"/>`).join("")}
+          <rect x="200" y="38" width="30" height="13" rx="6.5" fill="${GN}" stroke="#ffb3cf"/>
+          <path d="M190 45 L150 45" stroke="#ff8ab3" stroke-width="2" marker-end="url(#ar)"/>
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M10 0 L0 5 L10 10z" fill="#ff8ab3"/></marker></defs>
         </svg>
         <p>細菌は右（尿道側）から3本のレーンを進んできます。膀胱に着くと耐久が減り、0 になると負けです。すべての波をしのげば勝ちです。</p>
       </section>
@@ -144,6 +141,7 @@ export function howtoScreen(data: GameData): string {
         <h3>3. 抗菌薬を召喚する</h3>
         <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。遊ぶたびに、手札の何枚かが供給制限で使えなくなります。</p>
         <ul>
+          <li><b>カードの見かた</b>：${iconImg("coin", 1)}硬貨＝1回の医療費、${iconImg("hourglass", 1)}砂時計＝待ち時間、絵の左下の数字＝数字キー。</li>
           <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
           <li><b>内服薬</b>は、飲んだ薬のうち体に届く割合（<b>吸収率</b>。バイオアベイラビリティ）の量で出ます。吸収率の低い薬は、はじめから兵士が薄く出ます。</li>
           <li>効かない菌には弾がはじかれます。<b>耐性</b>＝その個体が耐性を獲得している。<b>自然耐性</b>＝その菌種がもともと効かない。<b>効かない扱い</b>＝このゲームで効かないことにしている組み合わせ（腸球菌に MEPM・IPM/CS）。</li>
@@ -182,9 +180,9 @@ function shortList(data: GameData, short: readonly string[]): string {
 
 /** ブリーフィングの医療費の欄。時間で増えるステージは「はじめ ◯、1日ごとに +◯」 */
 function budgetFact(stage: StageDef): string {
-  if (!stage.budgetPerDay) return `<div><span>医療費の予算</span><b>${yen(stage.budget)}</b></div>`;
+  if (!stage.budgetPerDay) return `<div><span>${iconImg("coin", 2)}医療費の予算</span><b>${yen(stage.budget)}</b></div>`;
   const max = stage.budgetMax ? `（ためられるのは ${yen(stage.budgetMax)} まで）` : "";
-  return `<div><span>医療費</span><b>はじめ ${yen(stage.budget)}</b><small>1日（ゲーム内の24秒）ごとに +${yen(stage.budgetPerDay)}${max}</small></div>`;
+  return `<div><span>${iconImg("coin", 2)}医療費</span><b>はじめ ${yen(stage.budget)}</b><small>1日（ゲーム内の24秒）ごとに +${yen(stage.budgetPerDay)}${max}</small></div>`;
 }
 
 export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", extra = "", startTable?: ResistanceTable, short: readonly string[] = []): string {
@@ -216,7 +214,7 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
     <div class="facts">
       <div><span>手札</span><div class="chips">${handChips(data, stage, short)}</div></div>
       ${budgetFact(stage)}
-      <div><span>敵の波</span><b>${stage.waves.length}</b></div>
+      <div><span>${iconImg("germ", 2)}敵の波</span><b>${stage.waves.length}</b></div>
     </div>
     ${shortNote(data, short)}
     ${handNote}
@@ -433,7 +431,7 @@ function dascCard(data: GameData, r: StageResult): string {
       : r.spectrum.dot > 0
         ? `ASC スコアを確かめていない薬（${missing}）を使ったので、まだ出せません`
         : "抗菌薬を使っていません";
-  return `<div><span>スペクトラムの広さ（DASC/DOT）</span><b>${dascValue(data, r)}</b><small>${small}</small></div>`;
+  return `<div><span>${iconImg("microscope", 1)} スペクトラムの広さ（DASC/DOT）</span><b>${dascValue(data, r)}</b><small>${small}</small></div>`;
 }
 
 function topClass(data: GameData, r: StageResult): string {
@@ -464,14 +462,15 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
   const used = Object.values(r.summons).reduce((a, b) => a + b, 0) > 0;
   return `
   <div class="screen result-screen">
-    <h2>${phase === "present" ? "ステージ1" : "ステージ2"}の結果：${outcomeLine(r)}</h2>
+    <h2>${iconImg(r.outcome === "won" ? "star" : "broken", 3)}${phase === "present" ? "ステージ1" : "ステージ2"}の結果：<span class="result-banner">${outcomeLine(r)}</span></h2>
+    <p class="foot strong top">耐性化の速さは、ゲーム用に大きく誇張しています。現実の予測ではありません。</p>
     ${short.length ? `<p class="why short-why">供給制限で使えなかった薬：<b>${shortList(data, short)}</b></p>` : ""}
     <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので、耐性率は変わっていません"}</p>
     <div class="stats">
-      <div><span>膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
-      <div><span>医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
-      <div><span>手札のどの薬も効かない菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた菌のうち</small></div>
-      <div><span>系統の使い分け（AHI）</span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。AHI（antibiotic heterogeneity index）の式で、系統ごとの使用日数の割合から計算</small></div>
+      <div><span>${iconImg("bladder", 1)} 膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
+      <div><span>${iconImg("coin", 1)} 医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
+      <div><span>${iconImg("broken", 1)} 手札のどの薬も効かない菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた菌のうち</small></div>
+      <div><span>${iconImg("chart", 1)} 系統の使い分け（AHI）</span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。AHI（antibiotic heterogeneity index）の式で、系統ごとの使用日数の割合から計算</small></div>
       ${dascCard(data, r)}
     </div>
     <div class="cols">
@@ -485,7 +484,6 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
         ${resistanceTable(data, scenario.region, start, r.resistanceEnd, drugs, from ? "ステージ1の開始 → ステージ2の終わり" : "開始 → 終わり")}
       </section>
     </div>
-    <p class="foot strong">耐性化の速さは、ゲーム用に大きく誇張しています。現実の予測ではありません。</p>
     <div class="buttons">
       ${resultButtons(scenario, phase, r)}
     </div>
@@ -587,7 +585,7 @@ export function sourcesScreen(data: GameData): string {
       <h3>用語の説明</h3>
       <dl>${GLOSSARY.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join("")}</dl>
     </section>
-    <p class="muted">薬の名前は略号と一般名だけを使っています（${escapeHtml(drugNames(data))}）。細菌と兵士（抗菌薬）の絵はすべてコードで描いています。フォントは端末に入っているものを使います。</p>
+    <p class="muted">薬の名前は略号と一般名だけを使っています（${escapeHtml(drugNames(data))}）。細菌と兵士（抗菌薬）の絵はすべてコードで描いています。見出し・数字・ボタンなどのドット絵の文字は DotGothic16（Fontworks。SIL Open Font License 1.1）、長い説明の文は端末に入っているフォントを使います。</p>
     <div class="buttons"><button class="primary" data-action="back">戻る</button></div>
   </div>`;
 }

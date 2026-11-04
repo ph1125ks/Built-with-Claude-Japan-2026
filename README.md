@@ -48,6 +48,8 @@ URL で選べるもの：
 
 - コード：[MIT License](LICENSE)
 - 公開データから作ったファイル（`data/generated/` の感受性・分離菌の割合・薬価）は、上の表のそれぞれの利用条件に従います（出典と「加工して作成」を明記して使えます）
+- フォント：見出し・数字・ボタンなどのドット絵の文字は [DotGothic16](https://github.com/fontworks-fonts/DotGothic16)（Fontworks、SIL Open Font License 1.1。npm の `@fontsource/dotgothic16` で同梱）。長い説明の文は端末に入っているフォントを使います
+- 兵士・細菌・アイコン・膀胱などの絵は、すべてコードで描いています（`src/game/pixel/`）
 - ゲームは教育用のシミュレーションで、実際の診療の判断には使えません（MIT License の無保証の条項もあわせてご確認ください）
 
 ## 開発

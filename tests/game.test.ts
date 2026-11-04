@@ -138,10 +138,12 @@ describe("効く・効かない", () => {
 });
 
 describe("情報の見え方", () => {
+  // 2026-11-04 作者の判断（「そろう作り」の①）：菌名は膀胱から 0.8333 より近く、感受性は 0.6667 より近くで分かる
   it("遠い：グラム染色だけ、中ほど：菌名、近い：感受性", () => {
     expect(revealLevelAt(data, L)).toBe("gram");
-    expect(revealLevelAt(data, L * 0.7)).toBe("gram");
-    expect(revealLevelAt(data, L * 0.5)).toBe("species");
+    expect(revealLevelAt(data, L * 0.9)).toBe("gram");
+    expect(revealLevelAt(data, L * 0.75)).toBe("species");
+    expect(revealLevelAt(data, L * 0.5)).toBe("susceptibility");
     expect(revealLevelAt(data, L * 0.2)).toBe("susceptibility");
   });
 

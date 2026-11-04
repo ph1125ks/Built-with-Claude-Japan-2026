@@ -1,9 +1,18 @@
 // 遊んでいる最中の DOM：上の帯（膀胱の耐久・医療費・波）、情報の見え方の帯、レーンの選択、手札のカード、知らせ。
 import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
-import { LAYOUT, laneTopY } from "./board.ts";
+import { LAYOUT, laneTopY, zoneBounds } from "./board.ts";
 import { cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
-import { soldierImg } from "./pixel/index.ts";
+import { iconImg, soldierImg } from "./pixel/index.ts";
+import type { IconName } from "./pixel/icons.ts";
+
+const pauseLabel = (paused: boolean) => (paused ? `${iconImg("play", 1)}<span>再開</span>` : `${iconImg("pause", 1)}<span>一時停止</span>`);
+const speedLabel = (n: number) => `${iconImg("fast", 1)}<span>×${n}</span>`;
+type TickerKind = "warn" | "res" | "hint" | "pause";
+const TICKER_ICON: Record<TickerKind, IconName> = { warn: "warn", res: "up", hint: "info", pause: "pause" };
+/** 遊び方の案内（最初に召喚するまで出しておく） */
+const START_HINT = "① 下のカードを選ぶ（カード右上の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止";
+const PAUSE_HINT = "一時停止中（スペースで再開）。止めたまま札を読み、カードを選んでレーンを予約できます";
 
 export interface HudOptions {
   root: HTMLElement;
@@ -17,6 +26,10 @@ export interface HudOptions {
   showDev?: boolean;
   /** 供給制限で今回は使えない薬（手札の右に札で出す） */
   shortDrugs?: string[];
+  /** 前のステージになかった薬（カードに「追加」の札を付ける） */
+  newDrugs?: string[];
+  /** カードを選んでレーンにかざしたとき、兵士が立つ場所の見本を出す（board.ts の preview）。戻り値は立つ場所（0〜） */
+  onPreview?: (drug: string | null, lane: number) => number;
   onEnd: () => void;
 }
 
@@ -25,8 +38,8 @@ function shortCard(data: GameData, short: string[], cards: number): string {
   if (short.length === 0) return "";
   const chips = short.map((d) => `<span>${escapeHtml(data.drugById.get(d)?.abbr ?? d)}</span>`).join("");
   const title = "供給制限：今回は使えません（遊ぶたびに変わります）";
-  if (cards >= MAX_CARDS) return `<div class="card short-card compact" title="${title}"><b>供給制限</b><small>今回は<br>使えない</small><div class="short-list">${chips}</div></div>`;
-  return `<div class="card short-card" title="${title}"><b>供給制限</b><small>今回は使えません</small><div class="short-list">${chips}</div><small>遊ぶたびに変わります</small></div>`;
+  if (cards >= MAX_CARDS) return `<div class="card short-card compact" style="--i:${cards}" title="${title}">${iconImg("warn", 1)}<b>供給制限</b><small>今回は<br>使えない</small><div class="short-list">${chips}</div></div>`;
+  return `<div class="card short-card" style="--i:${cards}" title="${title}">${iconImg("warn", 2)}<b>供給制限</b><small>今回は使えません</small><div class="short-list">${chips}</div><small>遊ぶたびに変わります</small></div>`;
 }
 
 export class Hud {
@@ -35,6 +48,9 @@ export class Hud {
   private selected: string | null = null;
   private els: {
     wave: HTMLElement;
+    pips: HTMLElement[];
+    bladderBox: HTMLElement;
+    budgetBox: HTMLElement;
     bladderBar: HTMLElement;
     bladderNum: HTMLElement;
     budget: HTMLElement;
@@ -55,15 +71,18 @@ export class Hud {
     this.root = opts.root;
     this.session = opts.session;
     const s = this.session.state;
+    this.lastHp = s.bladderHp;
+    this.lastBudget = s.budget;
     const data = s.data;
     const region = s.region;
     const lanesCount = data.rules.board.lanes;
-    const zoneW = (LAYOUT.x1 - LAYOUT.x0) / 3;
+    const [near, far] = zoneBounds();
+    const laneW = LAYOUT.x1 - LAYOUT.x0;
     const keys = cardKeys(s.stage.hand.map((h) => h.drug), opts.keyOrder);
     this.drugByKey = new Map([...keys].map(([d, k]) => [k, d]));
 
     const cardHtml = s.stage.hand
-      .map((h) => {
+      .map((h, i) => {
         const d = data.drugById.get(h.drug)!;
         const cls = data.classById.get(d.class)!;
         const sp = spectrumOf(data, region, d.id);
@@ -71,7 +90,8 @@ export class Hud {
           (x) => `<span class="${sp[x.key] ? "on" : "off"}" title="ゲーム内の目安：${x.label}に${sp[x.key] ? "効く見込みあり" : "効く見込みなし（自然耐性・効かない扱い）"}">${x.label}</span>`,
         ).join("");
         const gauge = s.model.id === "B" ? `<div class="gauge"><div class="gbar"><i></i></div><span class="glabel"></span></div>` : "";
-        return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color}" title="${escapeHtml(d.name)}">
+        return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color};--i:${i}" title="${escapeHtml(d.name)}">
+          <span class="card-shine"></span>${opts.newDrugs?.includes(d.id) ? `<span class="new-tag">追加</span>` : ""}
           <div class="card-head">
             <div class="portrait">${soldierImg(data, d, "card")}<span class="key">${keys.get(d.id)}</span></div>
             <div class="card-head-text">
@@ -81,7 +101,7 @@ export class Hud {
           </div>
           <div class="gname">${escapeHtml(genericName(d))}</div>
           <div class="cls">${escapeHtml(cls.name)}</div>
-          <div class="meta"><span>医療費 <b>${yen(costPerDose(data, d.id))}</b></span><span>待ち <b>${waitSeconds(data, d).toFixed(0)}秒</b></span></div>
+          <div class="meta"><span class="cost" title="1回の医療費">${iconImg("coin", 1)}<b>${yen(costPerDose(data, d.id))}</b></span><span class="wait" title="待ち時間（投与間隔）">${iconImg("hourglass", 1)}待ち<b>${waitSeconds(data, d).toFixed(0)}秒</b></span></div>
           <div class="interval">${escapeHtml(intervalShort(d))}${d.bioavailability != null ? `・吸収率 <b>${Math.round(d.bioavailability * 100)}%</b>` : ""}</div>
           <div class="spec">${spec}</div>
           ${gauge}
@@ -92,15 +112,15 @@ export class Hud {
 
     this.root.innerHTML = `
       <div class="hud">
-        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><small>${escapeHtml(modelShort(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
-        <div class="hud-bladder"><span>膀胱の耐久</span><div class="bar"><i></i></div><b class="num"></b></div>
-        <div class="hud-budget"><span>医療費 ${s.stage.budgetPerDay ? "使える額" : "残り"}</span><b class="budget"></b><small>${s.stage.budgetPerDay ? `1日ごとに +${yen(s.stage.budgetPerDay)}` : `/ ${yen(s.stage.budget)}`}</small></div>
-        <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">アンチバイオグラム</button><button class="pause" title="一時停止（スペース）">一時停止</button><button class="speed" title="速さ">×${opts.session.speed}</button></div>
+        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><div class="wave-pips">${s.stage.waves.map(() => "<i></i>").join("")}</div><small>${escapeHtml(modelShort(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
+        <div class="hud-bladder">${iconImg("bladder", 2)}<div class="hb-col"><span>膀胱の耐久</span><div class="bar"><i></i></div></div><b class="num"></b></div>
+        <div class="hud-budget">${iconImg("coin", 2)}<div class="hb-col"><span>医療費 ${s.stage.budgetPerDay ? "使える額" : "残り"}</span><small>${s.stage.budgetPerDay ? `1日ごとに +${yen(s.stage.budgetPerDay)}` : `/ ${yen(s.stage.budget)}`}</small></div><b class="budget"></b></div>
+        <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">${iconImg("chart", 1)}<span>アンチバイオグラム</span></button><button class="pause" title="一時停止（スペース）">${pauseLabel(false)}</button><button class="speed" title="速さ">${speedLabel(opts.session.speed)}</button></div>
       </div>
       <div class="zones" style="left:${LAYOUT.x0}px;width:${LAYOUT.x1 - LAYOUT.x0}px">
-        <span style="width:${zoneW}px">◀ 近い：効かない薬が分かる<small>（薬剤感受性試験）</small></span>
-        <span style="width:${zoneW}px">中ほど：菌名が分かる<small>（培養・同定）</small></span>
-        <span style="width:${zoneW}px">遠い：グラム染色像だけ<small>（<b class="gn">ピンク＝陰性</b>・<b class="gp">紫＝陽性</b>）</small></span>
+        <span class="z-near" style="width:${laneW * near}px">${iconImg("diskTest", 1)}<span><b>◀ 近い：効かない薬が分かる</b><small>（薬剤感受性試験）</small></span></span>
+        <span class="z-mid" style="width:${laneW * (far - near)}px">${iconImg("dish", 1)}<span><b>中ほど：菌名が分かる</b><small>（培養・同定）</small></span></span>
+        <span class="z-far" style="width:${laneW * (1 - far)}px">${iconImg("microscope", 1)}<span><b>遠い：グラム染色像だけ</b><small><i class="gn">ピンク＝陰性</i>・<i class="gp">紫＝陽性</i></small></span></span>
       </div>
       <div class="lanes">${Array.from(
         { length: lanesCount },
@@ -108,12 +128,13 @@ export class Hud {
       ).join("")}</div>
       <div class="ticker" style="top:${LAYOUT.msgTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;height:${LAYOUT.msgH}px"></div>
       <div class="hand${(opts.shortDrugs ?? []).length && s.stage.hand.length >= MAX_CARDS ? " tight" : ""}" style="top:${LAYOUT.cardsTop}px">${cardHtml}${shortCard(data, opts.shortDrugs ?? [], s.stage.hand.length)}</div>
-      <div class="abg-panel" hidden><div class="abg-head"><b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
+      <div class="abg-panel" hidden><div class="abg-head">${iconImg("chart", 2)}<b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
     `;
 
     const q = <T extends HTMLElement>(sel: string) => this.root.querySelector(sel) as T;
     const cards = new Map<string, { el: HTMLElement; dots: HTMLElement[]; gauge?: HTMLElement; gaugeLabel?: HTMLElement }>();
-    this.root.querySelectorAll<HTMLElement>(".card").forEach((el) => {
+    // 薬のカードだけ（供給制限の札は除く）
+    this.root.querySelectorAll<HTMLElement>(".card[data-drug]").forEach((el) => {
       cards.set(el.dataset.drug!, {
         el,
         dots: [...el.querySelectorAll<HTMLElement>(".dots i b")],
@@ -124,6 +145,9 @@ export class Hud {
     });
     this.els = {
       wave: q(".wave"),
+      pips: [...this.root.querySelectorAll<HTMLElement>(".wave-pips i")],
+      bladderBox: q(".hud-bladder"),
+      budgetBox: q(".hud-budget"),
       bladderBar: q(".hud-bladder .bar i"),
       bladderNum: q(".hud-bladder .num"),
       budget: q(".budget"),
@@ -135,6 +159,14 @@ export class Hud {
     };
     this.els.lanes.forEach((el, i) => {
       el.addEventListener("click", () => this.place(i));
+      el.addEventListener("mouseenter", () => {
+        this.hoverLane = i;
+        this.frame();
+      });
+      el.addEventListener("mouseleave", () => {
+        if (this.hoverLane === i) this.hoverLane = null;
+        this.frame();
+      });
       el.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         this.select(null);
@@ -146,7 +178,7 @@ export class Hud {
     this.els.speed.addEventListener("click", () => {
       const next = this.session.speed === 1 ? 2 : this.session.speed === 2 ? 4 : 1;
       this.session.speed = next;
-      this.els.speed.textContent = `×${next}`;
+      this.els.speed.innerHTML = speedLabel(next);
     });
     this.keyHandler = (e) => {
       if (e.key === " ") {
@@ -163,12 +195,30 @@ export class Hud {
       }
     };
     window.addEventListener("keydown", this.keyHandler);
+    // カードを配り終えたら、配る動きを外す（選び直したときに、もう一度配られないように）
+    this.dealTimer = window.setTimeout(() => this.root.querySelector(".hand")?.classList.add("dealt"), 1400);
     this.unsub = this.session.onEvents((events) => this.handle(events));
-    this.message("① 下のカードを選ぶ（カード右上の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止", "hint", 0);
+    this.message(START_HINT, "hint", 0);
     this.frame();
   }
 
+  /** かざしているレーン（兵士の立つ場所の見本を出す） */
+  private hoverLane: number | null = null;
+  /** このステージで一度でも召喚したか（それまでは遊び方の案内を出しておく） */
+  private summoned = false;
+
+  /** 新しい波が始まった：上の帯の波の表示を光らせる（board.ts の "wave"） */
+  waveFlash(): void {
+    const box = this.root.querySelector<HTMLElement>(".hud-stage");
+    if (box) this.pulse(box, "wave-new");
+  }
+
+  private dealTimer = 0;
+
   destroy(): void {
+    window.clearTimeout(this.dealTimer);
+    for (const t of this.badgeTimers.values()) window.clearTimeout(t);
+    this.opts.onPreview?.(null, 0);
     this.unsub();
     window.removeEventListener("keydown", this.keyHandler);
     this.root.innerHTML = "";
@@ -188,27 +238,35 @@ export class Hud {
     } else {
       this.session.paused = this.pausedBeforeAbg;
     }
-    this.els.pause.textContent = this.session.paused ? "再開" : "一時停止";
+    this.els.pause.innerHTML = pauseLabel(this.session.paused);
   }
 
   private togglePause(): void {
     // アンチバイオグラムを開いている間は止めたまま（閉じると元に戻る）
     if (this.abgOpen) return;
     this.session.paused = !this.session.paused;
-    this.els.pause.textContent = this.session.paused ? "再開" : "一時停止";
+    this.els.pause.innerHTML = pauseLabel(this.session.paused);
     this.root.classList.toggle("paused", this.session.paused);
-    if (!this.session.paused) {
-      // 再開したら、止めている間だけの案内（「準備ができたら…」「予約：…」）を消す（試遊の指摘：再開後も残っていた）
+    if (this.session.paused) {
+      // 一時停止の知らせは、知らせの帯に出す（前は帯の上に重ねていて、遊び方の案内を隠していた。試遊の指摘）
+      if (!this.root.classList.contains("reserving")) this.message(PAUSE_HINT, "pause", 0);
+    } else {
+      // 再開したら、止めている間だけの案内（「準備ができたら…」「予約：…」）を消す（試遊の指摘：再開後も残っていた）。
+      // まだ一度も召喚していなければ、遊び方の案内に戻す
       this.root.classList.remove("reserving");
-      if (this.els.ticker.classList.contains("hint")) {
-        this.els.ticker.innerHTML = "";
-        this.els.ticker.className = "ticker";
+      if (this.els.ticker.classList.contains("hint") || this.els.ticker.classList.contains("pause")) {
+        if (!this.summoned && this.session.pending.length === 0) this.message(START_HINT, "hint", 0);
+        else {
+          this.els.ticker.innerHTML = "";
+          this.els.ticker.className = "ticker";
+        }
       }
     }
   }
 
   private select(drug: string | null): void {
     this.selected = this.selected === drug ? null : drug;
+    if (!this.selected) this.opts.onPreview?.(null, 0);
     for (const [id, c] of this.els.cards) c.el.classList.toggle("selected", id === this.selected);
     this.root.classList.toggle("choosing", this.selected !== null);
     this.frame();
@@ -222,6 +280,7 @@ export class Hud {
       return;
     }
     this.session.summon(this.selected, lane);
+    this.summoned = true;
     // 一時停止中の召喚は、再開した瞬間に行われる（予約）。盤面には半透明の兵士で出し（board.ts）、帯には予約をまとめて出す。
     // 一時停止の帯は、予約があるあいだは隠して、この知らせを見せる（試遊の指摘：一時停止の帯に隠れていた）
     if (this.session.paused) {
@@ -232,11 +291,31 @@ export class Hud {
     }
   }
 
-  /** 最初のステージは止めた状態で始める（試遊の指摘：操作を知る前に菌が来る） */
-  pauseAtStart(): void {
+  /**
+   * ステージを止めた状態で始める（試遊の指摘：操作を知る前に菌が来る。ステージ2も、変わった手札を読む前に始まっていた）。
+   * 遊び方の案内（①②）も同じ帯に入れる（試遊の指摘：一時停止の帯に隠れて読めなかった）
+   */
+  pauseAtStart(extra = ""): void {
     if (this.session.paused) return;
     this.togglePause();
-    this.message("準備ができたら、スペースか「再開」で始まります。止めている間もカードを選んでレーンを予約できます", "hint", 0);
+    this.message(`準備ができたら、スペースか「再開」で始まります。① 下のカードを選ぶ → ② レーンをクリック（止めている間は予約）${extra}`, "hint", 0);
+  }
+
+  private lastHp = Infinity;
+  private lastBudget = Infinity;
+
+  /** 値が動いたときの短い合図（CSS のアニメーションを付け直し、終わったら外す） */
+  private pulse(el: HTMLElement, cls: string, autoRemove = true): void {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    if (!autoRemove) return;
+    const done = (e: AnimationEvent) => {
+      if (e.target !== el && !el.contains(e.target as Node)) return;
+      el.classList.remove(cls);
+      el.removeEventListener("animationend", done);
+    };
+    el.addEventListener("animationend", done);
   }
 
   private set(key: string, el: HTMLElement, prop: "text" | "width" | "class", value: string): void {
@@ -256,9 +335,18 @@ export class Hud {
     const startedWaves = s.spawnIndex > 0 ? (s.spawnPlan[s.spawnIndex - 1]?.wave ?? 0) + 1 : 0;
     const cleared = s.waveRemaining.filter((r) => r === 0).length;
     this.set("wave", this.els.wave, "text", `波 ${startedWaves} / ${s.stage.waves.length}（片付いた ${cleared}）`);
+    this.els.pips.forEach((pip, i) => this.set(`pip${i}`, pip, "class", s.waveRemaining[i] === 0 && i < startedWaves ? "done" : i < startedWaves ? "on" : ""));
+    if (s.bladderHp < this.lastHp - 1e-6) this.pulse(this.els.bladderBox, "hit");
+    this.lastHp = s.bladderHp;
+    if (s.budget > this.lastBudget + 0.5) this.pulse(this.els.budgetBox, "gain");
+    else if (s.budget < this.lastBudget - 0.5) this.pulse(this.els.budgetBox, "spend");
+    this.lastBudget = s.budget;
     const frac = s.bladderHp / s.stage.bladderHp;
     this.set("bb", this.els.bladderBar, "width", `${(frac * 100).toFixed(1)}%`);
     this.set("bbc", this.els.bladderBar, "class", frac < 0.3 ? "low" : frac < 0.6 ? "mid" : "");
+    this.els.bladderBox.classList.toggle("low", frac < 0.3);
+    // 耐久が2割を切ったら、盤面の縁を赤く脈打たせる（style.css）
+    document.body.classList.toggle("danger", frac < 0.2 && !this.ended);
     this.set("bn", this.els.bladderNum, "text", `${Math.ceil(s.bladderHp)} / ${s.stage.bladderHp}`);
     this.set("budget", this.els.budget, "text", yen(s.budget));
 
@@ -280,6 +368,7 @@ export class Hud {
         this.set(`dc${drug}${lane}`, dot, "class", cls);
       });
       c.el.classList.toggle("unusable", !anyReady);
+      c.el.classList.toggle("poor", costPerDose(data, drug) > s.budget + 1e-9);
       if (c.gauge && c.gaugeLabel) {
         const cls = data.drugById.get(drug)!.class;
         const g = s.gauge[cls] ?? 0;
@@ -289,6 +378,8 @@ export class Hud {
       }
     }
 
+    // カードを選んでいるとき：かざしたレーンだけを光らせ、兵士が立つ場所に見本と札を出す（試遊の指摘：3本ともピンクに光り、立つ場所も分からなかった）
+    let previewed = false;
     this.els.lanes.forEach((el, lane) => {
       const msg = el.firstElementChild as HTMLElement;
       if (!this.selected) {
@@ -298,14 +389,32 @@ export class Hud {
       }
       const r = canSummon(s, this.selected, lane);
       const abbr = data.drugById.get(this.selected)?.abbr ?? "";
-      let text = `ここに ${abbr} を召喚`;
+      let text = this.session.paused ? `ここに ${abbr} を予約（クリック）` : `ここに ${abbr} を召喚（クリック）`;
       if (r === "cooldown") {
         const left = ((s.readyAt.get(`${this.selected}:${lane}`) ?? 0) - s.tick) / tps;
         text = `${abbr}：待ち ${left.toFixed(1)}秒（投与間隔）`;
       } else if (r) text = `${abbr}：${rejectLabel(r)}`;
-      this.set(`lane${lane}`, el, "class", r ? "lane target blocked" : "lane target");
+      const hover = this.hoverLane === lane;
+      this.set(`lane${lane}`, el, "class", `lane target${r ? " blocked" : ""}${hover ? " hover" : ""}`);
       this.set(`lanem${lane}`, msg, "text", text);
+      if (hover) {
+        const slot = this.opts.onPreview?.(r ? null : this.selected, lane) ?? 0;
+        // 札は、兵士が立つ場所の右に出す（レーンの左端からの位置）
+        this.set(`lanex${lane}`, msg, "class", `lane-msg at${Math.min(2, slot)}`);
+        previewed = true;
+      }
     });
+    if (!previewed) this.opts.onPreview?.(null, 0);
+  }
+
+  /** 耐性率が上がった薬のカードに、しばらく「↑耐性」の札を出す */
+  private badgeTimers = new Map<string, number>();
+  private badge(drug: string): void {
+    const el = this.els.cards.get(drug)?.el;
+    if (!el) return;
+    this.pulse(el, "res-up", false);
+    window.clearTimeout(this.badgeTimers.get(drug));
+    this.badgeTimers.set(drug, window.setTimeout(() => el.classList.remove("res-up"), 6000));
   }
 
   private handle(events: GameEvent[]): void {
@@ -320,7 +429,11 @@ export class Hud {
             : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった`;
         const note = this.anyLinked(e.changes) ? (e.cause === "wave" ? "　※まだ使っていない薬（耐性の連動）" : "　※まだ使っていない薬（同じ系統・耐性の連動）") : "";
         const lines = this.topChanges(e.changes);
-        if (lines.length) this.message(`${head}：${lines.join("、")}${note}`, "res");
+        if (lines.length) {
+          // 耐性の知らせは、ほかの知らせより長く出す（試遊の指摘：8秒で薄くなり読み逃す）
+          this.message(`${head}：${lines.join("、")}${note}`, "res", 12000);
+          for (const c of this.pickChanges(e.changes)) this.badge(c.drug);
+        }
       } else if (e.type === "end" && !this.ended) {
         this.ended = true;
         window.setTimeout(() => this.opts.onEnd(), 1400);
@@ -355,9 +468,9 @@ export class Hud {
   private messageTimer = 0;
 
   /** レーンの下の帯に知らせを出す。新しい知らせが来るまで残し、しばらくしたら薄くする（ms が 0 なら薄くしない） */
-  message(html: string, kind: "warn" | "res" | "hint" = "res", ms = 8000): void {
+  message(html: string, kind: TickerKind = "res", ms = 8000): void {
     const el = this.els.ticker;
-    el.innerHTML = html;
+    el.innerHTML = `<span class="tk-ico">${iconImg(TICKER_ICON[kind], 1)}</span><span class="tk-text">${html}</span>`;
     el.className = `ticker ${kind}`;
     window.clearTimeout(this.messageTimer);
     if (ms > 0) this.messageTimer = window.setTimeout(() => el.classList.add("old"), ms);

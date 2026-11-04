@@ -41,3 +41,7 @@ export function bugSprite(style: PixelStyle, bug: PixelBug, frame?: number, bare
 export function ditherKeep(s: Sprite, keep: number, edgeKeep?: boolean): Sprite;
 export function isEdge(s: Sprite, x: number, y: number): boolean;
 export function crop(s: Sprite, r: { x: number; y: number; w: number; h: number }): Sprite;
+export function blank(w: number, h: number): Sprite;
+export function blit(dst: Sprite, src: Sprite, x: number, y: number): Sprite;
+export function outline(s: Sprite, mode?: "darken" | "selout" | { color: string }): Sprite;
+export function fromRows(rows: string[], palette: Record<string, string | RGB | null>, ctx?: { classRamp?: string[]; gramRamp?: string[]; accent?: string }): Sprite;
