@@ -266,8 +266,10 @@ async function main(): Promise<void> {
     } else {
       await scene(6, 40, [still(await render(page, "card", "シーン6　教える側：Claude がステージを作る", ["（教員モードの画面は、これから作って収録します）"]), 40)], ov6);
     }
-    // 7 作り方（15秒）：仮の画面
-    await scene(7, 15, [still(await render(page, "card", "シーン7　作り方：Claude Code を中心にした開発", ["（データ監査のサブエージェント・耐性モデルの比較・コミット前のフックの画面を、あとで差し込みます）"]), 15)], []);
+    // 7 作り方（15秒）：scripts/make-scene7.ts が作った絵（データ監査・耐性モデルの比較・フック）を順に。なければ仮の画面
+    const sc7 = ["audit.png", "models.png", "hook.png"].map((f) => join(REC, "scene7", f)).filter((f) => existsSync(f));
+    if (sc7.length) await scene(7, 15, sc7.map((f) => still(f, 15 / sc7.length)), []);
+    else await scene(7, 15, [still(await render(page, "card", "シーン7　作り方：Claude Code を中心にした開発", ["（データ監査のサブエージェント・耐性モデルの比較・コミット前のフックの画面を、あとで差し込みます）"]), 15)], []);
     // 8 使い続ける場面（11秒）：タイトル
     await scene(8, 11, [still(title, 11)], [{ png: await render(page, "top", "病院実務実習 ／ 院内の新人研修 ／ 大学・専門学校の講義"), start: 0, end: 6 }]);
     // 9 エンドカード（2秒）
