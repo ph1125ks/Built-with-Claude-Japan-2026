@@ -298,11 +298,12 @@ export function membraneStrip(w = 48, h = 8): Sprite {
     const bot = Math.round(mid + 2.2 + bump * 0.7);
     for (let y = top; y <= bot; y++) {
       const t = (y - top) / Math.max(1, bot - top);
-      p.set(x, y, t < 0.18 ? "#c25b8a" : t < 0.45 ? "#8f2f5f" : t < 0.8 ? "#6b1f48" : "#4a1433");
+      // 粘膜の色は、細菌（グラム陰性）のピンクと見分けられるよう、くすんだ赤紫に（試遊の指摘）
+      p.set(x, y, t < 0.18 ? "#a0647f" : t < 0.45 ? "#704060" : t < 0.8 ? "#54304a" : "#3a2036");
     }
-    p.set(x, top - 1, "#2d0d20");
-    p.set(x, bot + 1, "#1f0816");
-    if (x % 12 === 3) p.set(x, top + 1, "#f08cb4");
+    p.set(x, top - 1, "#24101f");
+    p.set(x, bot + 1, "#180a15");
+    if (x % 12 === 3) p.set(x, top + 1, "#c890a8");
   }
   return p.s;
 }
@@ -335,7 +336,7 @@ export function bladderSprite(w: number, h: number, frac: number, gates: number[
   const hurt = 1 - Math.max(0, Math.min(1, frac));
   const lerp = (a: string, b: string, t: number) => mixRgb(hexToRgb(a), hexToRgb(b), t);
   // 傷むほど赤く：耐久が半分を切ると、はっきり赤みが出る（試遊の指摘：耐久 20 でも黄色のままに見えた）
-  const t = Math.min(1, hurt * 1.35);
+  const t = Math.min(1, hurt * 1.7);
   const wall = [lerp("#ffb8d4", "#ffb0a8", t), lerp("#ef6fa2", "#f0404e", t), lerp("#c13f78", "#c01c30", t), lerp("#8a2457", "#7a0c18", t), lerp("#56123a", "#3d050c", t)];
   const urine = [lerp("#fff6c4", "#ffc8b4", t), lerp("#ffe066", "#f2765c", t), lerp("#f6bd34", "#d8452e", t), lerp("#d8921a", "#a82a1e", t), lerp("#9c620e", "#6b1410", t)];
   const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];

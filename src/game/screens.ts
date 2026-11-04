@@ -509,6 +509,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
   return `
   <div class="screen final-screen">
     <p class="big-tagline">あなたの選択が、未来の敵をつくる</p>
+    <p class="foot strong top center">耐性率の動きは、ゲーム用に大きく誇張した値です。現実の予測ではありません。</p>
     <table class="summary">
       <thead><tr><th></th><th>ステージ1「${escapeHtml(scenario.present.title)}」</th><th>ステージ2「${escapeHtml(scenario.future.title)}」</th></tr></thead>
       <tbody>
@@ -526,7 +527,6 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
       </tbody>
     </table>
     ${dascMissingNote(data, [present, future])}
-    <p class="foot strong">耐性率の動きは、ゲーム用に大きく誇張した値です。現実の予測ではありません。</p>
     ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p></section>` : ""}
     ${notice(data)}
     <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>

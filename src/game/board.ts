@@ -490,10 +490,7 @@ export class BoardScene extends Phaser.Scene {
       v.c.setDepth(10 + (1 - b.x / s.state.data.rules.board.laneLength));
       v.last = { x, y };
       // 当たったときの白い光
-      if (v.flashUntil > 0 && t > v.flashUntil) {
-        v.flashUntil = 0;
-        v.body.clearTint();
-      }
+      if (v.body.isTinted && t > v.flashUntil && !v.dying) v.body.clearTint();
       v.glow.setAlpha((v.gram === "positive" ? 0.5 : 0.34) + 0.12 * Math.sin(t / 300 + v.phase));
       if (v.level !== b.level) this.updateLevel(v, b, s);
       this.drawHp(v, b);
@@ -957,9 +954,10 @@ export class BoardScene extends Phaser.Scene {
           // 当たった：系統の色の火花と、菌が白く光って少し押される
           this.burst.setParticleTint(v.color);
           this.burst.explode(5, shot.x, shot.y);
-          if (!tv.dying) {
+          // 白く光らせるのは短く、間を空けて（試遊の指摘：何体にも当たられると白いままで、グラム染色の色が分からない）
+          if (!tv.dying && this.time.now - tv.flashUntil > 220) {
             tv.body.setTintFill(0xffffff);
-            tv.flashUntil = this.time.now + 60;
+            tv.flashUntil = this.time.now + 45;
             tv.knock = 5;
           }
           this.tweens.add({ targets: shot, scale: 1.8, alpha: 0, duration: 140, onComplete: () => shot.destroy() });
@@ -1071,7 +1069,7 @@ export class BoardScene extends Phaser.Scene {
           this.tweens.add({ targets: this.bladderFlash, alpha: 0, duration: 480, ease: "Quad.Out" });
           this.bladder.setTintFill(0xffffff);
           this.time.delayedCall(70, () => this.bladder.clearTint());
-          this.float(LAYOUT.x0 / 2, LAYOUT.laneTop + 60, `−${e.damage}`, "#ffffff", 32, "#9a0f24");
+          this.float(LAYOUT.x0 / 2, LAYOUT.laneTop + 28, `−${e.damage}`, "#ffffff", 32, "#9a0f24");
           break;
         }
         case "summon": {

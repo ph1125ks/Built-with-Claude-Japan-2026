@@ -299,14 +299,16 @@ strong {
   color: var(--bad);
 }
 
-/* 耐久が2割を切ったら、盤面の縁を赤く脈打たせる（hud.ts） */
-body.danger #board::before {
+/* 耐久が2割を切ったら、画面の縁を赤く脈打たせる（hud.ts）。上の帯と手札の上にも重ねる（試遊の指摘：隠れて見えなかった） */
+body.danger #app::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
-  box-shadow: inset 0 0 90px rgba(255, 40, 40, 0.55);
+  z-index: 15;
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 40, 40, 0.9),
+    inset 0 0 140px rgba(255, 30, 30, 0.6);
   animation: danger 0.9s ease-in-out infinite;
 }
 
@@ -469,8 +471,8 @@ body.danger #board::before {
 }
 
 .zones small {
-  color: var(--muted);
-  font-size: 10.5px;
+  color: var(--ink-2);
+  font-size: 11px;
 }
 
 .zones i {
@@ -530,7 +532,7 @@ body.danger #board::before {
 .lane-msg {
   position: absolute;
   left: 86px;
-  top: 10px;
+  top: 3px;
   font-size: 13px;
   font-weight: 700;
   color: #06231f;
@@ -649,6 +651,7 @@ body.danger #board::before {
 }
 
 .card.selected {
+  z-index: 2;
   transform: translateY(-14px);
   box-shadow:
     0 calc(-1 * var(--px)) 0 0 #fff,
@@ -1200,11 +1203,10 @@ body.danger #board::before {
 #screen.can-scroll .screen > .buttons:last-child::before {
   content: "▼ 下にもつづきます（スクロール）";
   position: absolute;
-  left: 0;
-  right: 0;
-  width: max-content;
-  margin-inline: auto;
-  top: -34px;
+  left: 40px;
+  top: 50%;
+  margin-top: -12px;
+  line-height: 18px;
   z-index: 1;
   font-size: 12.5px;
   font-weight: 700;
@@ -1217,16 +1219,7 @@ body.danger #board::before {
   pointer-events: none;
 }
 
-#screen.can-scroll .screen > .buttons:last-child::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  top: -60px;
-  height: 60px;
-  background: linear-gradient(rgba(22, 15, 34, 0), var(--bg1));
-  pointer-events: none;
-}
+
 
 #screen.open {
   display: block;
@@ -1446,8 +1439,9 @@ body.danger #board::before {
 
 .model-pick-label small {
   font-weight: 400;
-  color: var(--muted);
-  margin-left: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-left: 10px;
 }
 
 .model-opt {
@@ -1729,9 +1723,38 @@ body.danger #board::before {
   margin: -6px 0 10px;
 }
 
+.foot.strong.top.center {
+  text-align: center;
+  margin: -12px 0 16px;
+}
+
 /* 縦向きの画面では横向きを勧める */
 #rotate-hint {
   display: none;
+}
+
+/* 小さい画面（横向きでも幅が狭い）では、文字が小さくなることを知らせる（試遊の指摘） */
+@media (orientation: landscape) and (max-width: 1000px) {
+  #rotate-hint {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    padding: 4px 12px;
+    text-align: center;
+    font-size: 0;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(194, 24, 91, 0.9);
+    z-index: 30;
+  }
+
+  /* 横向きなので「横向きにすると」の文は隠し、こちらだけ出す */
+  #rotate-hint::after {
+    content: "画面が小さいため、文字が小さく見えます。幅 1024px 以上の画面をおすすめします";
+    font-size: 12px;
+  }
 }
 
 @media (orientation: portrait) {
@@ -2313,11 +2336,16 @@ body.danger #board::before {
   min-width: 6em;
 }
 
-.rtable td.na,
-.abg td.na {
-  color: var(--faint);
+.rtable td.na {
+  color: var(--muted);
   background: rgba(0, 0, 0, 0.25);
-  font-size: 10.5px;
+  font-size: 11px;
+}
+
+.abg td.na {
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 12px;
 }
 
 .rtable td.up0 b {

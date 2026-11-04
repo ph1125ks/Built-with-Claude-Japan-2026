@@ -11,7 +11,7 @@ const speedLabel = (n: number) => `${iconImg("fast", 1)}<span>×${n}</span>`;
 type TickerKind = "warn" | "res" | "hint" | "pause";
 const TICKER_ICON: Record<TickerKind, IconName> = { warn: "warn", res: "up", hint: "info", pause: "pause" };
 /** 遊び方の案内（最初に召喚するまで出しておく） */
-const START_HINT = "① 下のカードを選ぶ（カード右上の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止";
+const START_HINT = "① 下のカードを選ぶ（カードの絵の左下の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止";
 const PAUSE_HINT = "一時停止中（スペースで再開）。止めたまま札を読み、カードを選んでレーンを予約できます";
 
 export interface HudOptions {
@@ -248,8 +248,12 @@ export class Hud {
     this.els.pause.innerHTML = pauseLabel(this.session.paused);
     this.root.classList.toggle("paused", this.session.paused);
     if (this.session.paused) {
-      // 一時停止の知らせは、知らせの帯に出す（前は帯の上に重ねていて、遊び方の案内を隠していた。試遊の指摘）
-      if (!this.root.classList.contains("reserving")) this.message(PAUSE_HINT, "pause", 0);
+      // 一時停止の知らせは、知らせの帯に出す（前は帯の上に重ねていて、遊び方の案内を隠していた。試遊の指摘）。
+      // ただし、まだ新しい耐性・警告の知らせは消さない（止めて読もうとしたら消えた。試遊の指摘）。止まっていることは金の枠とボタンで分かる
+      const t = this.els.ticker;
+      const fresh = (t.classList.contains("res") || t.classList.contains("warn")) && !t.classList.contains("old");
+      if (!this.root.classList.contains("reserving") && !fresh) this.message(PAUSE_HINT, "pause", 0);
+      if (fresh) window.clearTimeout(this.messageTimer);
     } else {
       // 再開したら、止めている間だけの案内（「準備ができたら…」「予約：…」）を消す（試遊の指摘：再開後も残っていた）。
       // まだ一度も召喚していなければ、遊び方の案内に戻す
@@ -449,8 +453,9 @@ export class Hud {
 
   private pickChanges(changes: ResistanceChange[]): ResistanceChange[] {
     const hand = new Set(this.session.state.stage.hand.map((h) => h.drug));
+    // 0.5 ポイント未満と、表示で同じ数字に丸まる変化（「36% → 36%」）は出さない（試遊の指摘）
     return changes
-      .filter((c) => hand.has(c.drug) && c.to - c.from >= 0.005)
+      .filter((c) => hand.has(c.drug) && c.to - c.from >= 0.005 && pct(c.from) !== pct(c.to))
       .sort((a, b) => b.to - b.from - (a.to - a.from))
       .slice(0, 2);
   }
