@@ -143,7 +143,9 @@ export function focusPerStage(data: GameData, s: ScenarioDef, focus: Focus, runs
   let total = 0;
   for (let i = 0; i < runs; i++) {
     const short = drawShortage(data, s.present, s.region, seed + i);
-    const state = createGame({ data, stage: withShortage(s.present, short), region: s.region, seed: seed + i });
+    // 膀胱が破られて途中で止まらないよう、耐久を大きくして全部の菌を出し切る（2026-11-05 data-auditor の指摘：負けた時点で止まり、少なく数えていた）
+    const stage = { ...withShortage(s.present, short), bladderHp: 1e9 };
+    const state = createGame({ data, stage, region: s.region, seed: seed + i });
     const seen = new Set<number>();
     const maxTicks = 1200 * data.rules.time.ticksPerSecond;
     while (state.outcome === "playing" && state.tick < maxTicks) {
@@ -177,11 +179,11 @@ export function evaluateScenario(data: GameData, s: ScenarioDef, opts: { runs?: 
   const a = bots.appropriate;
   const b = bots.broad;
   const checks: Check[] = [
-    { id: "appropriate", label: "適正ボットは、いまも2050年も守り切る", ok: a.presentWin >= TARGETS.appropriateMin && a.futureWin >= TARGETS.appropriateMin, value: `${pct(a.presentWin)}／${pct(a.futureWin)}`, target: `どちらも ${pct(TARGETS.appropriateMin)} 以上` },
-    { id: "broadPresent", label: "乱用ボットも、いまは勝てる", ok: b.presentWin >= TARGETS.broadPresentMin, value: pct(b.presentWin), target: `${pct(TARGETS.broadPresentMin)} 以上` },
-    { id: "broadFuture", label: "乱用ボットは、2050年に負ける", ok: b.futureWin <= TARGETS.broadFutureMax, value: pct(b.futureWin), target: `${pct(TARGETS.broadFutureMax)} 以下` },
-    { id: "random", label: "でたらめに選ぶより、適正に選ぶほうが強い", ok: bots.random.presentWin < a.presentWin, value: `${pct(bots.random.presentWin)} < ${pct(a.presentWin)}`, target: "ランダム < 適正" },
-    { id: "idle", label: "何もしなければ負ける", ok: bots.idle.presentWin === 0, value: pct(bots.idle.presentWin), target: "0%" },
+    { id: "appropriate", label: "適正ボットは、いまも2050年も守り切る", ok: a.presentWin >= TARGETS.appropriateMin && a.futureWin >= TARGETS.appropriateMin, value: `勝率 ${pct(a.presentWin)}／${pct(a.futureWin)}`, target: `勝率 どちらも ${pct(TARGETS.appropriateMin)} 以上` },
+    { id: "broadPresent", label: "乱用ボットも、いまは勝てる", ok: b.presentWin >= TARGETS.broadPresentMin, value: `勝率 ${pct(b.presentWin)}`, target: `勝率 ${pct(TARGETS.broadPresentMin)} 以上` },
+    { id: "broadFuture", label: "乱用ボットは、2050年に負ける", ok: b.futureWin <= TARGETS.broadFutureMax, value: `勝率 ${pct(b.futureWin)}`, target: `勝率 ${pct(TARGETS.broadFutureMax)} 以下` },
+    { id: "random", label: "でたらめに選ぶより、適正に選ぶほうが強い", ok: bots.random.presentWin < a.presentWin, value: `勝率 ${pct(bots.random.presentWin)} < ${pct(a.presentWin)}`, target: "ランダム < 適正" },
+    { id: "idle", label: "何もしなければ負ける", ok: bots.idle.presentWin === 0, value: `勝率 ${pct(bots.idle.presentWin)}`, target: "勝率 0%" },
     { id: "ahi", label: "適正ボットの系統の使い分け（AHI）", ok: (a.presentAhi ?? 0) >= TARGETS.ahiMin, value: a.presentAhi === null ? "—" : a.presentAhi.toFixed(2), target: `${TARGETS.ahiMin} 以上（仮）` },
   ];
   if (opts.focus && focus !== null) {

@@ -41,8 +41,11 @@ function auditHtml(md: string): string {
   const cell = (c: string) => esc(c).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
   return `<style>${BASE}
 table{width:100%;border-collapse:collapse;font-size:23px;line-height:1.45}
-th{text-align:left;font-size:21px;color:#ff8ab3;padding:10px 14px;border-bottom:2px solid #5d4a85}
-td{padding:10px 14px;border-bottom:1px solid #33274f;vertical-align:top;color:#d9cce4}
+th{text-align:left;font-size:19px;color:#ff8ab3;padding:7px 12px;border-bottom:2px solid #5d4a85}
+td{padding:10px 12px;border-bottom:1px solid #33274f;vertical-align:top;color:#d9cce4}
+td:nth-child(3){white-space:nowrap}
+h1{font-size:44px;margin-bottom:18px}
+.panel{padding:20px 28px}
 td:first-child{color:#fff;font-weight:700;white-space:nowrap}
 td:last-child{font-weight:700;color:#5ef0a0}
 code{font-size:.85em;color:#b8fff3}
