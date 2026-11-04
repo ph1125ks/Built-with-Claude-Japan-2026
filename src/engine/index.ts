@@ -13,3 +13,4 @@ export { getResistanceModel, noResistanceModel, selectionModel, gaugeModel, brea
 export { appropriateBot, broadBot, singleDrugBot, randomBot, idleBot, expectedEffect, knowledgeFor, type Bot, type Knowledge } from "./bots.ts";
 export { demoAbuseBot, demoProperBot } from "./demo.ts";
 export { runStage, runScenario, type ScenarioRun } from "./simulate.ts";
+export { BANNED_WORDS, TEXT_LIMITS, COVER_S, TARGETS, textProblems, coverageProblems, checkScenario, focusPerStage, evaluateScenario, type Focus, type Evaluation, type Check, type BotSummary } from "./stagecheck.ts";

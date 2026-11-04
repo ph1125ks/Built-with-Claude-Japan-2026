@@ -235,10 +235,13 @@ async function main(): Promise<void> {
       await speedBadge(k4, 9, 19),
       { png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), start: 19, end: 22 },
     ]);
-    // 5 やり直し 適正（24秒）：ステージ1（14秒）→ 2050年（7秒）→ 守り切った（3秒）
+    // 5 やり直し 適正（24秒）：ステージ1（14秒）→ 2050年（7秒）→ 守り切った（3秒）。
+    // 最後は結果画面ではなく、盤面に「守り切った！」の帯と紙吹雪が出る場面を等倍で（2026-11-04 作者の判断「見せ方で対処」：
+    // 適正でも上がる組が結果の表に大きく映り、「今度は2050年も守り切れました」と食い違って見えたため）
+    const won2 = pr2 - 3.1;
     const k5a = (pr1 - p1) / 14;
-    const k5b = (pr2 - p2) / 7;
-    await scene(5, 24, [clip(PROPER, p1, pr1, k5a), clip(PROPER, p2, pr2, k5b), clip(PROPER, pr2, pr2 + 3)], [
+    const k5b = (won2 - p2) / 7;
+    await scene(5, 24, [clip(PROPER, p1, pr1, k5a), clip(PROPER, p2, won2, k5b), clip(PROPER, won2, pr2 - 0.1)], [
       await speedBadge(k5a, 0, 14),
       await speedBadge(k5b, 14, 21),
       ...(script.get(5)?.supplements[0] ? [{ png: await render(page, "top", script.get(5)!.supplements[0]!), start: 0, end: 24 }] : []),

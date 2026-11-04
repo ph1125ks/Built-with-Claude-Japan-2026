@@ -466,6 +466,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
     <p class="foot strong top">耐性化の速さは、ゲーム用に大きく誇張しています。現実の予測ではありません。</p>
     ${short.length ? `<p class="why short-why">供給制限で使えなかった薬：<b>${shortList(data, short)}</b></p>` : ""}
     <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので、耐性率は変わっていません"}</p>
+    ${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}
     <div class="stats">
       <div><span>${iconImg("bladder", 1)} 膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
       <div><span>${iconImg("coin", 1)} 医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
@@ -503,6 +504,12 @@ function resultButtons(scenario: ScenarioDef, phase: "present" | "future", r: St
   return won ? next + retry : retry + next;
 }
 
+/**
+ * 適正に使っても耐性率が上がることの説明（2026-11-04 作者の判断「見せ方で対処」：適正な使い方でも結果の表で大きく上がる組があり、
+ * 「どう使っても同じ」と受け取られないように。文は作者が確かめる）
+ */
+const USED_RISE_NOTE = "適正に使っても、使った薬の耐性率は上がります（どの薬も、効かない菌を選んで残すため）。このゲームでは、系統を使い分けると、1つの薬の耐性の上がり方を抑えられます。";
+
 export function finalScreen(data: GameData, scenario: ScenarioDef, present: StageResult, future: StageResult, short: { present: string[]; future: string[] } = { present: [], future: [] }): string {
   const row = (label: string, f: (r: StageResult) => string) => `<tr><th>${label}</th><td>${f(present)}</td><td>${f(future)}</td></tr>`;
   const drugs = [...new Set([...scenario.present.hand, ...scenario.future.hand].map((h) => h.drug))];
@@ -527,7 +534,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
       </tbody>
     </table>
     ${dascMissingNote(data, [present, future])}
-    ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p></section>` : ""}
+    ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p><p class="why-note">${USED_RISE_NOTE}</p></section>` : ""}
     ${notice(data)}
     <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>
   </div>`;

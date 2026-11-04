@@ -1702,6 +1702,21 @@ body.danger #app::after {
   color: var(--bad);
 }
 
+/* 適正に使っても耐性率は上がることの説明（screens.ts の USED_RISE_NOTE） */
+.why-note {
+  margin: -6px 0 12px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #b8fff3 !important;
+  background: rgba(59, 224, 198, 0.07);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.debrief .why-note {
+  margin: 10px 0 0;
+}
+
 .rtable-wrap {
   overflow-x: auto;
 }

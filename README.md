@@ -62,12 +62,25 @@ npm run build      # 公開用のビルド（dist/）
 npm run sim -- --runs 200 --model A   # ボットでシミュレーション
 ```
 
+### 教員モード（Claude がステージを作る。手元でだけ動かす）
+
+教える人が地域と教えたいことを入れると、Claude（`claude-opus-5-5`）がステージを設計し、ボットのシミュレーションで「適正に使えば2050年も守れる／乱用すると負ける」が成り立つまで自分で直します。感受性の数値は公開データから読むだけで、Claude には作らせません。最後は教える人が確かめて承認します。
+
+1. `.env` に `ANTHROPIC_API_KEY=…` を書く（`.env` はコミットしません）
+2. `npm run teacher`（手元のサーバー。127.0.0.1:8787 だけで待ち受け）と `npm run dev` を動かす
+3. http://localhost:5173/teacher.html を開く。地域・対象・教えたいことを入れて「ステージを作る」
+4. できたステージを「プレビューで遊ぶ」で確かめ、「承認して公開する」を押すと `public/stages/<id>.json` に書き出され、学生用の URL（`?stage=<id>`）と QR コードが出る。コミットして push すると公開サイトで遊べる
+
+Claude が使うツール（`get_region_data`・`list_catalog`・`simulate_stage`・`validate_stage`・`submit_stage`）は `server/`、合格の検査は `src/engine/stagecheck.ts`、ステージ設計の知識はスキル [.claude/skills/stage-design/SKILL.md](.claude/skills/stage-design/SKILL.md)（教員モードの指示にも同じ本文を使う）。教員用の画面とサーバーは公開サイトには入りません。
+
 公開データの取り込み直し（`npm run data:fetch` → `npm run data:build` → `npm run data:verify`）の手順は [.claude/skills/janis-import/SKILL.md](.claude/skills/janis-import/SKILL.md) にあります。元の Excel（`data/raw/`）はリポジトリに入れていません。
 
 | フォルダ | 中身 |
 |---|---|
 | `src/engine/` | ゲームのロジック（描画なし。ブラウザなしで動く） |
 | `src/game/` | 描画と操作（Phaser 3） |
+| `src/teacher/`・`teacher.html` | 教員モードの画面（手元だけ） |
+| `server/` | 教員モードのサーバーと、Claude のツール（Anthropic TypeScript SDK のツールランナー） |
 | `data/` | 菌・薬・薬価・感受性・ルール・ステージ、出典（`data/README.md`） |
 | `scripts/` | データの取り込み、シミュレーション |
 | `tests/` | Vitest のテスト |

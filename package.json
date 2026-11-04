@@ -14,15 +14,20 @@
     "data:fetch": "tsx scripts/data/fetch-raw.ts",
     "data:build": "tsx scripts/data/build-data.ts",
     "sim": "tsx scripts/sim.ts",
-    "data:verify": "tsx scripts/data/verify-data.ts"
+    "data:verify": "tsx scripts/data/verify-data.ts",
+    "teacher": "tsx server/teacher.ts"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.137.0",
     "@types/node": "^26.6.6",
+    "@types/qrcode": "1.5.6",
     "exceljs": "^4.4.0",
+    "qrcode": "1.5.4",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "zod": "4.6.7"
   },
   "dependencies": {
     "@fontsource/dotgothic16": "5.3.1",

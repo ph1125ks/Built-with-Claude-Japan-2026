@@ -27,6 +27,15 @@
         "--strictPort"
       ],
       "port": 4173
+    },
+    {
+      "name": "teacher",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "teacher"
+      ],
+      "port": 8787
     }
   ]
 }
