@@ -1,0 +1,215 @@
+{
+  "_comment": "教員モードで作ったステージ（2026-11-05、claude-opus-5-5）。地域：大阪府／対象：病院実務実習の薬学生／教えたいこと：第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい。承認時の確かめ（各ボット100回、種2001〜）：適正ボットは、いまも2050年も守り切る 100%／100%、乱用ボットも、いまは勝てる 86%、乱用ボットは、2050年に負ける 18%、でたらめに選ぶより、適正に選ぶほうが強い 42% < 100%、何もしなければ負ける 0%、適正ボットの系統の使い分け（AHI） 0.43、教えたい場面：大腸菌（CTRX 耐性）が出てくる 平均 2.9 体",
+  "id": "uti-osaka-3gc-r-ecoli",
+  "title": "尿路（大阪府）第3世代セフェムが効かない大腸菌",
+  "region": "大阪府",
+  "target": "病院実務実習の薬学生",
+  "learningGoal": "第3世代セフェムが効かない大腸菌に、カルバペネム系を使わずに勝つ",
+  "debrief": "第3世代セフェム（CTRX など）が効かない大腸菌は、大阪府でも珍しくありません。JANIS 2025年報では、大阪府の大腸菌（すべての検査材料）の CTRX 感性率は 59.5%、CMZ 感性率は 97.9% です。CTRX が効かないと分かったとき、すぐカルバペネム系に切り替えず、感受性を見て CMZ など別の系統を選べば、カルバペネム系を2050年まで温存できます。広く効く薬ばかり使うと、その場は勝てても2050年に効く薬が減ります。菌の正体が分かるにつれて狭い薬へ切り替えましょう。このゲームは公開データの耐性率から始まりますが、耐性化の速さはゲーム用に大きく誇張しています。実際の薬の選び方は、施設のアンチバイオグラムや国の手引きなどにもとづいて決められます。",
+  "present": {
+    "title": "いま",
+    "briefing": "大阪府の公開データ（JANIS 2025年報）の耐性率から始まります。遠くの菌はグラム染色の見た目だけ、近づくと菌名、さらに近づくと効かない薬が分かります。第3世代セフェムが効かない大腸菌が混じります。カルバペネム系に頼らず、効く見込みの高い別の系統で守りましょう。",
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      {
+        "drug": "ABPC"
+      },
+      {
+        "drug": "AMPC_PO"
+      },
+      {
+        "drug": "CEZ"
+      },
+      {
+        "drug": "CEX_PO"
+      },
+      {
+        "drug": "CMZ"
+      },
+      {
+        "drug": "CTRX"
+      },
+      {
+        "drug": "CTX"
+      },
+      {
+        "drug": "CAZ"
+      },
+      {
+        "drug": "CFDN_PO"
+      },
+      {
+        "drug": "CFPM"
+      },
+      {
+        "drug": "LVFX_PO"
+      },
+      {
+        "drug": "TAZPIPC"
+      },
+      {
+        "drug": "MEPM"
+      }
+    ],
+    "shortage": {
+      "count": 5,
+      "candidates": [
+        "ABPC",
+        "AMPC_PO",
+        "CEZ",
+        "CEX_PO",
+        "CMZ",
+        "CTRX",
+        "CTX",
+        "CAZ",
+        "CFDN_PO",
+        "CFPM",
+        "LVFX_PO"
+      ]
+    },
+    "waves": [
+      {
+        "at": 2,
+        "lane": "random",
+        "species": "auto",
+        "count": 4,
+        "spacing": 2
+      },
+      {
+        "at": 22,
+        "lane": "random",
+        "species": "auto",
+        "count": 5,
+        "spacing": 2
+      },
+      {
+        "at": 45,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 70,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 95,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.5
+      },
+      {
+        "at": 120,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      },
+      {
+        "at": 145,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      }
+    ]
+  },
+  "future": {
+    "title": "2050年",
+    "briefing": "25年後の2050年です。いまの戦い方しだいで、どの薬が効かなくなったかが変わります。第3世代セフェムが効かない大腸菌は、さらに増えているかもしれません。残った手札で守り切れるでしょうか。",
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      {
+        "drug": "ABPC"
+      },
+      {
+        "drug": "AMPC_PO"
+      },
+      {
+        "drug": "CMZ"
+      },
+      {
+        "drug": "CTRX"
+      },
+      {
+        "drug": "CAZ"
+      },
+      {
+        "drug": "LVFX_PO"
+      },
+      {
+        "drug": "TAZPIPC"
+      },
+      {
+        "drug": "MEPM"
+      },
+      {
+        "drug": "IPMCS"
+      }
+    ],
+    "shortage": {
+      "count": 2
+    },
+    "waves": [
+      {
+        "at": 2,
+        "lane": "random",
+        "species": "auto",
+        "count": 5,
+        "spacing": 2
+      },
+      {
+        "at": 22,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 45,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.6
+      },
+      {
+        "at": 70,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.6
+      },
+      {
+        "at": 95,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      },
+      {
+        "at": 120,
+        "lane": "random",
+        "species": "auto",
+        "count": 10,
+        "spacing": 1.4
+      },
+      {
+        "at": 145,
+        "lane": "random",
+        "species": "auto",
+        "count": 10,
+        "spacing": 1.4
+      }
+    ],
+    "yearsLater": 25
+  }
+}
