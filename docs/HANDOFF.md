@@ -5,7 +5,7 @@
 ## 1. いまの状態
 
 - 提出は **2026-11-08（日）20:00 JST**（作者は 18:00 までに提出する予定。SPEC 13章）
-- **公開済み**：https://ph1125ks.github.io/Built-with-Claude-Japan-2026/ （2026-11-03）。`.github/workflows/pages.yml` が、main への push のたびにテスト・ビルド・公開を行う
+- **公開済み**：https://ph1125ks.github.io/Built-with-Claude-Japan-2026/ （2026-11-03。15回目の新しい画面も、作者の push で e08c5f4 まで公開されたことを確かめた）。`.github/workflows/pages.yml` が、main への push のたびにテスト・ビルド・公開を行う
 - **push は作者が自分で行う**。Claude はコミットまで。公開に関わるコミットをしたら、push が必要なことを作者に伝える（CLAUDE.md）
 - **作者への質問は AskUserQuestion で聞く**（作者の希望。選択肢と推奨を付ける）
 - SPEC 13章の日程のうち、Claude の分で終わったもの
