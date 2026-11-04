@@ -5,10 +5,10 @@
 //   --seed：乱数の種（既定 570。scripts/demo-seeds.ts で選んだ。データを変えたら探し直す）
 // 必要なもの：Google Chrome と ffmpeg（どちらも手元に入っているもの）。録画は Git に入れない（recordings/ は .gitignore）
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { CHROME, openChrome as open, sleep, type Page } from "./lib/chrome.ts";
 
 const { values } = parseArgs({
   options: {
@@ -16,7 +16,7 @@ const { values } = parseArgs({
     base: { type: "string", default: "http://localhost:5173" },
     seed: { type: "string", default: "570" },
     out: { type: "string", default: "recordings" },
-    chrome: { type: "string", default: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" },
+    chrome: { type: "string", default: CHROME },
     width: { type: "string", default: "1920" },
     height: { type: "string", default: "1080" },
   },
@@ -24,88 +24,7 @@ const { values } = parseArgs({
 
 const W = Number(values.width);
 const H = Number(values.height);
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/** Chrome の DevTools Protocol（1ページだけ） */
-class Page {
-  private id = 0;
-  private pending = new Map<number, (v: { result?: unknown; error?: unknown }) => void>();
-  private handlers = new Map<string, (p: Record<string, unknown>) => void>();
-  constructor(private ws: WebSocket) {
-    ws.onmessage = (m) => {
-      const d = JSON.parse(String(m.data));
-      if (d.id && this.pending.has(d.id)) {
-        this.pending.get(d.id)!(d);
-        this.pending.delete(d.id);
-      } else if (d.method) this.handlers.get(d.method)?.(d.params);
-    };
-  }
-  send(method: string, params: Record<string, unknown> = {}): Promise<{ result?: unknown; error?: unknown }> {
-    return new Promise((r) => {
-      const i = ++this.id;
-      this.pending.set(i, r);
-      this.ws.send(JSON.stringify({ id: i, method, params }));
-    });
-  }
-  on(method: string, fn: (p: Record<string, unknown>) => void): void {
-    this.handlers.set(method, fn);
-  }
-  /** ページで式を評価して値を返す */
-  async eval<T>(expression: string): Promise<T> {
-    const r = (await this.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })) as {
-      result?: { result?: { value?: T }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
-    };
-    const ex = r.result?.exceptionDetails;
-    if (ex) throw new Error(`ページの式でエラー：${ex.exception?.description ?? ex.text}`);
-    return r.result?.result?.value as T;
-  }
-}
-
-async function openChrome(): Promise<{ page: Page; close: () => void }> {
-  const port = 9400 + Math.floor(Math.random() * 400);
-  const profile = mkdtempSync(join(tmpdir(), "sentakuatsu-rec-"));
-  const chrome = spawn(
-    values.chrome!,
-    [
-      "--headless=new",
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${profile}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-background-timer-throttling",
-      "--disable-renderer-backgrounding",
-      "--disable-backgrounding-occluded-windows",
-      "--hide-scrollbars",
-      `--window-size=${W},${H}`,
-      "about:blank",
-    ],
-    { stdio: "ignore" },
-  );
-  let targets: { type: string; webSocketDebuggerUrl: string }[] = [];
-  for (let i = 0; i < 60 && targets.length === 0; i++) {
-    try {
-      targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as typeof targets;
-    } catch {
-      await sleep(200);
-    }
-  }
-  const t = targets.find((x) => x.type === "page");
-  if (!t) throw new Error("Chrome に接続できませんでした");
-  const ws = new WebSocket(t.webSocketDebuggerUrl);
-  await new Promise((r) => (ws.onopen = r));
-  const page = new Page(ws);
-  await page.send("Runtime.enable");
-  await page.send("Page.enable");
-  await page.send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: false });
-  return {
-    page,
-    close: () => {
-      ws.close();
-      chrome.kill();
-      setTimeout(() => rmSync(profile, { recursive: true, force: true }), 500);
-    },
-  };
-}
+const openChrome = () => open({ width: W, height: H, chrome: values.chrome });
 
 /** 画面の流れ（screencast）を ffmpeg に流して MP4 にする。届いた時刻をそのまま使い、30fps にそろえる */
 function startRecorder(page: Page, file: string): { stop: () => Promise<void> } {
