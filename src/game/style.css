@@ -1287,9 +1287,10 @@ img.px {
   font-size: 11px;
 }
 
+/* 右の列は枠より広がらない（表が長くても枠からはみ出さない） */
 .cols {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: 20px;
   margin-top: 6px;
 }
@@ -1365,9 +1366,29 @@ img.px {
   background: #fbf6f8;
 }
 
-.rtable td span {
+/* 変化した組：上の行に小さく「前 →」、下の行に「後」 */
+.rtable td small {
+  display: block;
+  font-size: 9.5px;
+  line-height: 1.2;
   color: var(--muted);
-  margin: 0 1px;
+}
+
+.rtable td b {
+  display: block;
+  line-height: 1.25;
+}
+
+/* 左上の見出しと菌名は折り返してよい（列を細くする） */
+.rtable thead th:first-child {
+  white-space: normal;
+  font-size: 10.5px;
+  min-width: 6.5em;
+}
+
+.rtable tbody th {
+  white-space: normal;
+  min-width: 6em;
 }
 
 .rtable td.na {

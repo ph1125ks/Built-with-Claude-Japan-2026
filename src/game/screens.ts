@@ -387,8 +387,8 @@ function resistanceTable(data: GameData, region: string, from: ResistanceTable, 
           const rose = up >= 0.005 || (b >= 0.002 && b >= a * 1.5);
           const cls = up >= 0.2 ? "up2" : up >= 0.05 ? "up1" : rose ? "up0" : "";
           // 使わなかった薬で、実測にもとづいて下がった組（未来ステージ）
-          if (!rose && a - b >= 0.005) return `<td class="down">${pct(a)}<span>→</span><b>${pct(b)}</b></td>`;
-          return rose ? `<td class="${cls}">${pct(a)}<span>→</span><b>${pct(b)}</b></td>` : `<td>${pct(b)}</td>`;
+          if (!rose && a - b >= 0.005) return `<td class="down"><small>${pct(a)}→</small><b>${pct(b)}</b></td>`;
+          return rose ? `<td class="${cls}"><small>${pct(a)}→</small><b>${pct(b)}</b></td>` : `<td>${pct(b)}</td>`;
         })
         .join("");
       return `<tr><th>${escapeHtml(data.bacteriumById.get(sp)!.name)}</th>${cells}</tr>`;
