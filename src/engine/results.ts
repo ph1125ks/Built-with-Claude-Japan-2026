@@ -50,8 +50,8 @@ export interface StageResult {
   spectrum: SpectrumUse;
   /** 系統ごとの使用割合（activeDays をもとに、合計 1） */
   usageByClass: Record<string, number>;
-  /** 偏りの指標（仮）。系統別使用割合の均等度（0〜1、1 が均等）。作者の指定する式に差し替える（SPEC.md 4.10） */
-  evennessProvisional: number | null;
+  /** 偏りの指標：AHI（0〜1。手札の系統を同じ日数ずつ使うと 1、1つの系統だけだと 0）。式は作者の指定（SPEC.md 4.10）。手札の系統が1つか、使っていないときは null */
+  ahi: number | null;
   /** WHO の AWaRe 分類ごとの使用割合（activeDays をもとに、合計 1）。WHO の目標は Access 60% 以上 */
   usageByAware: Record<AwareGroup, number>;
   kills: Record<string, number>;
@@ -65,6 +65,21 @@ export interface StageResult {
   gauge: Record<string, number>;
   resistanceStart: ResistanceTable;
   resistanceEnd: ResistanceTable;
+}
+
+/**
+ * AHI（antibiotic heterogeneity index）。2026-11-04 作者が指定した式：
+ *   AHI ＝ 1 −｛n /［2 ×（n − 1）］｝× Σ｜ai − bi｜
+ *   n：比較する抗菌薬系統数（このゲームでは手札にある系統の数）、ai：均等に使った場合の比率（1/n）、bi：実際の使用比率（%DOT。使用日数の割合）
+ * classes は比べる系統、usage は系統 → 使用比率（合計 1）。系統が2つ未満か、使用がないときは null
+ */
+export function ahi(classes: readonly string[], usage: Record<string, number>): number | null {
+  const n = classes.length;
+  const total = classes.reduce((s, c) => s + (usage[c] ?? 0), 0);
+  if (n < 2 || total <= 0) return null;
+  const sum = classes.reduce((s, c) => s + Math.abs(1 / n - (usage[c] ?? 0) / total), 0);
+  // 式の上では 0〜1。計算の誤差で 0 をわずかに下回らないように収める
+  return Math.min(1, Math.max(0, 1 - (n / (2 * (n - 1))) * sum));
 }
 
 export function stageResult(state: GameState): StageResult {
@@ -87,13 +102,8 @@ export function stageResult(state: GameState): StageResult {
     Object.entries(byAware).map(([k, v]) => [k, total > 0 ? v / total : 0]),
   ) as Record<AwareGroup, number>;
 
-  // 手札にある系統の数で正規化した均等度（Pielou の J）。仮の式
-  const handClasses = new Set(state.stage.hand.map((h) => drugOf(data, h.drug).class));
-  let evenness: number | null = null;
-  if (total > 0 && handClasses.size > 1) {
-    const h = -Object.values(usageByClass).reduce((s, p) => (p > 0 ? s + p * Math.log(p) : s), 0);
-    evenness = h / Math.log(handClasses.size);
-  }
+  // 偏りの指標（AHI）。比べる系統は、手札にある系統（供給制限で使えない薬は手札から外れている）
+  const handClasses = [...new Set(state.stage.hand.map((h) => drugOf(data, h.drug).class))];
 
   return {
     outcome: state.outcome,
@@ -108,7 +118,7 @@ export function stageResult(state: GameState): StageResult {
     activeDays,
     spectrum: spectrumUse(data, activeDays),
     usageByClass,
-    evennessProvisional: evenness,
+    ahi: ahi(handClasses, usageByClass),
     usageByAware,
     kills: { ...state.stats.kills },
     spawned: state.stats.spawned,

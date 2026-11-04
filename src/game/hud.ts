@@ -197,6 +197,14 @@ export class Hud {
     this.session.paused = !this.session.paused;
     this.els.pause.textContent = this.session.paused ? "再開" : "一時停止";
     this.root.classList.toggle("paused", this.session.paused);
+    if (!this.session.paused) {
+      // 再開したら、止めている間だけの案内（「準備ができたら…」「予約：…」）を消す（試遊の指摘：再開後も残っていた）
+      this.root.classList.remove("reserving");
+      if (this.els.ticker.classList.contains("hint")) {
+        this.els.ticker.innerHTML = "";
+        this.els.ticker.className = "ticker";
+      }
+    }
   }
 
   private select(drug: string | null): void {
@@ -214,8 +222,14 @@ export class Hud {
       return;
     }
     this.session.summon(this.selected, lane);
-    // 一時停止中の召喚は、再開した瞬間に行われる（予約）
-    if (this.session.paused) this.message(`予約：${this.session.state.data.drugById.get(this.selected)?.abbr} をレーン${lane + 1}に。再開すると召喚します`, "hint", 0);
+    // 一時停止中の召喚は、再開した瞬間に行われる（予約）。盤面には半透明の兵士で出し（board.ts）、帯には予約をまとめて出す。
+    // 一時停止の帯は、予約があるあいだは隠して、この知らせを見せる（試遊の指摘：一時停止の帯に隠れていた）
+    if (this.session.paused) {
+      const data = this.session.state.data;
+      const list = this.session.pending.map((p) => `${data.drugById.get(p.drug)?.abbr ?? p.drug} → レーン${p.lane + 1}`).join("、");
+      this.root.classList.add("reserving");
+      this.message(`一時停止中・予約：${list}。再開すると召喚します`, "hint", 0);
+    }
   }
 
   /** 最初のステージは止めた状態で始める（試遊の指摘：操作を知る前に菌が来る） */

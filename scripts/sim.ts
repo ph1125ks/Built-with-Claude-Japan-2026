@@ -79,6 +79,7 @@ interface Summary {
   futureBudgetShortSec: number;
   presentUsage: Record<string, number>;
   presentAccess: number;
+  presentAhi: number;
   /** 未来ステージで、手札のどの薬にも耐性だった個体の割合 */
   futurePanResistant: number;
   msPerRun: number;
@@ -129,6 +130,8 @@ for (const id of botIds) {
     futureBudgetShortSec: mean(future.map((r) => r.budgetShortSeconds)),
     presentUsage: usage,
     presentAccess: mean(present.map((r) => r.usageByAware.Access)),
+    // 偏りの指標 AHI（2026-11-04 作者の式）。使わなかった回（null）は除く
+    presentAhi: ((xs) => (xs.length ? mean(xs) : Number.NaN))(present.flatMap((r) => (r.ahi === null ? [] : [r.ahi]))),
     futurePanResistant: mean(future.map((r) => r.panResistantFraction)),
     msPerRun: ms,
   });
@@ -138,7 +141,7 @@ if (values.json) {
   console.log(JSON.stringify({ scenario: scenario.id, region: scenario.region, model: modelId, cost: costMode, runs, seed: seed0, summaries }, null, 2));
 } else {
   console.log(`シナリオ ${scenario.id}（${scenario.region}）／耐性モデル ${modelId}／医療費 ${costMode}／各 ${runs} 回（種 ${seed0}〜${seed0 + runs - 1}）`);
-  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\t未来医療費\t医療費の最大（いま/未来）\t予算待ち秒（いま/未来）\tAccess割合\t未来の全耐性\t1回(ms)\tいまの系統別使用割合");
+  console.log("ボット\tいま勝率\t未来勝率\tいま膀胱\t未来膀胱\tいま医療費\t未来医療費\t医療費の最大（いま/未来）\t予算待ち秒（いま/未来）\tAccess割合\tいまのAHI\t未来の全耐性\t1回(ms)\tいまの系統別使用割合");
   for (const s of summaries) {
     const usage = Object.entries(s.presentUsage)
       .sort((a, b) => b[1] - a[1])
@@ -156,6 +159,7 @@ if (values.json) {
         `${s.presentCostMax.toFixed(0)}/${s.futureCostMax.toFixed(0)}`,
         `${s.presentBudgetShortSec.toFixed(0)}/${s.futureBudgetShortSec.toFixed(0)}`,
         pct(s.presentAccess),
+        Number.isNaN(s.presentAhi) ? "—" : s.presentAhi.toFixed(2),
         pct(s.futurePanResistant),
         s.msPerRun.toFixed(1),
         usage,

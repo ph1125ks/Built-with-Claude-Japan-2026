@@ -587,6 +587,11 @@ img.px {
 }
 
 /* 一時停止中：盤面の菌の札を隠さないよう、レーンの下の知らせの帯に重ねて出す */
+/* 予約があるあいだは、帯の代わりに予約の知らせ（hud.ts）を見せる */
+#play.paused.reserving::after {
+  display: none;
+}
+
 #play.paused::after {
   content: "一時停止中（スペースで再開）。止めたまま札を読み、カードを選んでレーンを予約できます";
   position: absolute;

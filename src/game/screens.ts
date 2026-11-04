@@ -137,7 +137,7 @@ export function howtoScreen(data: GameData): string {
           <div><b>中ほど</b><span>菌名（培養・同定）</span></div>
           <div><b>近い</b><span>手札のうち効かない薬（薬剤感受性試験）</span></div>
         </div>
-        <p>まず効く見込みの高い薬（多くは広い範囲に効く薬）で始め、菌名や感受性が分かったら効く範囲の狭い薬に切り替えるか（デエスカレーション）、広い薬を使い続けるかを判断します。</p>
+        <p>このゲームでは、まず効く見込みの高い薬（多くは広い範囲に効く薬）で始め、菌名や感受性が分かったら効く範囲の狭い薬に切り替えるか（デエスカレーション）、広い薬を使い続けるかを判断します。</p>
         <p>菌名が分かる前は、<b>アンチバイオグラム</b>（その地域で、菌ごとに感性（S）だった株の割合。右上のボタンか A キー）を見て、効く見込みの高い薬を選べます。</p>
       </section>
       <section>
@@ -471,7 +471,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
       <div><span>膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
       <div><span>医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
       <div><span>手札のどの薬も効かない菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた菌のうち</small></div>
-      <div><span>系統の使い分け（仮の指標）</span><b>${r.evennessProvisional === null ? "—" : r.evennessProvisional.toFixed(2)}</b><small>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ</small></div>
+      <div><span>系統の使い分け（AHI）</span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。AHI（antibiotic heterogeneity index）の式で、系統ごとの使用日数の割合から計算</small></div>
       ${dascCard(data, r)}
     </div>
     <div class="cols">

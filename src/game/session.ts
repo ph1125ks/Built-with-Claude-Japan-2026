@@ -64,6 +64,11 @@ export class PlaySession {
     this.queue.push({ type: "summon", drug, lane });
   }
 
+  /** まだ行われていない召喚（一時停止中の予約）。盤面と知らせの帯に出す */
+  get pending(): { drug: string; lane: number }[] {
+    return this.queue.flatMap((c) => (c.type === "summon" ? [{ drug: c.drug, lane: c.lane }] : []));
+  }
+
   /** 実時間を進める。戻り値は進めたティック数 */
   advance(ms: number): number {
     if (this.paused || this.ended) return 0;

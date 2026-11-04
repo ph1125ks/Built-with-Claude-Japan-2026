@@ -101,6 +101,9 @@ export class BoardScene extends Phaser.Scene {
   private bladderShake = 0;
   private lastBladderFrac = -1;
   private fx!: Phaser.GameObjects.Layer;
+  /** 一時停止中の予約（半透明の兵士と「予約」の札） */
+  private ghosts: Phaser.GameObjects.Container[] = [];
+  private ghostKey = "";
 
   constructor() {
     super("board");
@@ -163,6 +166,9 @@ export class BoardScene extends Phaser.Scene {
     this.bugs.clear();
     this.units.clear();
     this.fx.removeAll(true);
+    for (const g of this.ghosts) g.destroy();
+    this.ghosts = [];
+    this.ghostKey = "";
     this.session = session;
     this.lastBladderFrac = -1;
     if (session) this.unsubscribe = session.onEvents((events) => this.handle(events));
@@ -225,6 +231,7 @@ export class BoardScene extends Phaser.Scene {
     s.advance(delta);
     this.syncBugs(s);
     this.syncUnits(s, delta);
+    this.syncReservations(s);
     const frac = s.state.bladderHp / s.state.stage.bladderHp;
     this.drawBladder(frac);
     if (this.bladderShake > 0) {
@@ -438,6 +445,39 @@ export class BoardScene extends Phaser.Scene {
           this.fire(v, u.drug, s);
         }
       }
+    }
+  }
+
+  /**
+   * 一時停止中の予約を、召喚される場所に半透明の兵士で出す（試遊の指摘：予約しても盤面に何も出なかった）。
+   * 再開すると予約が召喚に変わり、ここは消える
+   */
+  private syncReservations(s: PlaySession): void {
+    const list = s.paused ? s.pending : [];
+    const key = list.map((p) => `${p.drug}@${p.lane}`).join(",");
+    if (key === this.ghostKey) return;
+    this.ghostKey = key;
+    for (const g of this.ghosts) g.destroy();
+    this.ghosts = [];
+    const used = new Map<number, Set<number>>();
+    for (const u of this.units.values()) {
+      const set = used.get(u.lane) ?? new Set<number>();
+      set.add(u.slot);
+      used.set(u.lane, set);
+    }
+    const S = soldierPx();
+    for (const p of list) {
+      const set = used.get(p.lane) ?? new Set<number>();
+      let slot = 0;
+      while (set.has(slot)) slot++;
+      set.add(slot);
+      used.set(p.lane, set);
+      const c = this.add.container(unitX(slot), unitY(p.lane));
+      c.setDepth(8);
+      const body = this.add.image(0, SOLDIER_Y, this.unitKey(p.drug, "idle0", LEVELS)).setDisplaySize(S, S).setAlpha(0.45);
+      const tag = this.text(0, PLATE_Y, "予約", 12, "#ffffff", { fontStyle: "bold", backgroundColor: "#7a1e45", padding: { x: 6, y: 1 } }).setOrigin(0.5);
+      c.add([body, tag]);
+      this.ghosts.push(c);
     }
   }
 
