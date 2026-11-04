@@ -167,7 +167,8 @@ async function playthrough(s: Step, withFinal: boolean): Promise<void> {
 const takes: Record<string, () => Promise<void>> = {
   title: () =>
     record("title", url(), async (s) => {
-      await s.hold(6000);
+      // タイトルの後ろで適正ボットが遊ぶデモを、シーン1（20秒）とシーン8（11秒）で別の場面から使えるよう長めに映す
+      await s.hold(40000);
       await s.press("howto", "タイトル → 遊び方");
       await s.hold(4000);
       await s.scrollTo(".soldier-legend");
