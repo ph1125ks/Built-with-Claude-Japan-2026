@@ -2,6 +2,7 @@
 // 画面の流れを ffmpeg で MP4（1920×1080、30fps）にする。画面が切り替わった時刻は、同じ名前の .json に残す（編集の目印）。
 //   開発サーバーを動かしてから：npx tsx scripts/record-demo.ts --take abuse --base http://localhost:5173
 //   --take：title（タイトルと遊び方）／abuse（乱用：ステージ1で楽勝 → 2050年で負ける）／proper（適正：両方守り切る）／all
+//           teacher（シーン6：教員モードで本物の Claude がステージを作る。npm run teacher と .env の API キーが要り、費用がかかるので all には入れない）
 //   --seed：乱数の種（既定 570。scripts/demo-seeds.ts で選んだ。データを変えたら探し直す）
 // 必要なもの：Google Chrome と ffmpeg（どちらも手元に入っているもの）。録画は Git に入れない（recordings/ は .gitignore）
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
@@ -172,11 +173,59 @@ const takes: Record<string, () => Promise<void>> = {
       await s.scrollTo(".soldier-legend");
       await s.hold(8000);
     }),
+  // シーン6：教員モード（本物の Claude を動かす。npm run teacher のサーバーと .env の API キーが要る。1回ごとに API の費用がかかる）
+  teacher: () =>
+    record("teacher", `${base}/teacher.html`, async (s) => {
+      const goal = "第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい";
+      await s.hold(2500);
+      await s.page.eval(`(() => { const r = document.querySelector('#region'); r.value = '大阪府'; r.dispatchEvent(new Event('change')); })()`);
+      s.mark("地域：大阪府");
+      await s.hold(3000);
+      await s.page.eval(`document.querySelector('#audience').value = '病院実務実習の薬学生'`);
+      for (const ch of goal) {
+        await s.page.eval(`document.querySelector('#goal').value += ${JSON.stringify(ch)}`);
+        await s.hold(70);
+      }
+      s.mark("教えたいこと");
+      await s.hold(1500);
+      await s.page.eval(`document.querySelector('#go').click()`);
+      s.mark("ステージを作る");
+      // できるまで待つ（最長20分）。止まったら（エラー・提出なし）そこで終える
+      const t0 = Date.now();
+      let state = "";
+      while (Date.now() - t0 < 20 * 60_000) {
+        await s.hold(1000);
+        state = await s.page.eval<string>(`!document.querySelector('#result').hidden ? 'done' : document.querySelector('#go').disabled ? 'busy' : 'stopped'`);
+        if (state !== "busy") break;
+      }
+      s.mark(`設計の終わり：${state}`);
+      if (state !== "done") return;
+      await s.page.eval(`document.querySelector('#result').scrollIntoView({ behavior: 'smooth', block: 'start' })`);
+      await s.hold(6000);
+      await s.page.eval(`document.querySelector('#approve').click()`);
+      s.mark("承認");
+      for (let i = 0; i < 60; i++) {
+        await s.hold(500);
+        if (await s.page.eval<boolean>(`!!document.querySelector('.t-qr img')`)) break;
+      }
+      await s.page.eval(`document.querySelector('#approved').scrollIntoView({ behavior: 'smooth', block: 'center' })`);
+      s.mark("学生用の URL");
+      await s.hold(6000);
+      // できたステージを学生用の画面で遊ぶ（適正ボットで少し進める）
+      const id = await s.page.eval<string>(`document.querySelector('#result h3 code')?.textContent ?? ''`);
+      await s.page.send("Page.navigate", { url: `${base}/?stage=${id}&model=A&r=1.5&auto=appropriate` });
+      await s.hold(2500);
+      await s.press("start", "タイトル → 遊び方");
+      await s.press("start", "遊び方 → ブリーフィング（できたステージ）");
+      await s.hold(5000);
+      await s.press("play", "できたステージを遊ぶ");
+      await s.hold(25000);
+    }),
   abuse: () => record(`abuse-seed${values.seed}`, url("demo-abuse"), (s) => playthrough(s, false)),
   proper: () => record(`proper-seed${values.seed}`, url("demo-proper"), (s) => playthrough(s, true)),
 };
 
-const names = values.take === "all" ? Object.keys(takes) : values.take!.split(",");
+const names = values.take === "all" ? Object.keys(takes).filter((n) => n !== "teacher") : values.take!.split(",");
 for (const n of names) {
   const fn = takes[n];
   if (!fn) throw new Error(`take ${n} はない（${Object.keys(takes).join(", ")}）`);

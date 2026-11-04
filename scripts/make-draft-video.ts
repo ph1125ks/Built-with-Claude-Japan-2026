@@ -5,7 +5,7 @@
 //   → recordings/draft-video.mp4（1920×1080、30fps）と、ナレーションの字幕 recordings/draft-video.srt
 // シーン6（教員モード）とシーン7（開発の画面）は、まだ撮るものがないので仮の画面にしている
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { openChrome, sleep, type Page } from "./lib/chrome.ts";
@@ -246,11 +246,26 @@ async function main(): Promise<void> {
       await speedBadge(k5b, 14, 21),
       ...(script.get(5)?.supplements[0] ? [{ png: await render(page, "top", script.get(5)!.supplements[0]!), start: 0, end: 24 }] : []),
     ]);
-    // 6 教える側（40秒）：教員モードはまだないので仮の画面。補足の字幕は順に出す
+    // 6 教える側（40秒）：教員モードの録画（record-demo.ts の teacher）があれば使う。なければ仮の画面。補足の字幕は順に出す
     const sup6 = script.get(6)?.supplements ?? [];
     const ov6: Overlay[] = [];
     for (const [i, t] of sup6.entries()) ov6.push({ png: await render(page, "top", t), start: (40 / sup6.length) * i, end: (40 / sup6.length) * (i + 1) });
-    await scene(6, 40, [still(await render(page, "card", "シーン6　教える側：Claude がステージを作る", ["（教員モードの画面は、これから作って収録します）"]), 40)], ov6);
+    const TEACHER = "teacher";
+    const teacherDone = existsSync(join(REC, `${TEACHER}.mp4`)) && markers(TEACHER).some((m) => m.label === "設計の終わり：done");
+    if (teacherDone) {
+      // 入力（8秒）→ Claude の作業を早送り（16秒）→ できたステージと承認・URL（10秒）→ 学生が遊ぶ（6秒）
+      const tReg = at(TEACHER, "地域：大阪府");
+      const tGo = at(TEACHER, "ステージを作る");
+      const tEnd = at(TEACHER, "設計の終わり：done");
+      const tUrl = at(TEACHER, "学生用の URL");
+      const tPlay = at(TEACHER, "できたステージを遊ぶ");
+      const kIn = (tGo + 1 - (tReg - 1)) / 8;
+      const kWork = (tEnd - (tGo + 1)) / 16;
+      const kRes = (tUrl + 5 - tEnd) / 10;
+      await scene(6, 40, [clip(TEACHER, tReg - 1, tGo + 1, kIn), clip(TEACHER, tGo + 1, tEnd, kWork), clip(TEACHER, tEnd, tUrl + 5, kRes), clip(TEACHER, tPlay + 3, tPlay + 9)], [...ov6, await speedBadge(kWork, 8, 24)]);
+    } else {
+      await scene(6, 40, [still(await render(page, "card", "シーン6　教える側：Claude がステージを作る", ["（教員モードの画面は、これから作って収録します）"]), 40)], ov6);
+    }
     // 7 作り方（15秒）：仮の画面
     await scene(7, 15, [still(await render(page, "card", "シーン7　作り方：Claude Code を中心にした開発", ["（データ監査のサブエージェント・耐性モデルの比較・コミット前のフックの画面を、あとで差し込みます）"]), 15)], []);
     // 8 使い続ける場面（11秒）：タイトル

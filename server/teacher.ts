@@ -3,11 +3,20 @@
 // API キーは作者が .env に ANTHROPIC_API_KEY=... と書く（.env は .gitignore に入っている）。キーはこのサーバーの中だけで使い、画面には送らない
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { designStage, MODEL, type DesignEvent } from "./agent.ts";
 import { data, loadDraft, regionData, simulate } from "./tools.ts";
 
-if (existsSync(".env")) process.loadEnvFile(".env");
+/**
+ * API キーの読み込み先（先に見つかったものを使う。どれもリポジトリには入らない）：
+ *   1. 環境変数 TEACHER_ENV_FILE で指定したファイル
+ *   2. リポジトリ直下の .env（.gitignore に入っている）
+ *   3. 作者の作業用フォルダ（Cowork）の .env（2026-11-04 作者の希望：キーは GitHub と関係のない作業用フォルダで管理する）
+ */
+const ENV_FILES = [process.env.TEACHER_ENV_FILE, ".env", join(homedir(), "Claude", "Cowork", "Built with Claude Japan 2026", ".env")].filter((f): f is string => Boolean(f));
+const envFile = ENV_FILES.find((f) => existsSync(f));
+if (envFile) process.loadEnvFile(envFile);
 
 const PORT = Number(process.env.TEACHER_PORT ?? 8787);
 const HOST = "127.0.0.1";
@@ -125,5 +134,6 @@ createServer((req, res) => {
   });
 }).listen(PORT, HOST, () => {
   console.log(`教員モードのサーバー：http://${HOST}:${PORT}（画面は npm run dev のあと ${LOCAL_BASE}teacher.html）`);
+  console.log(envFile ? `API キーの読み込み先：${envFile === ".env" ? "リポジトリ直下の .env" : "リポジトリの外の .env"}` : "API キーのファイルは見つかりませんでした");
   if (!process.env.ANTHROPIC_API_KEY) console.log("注意：ANTHROPIC_API_KEY がありません。.env に書くか、ant auth login で認証してください");
 });

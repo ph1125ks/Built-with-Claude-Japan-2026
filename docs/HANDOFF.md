@@ -90,7 +90,8 @@
 ### Claude の作業の候補
 
 1. **教員モードを本物の Claude で動かして、シーン6を撮る**（15回目に実装済み。README「教員モード」と DEVLOG「審査基準との照らし合わせと、教員モード」）
-   - `.env` に `ANTHROPIC_API_KEY` → `npm run teacher` と `npm run dev` → http://localhost:5173/teacher.html
+   - API キーは作者が自分で作って置く（Claude はキーを作ったり書いたりしない）。作者の希望で、キーは作業用フォルダ（Cowork の「Built with Claude Japan 2026」）の `.env` に置く。サーバーは「`TEACHER_ENV_FILE` → リポジトリ直下の `.env` → 作業用フォルダの `.env`」の順に探す（`server/teacher.ts`）
+   - `npm run teacher` と `npm run dev` → http://localhost:5173/teacher.html。録画は `npx tsx scripts/record-demo.ts --take teacher --base http://localhost:5173`（本物の Claude を1回動かす。そのあと `npx tsx scripts/make-draft-video.ts` でシーン6に入る）
    - 例：地域「大阪府」、対象「病院実務実習の薬学生」、教えたいこと「第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい」
    - 1回の費用とトークンを DEVLOG に記録する（SPEC 5.5）。承認したステージ（`public/stages/<id>.json`）はコミットすると公開サイトで遊べる
    - 録画は、教員用の画面を画面なしの Chrome で撮るスクリプトを `scripts/record-demo.ts` に足すか、作者の画面録画で
