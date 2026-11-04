@@ -183,11 +183,11 @@ describe("未来ステージへの引き継ぎ", () => {
     const { observed, exaggeration } = data.rules.resistance.carryOver.maxLogitPerYear;
     const logit = (r: number) => Math.log(r / (1 - r));
     const end = cloneTable(start);
-    end.ecoli!.LVFX_PO = 0.75; // 大きく上がった組（上限がなければ数年でほぼ 100% になる）
+    end.ecoli!.LVFX_PO = 0.95; // とても大きく上がった組（上限がなければ数年でほぼ 100% になる。A の延ばし方を 0.1 にした 2026-11-04 からは、5年でも上限に届く大きさにしている）
     for (const model of [selectionModel, gaugeModel]) {
       for (const years of [5, 10, 25]) {
         const r = model.carryOver(data, start, end, years).ecoli!.LVFX_PO!;
-        expect(logit(r) - logit(0.75), `${model.id} ${years}年`).toBeCloseTo(years * observed * exaggeration, 6);
+        expect(logit(r) - logit(0.95), `${model.id} ${years}年`).toBeCloseTo(years * observed * exaggeration, 6);
       }
     }
   });
