@@ -1,0 +1,265 @@
+// デモ動画のプレイ画面を録画する（docs/DEMO.md のシーン0〜5）。画面なしの Chrome を DevTools Protocol で動かし、
+// 画面の流れを ffmpeg で MP4（1920×1080、30fps）にする。画面が切り替わった時刻は、同じ名前の .json に残す（編集の目印）。
+//   開発サーバーを動かしてから：npx tsx scripts/record-demo.ts --take abuse --base http://localhost:5173
+//   --take：title（タイトルと遊び方）／abuse（乱用：ステージ1で楽勝 → 2050年で負ける）／proper（適正：両方守り切る）／all
+//   --seed：乱数の種（既定 570。scripts/demo-seeds.ts で選んだ。データを変えたら探し直す）
+// 必要なもの：Google Chrome と ffmpeg（どちらも手元に入っているもの）。録画は Git に入れない（recordings/ は .gitignore）
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { parseArgs } from "node:util";
+
+const { values } = parseArgs({
+  options: {
+    take: { type: "string", default: "all" },
+    base: { type: "string", default: "http://localhost:5173" },
+    seed: { type: "string", default: "570" },
+    out: { type: "string", default: "recordings" },
+    chrome: { type: "string", default: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" },
+    width: { type: "string", default: "1920" },
+    height: { type: "string", default: "1080" },
+  },
+});
+
+const W = Number(values.width);
+const H = Number(values.height);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Chrome の DevTools Protocol（1ページだけ） */
+class Page {
+  private id = 0;
+  private pending = new Map<number, (v: { result?: unknown; error?: unknown }) => void>();
+  private handlers = new Map<string, (p: Record<string, unknown>) => void>();
+  constructor(private ws: WebSocket) {
+    ws.onmessage = (m) => {
+      const d = JSON.parse(String(m.data));
+      if (d.id && this.pending.has(d.id)) {
+        this.pending.get(d.id)!(d);
+        this.pending.delete(d.id);
+      } else if (d.method) this.handlers.get(d.method)?.(d.params);
+    };
+  }
+  send(method: string, params: Record<string, unknown> = {}): Promise<{ result?: unknown; error?: unknown }> {
+    return new Promise((r) => {
+      const i = ++this.id;
+      this.pending.set(i, r);
+      this.ws.send(JSON.stringify({ id: i, method, params }));
+    });
+  }
+  on(method: string, fn: (p: Record<string, unknown>) => void): void {
+    this.handlers.set(method, fn);
+  }
+  /** ページで式を評価して値を返す */
+  async eval<T>(expression: string): Promise<T> {
+    const r = (await this.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })) as {
+      result?: { result?: { value?: T }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
+    };
+    const ex = r.result?.exceptionDetails;
+    if (ex) throw new Error(`ページの式でエラー：${ex.exception?.description ?? ex.text}`);
+    return r.result?.result?.value as T;
+  }
+}
+
+async function openChrome(): Promise<{ page: Page; close: () => void }> {
+  const port = 9400 + Math.floor(Math.random() * 400);
+  const profile = mkdtempSync(join(tmpdir(), "sentakuatsu-rec-"));
+  const chrome = spawn(
+    values.chrome!,
+    [
+      "--headless=new",
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${profile}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--disable-backgrounding-occluded-windows",
+      "--hide-scrollbars",
+      `--window-size=${W},${H}`,
+      "about:blank",
+    ],
+    { stdio: "ignore" },
+  );
+  let targets: { type: string; webSocketDebuggerUrl: string }[] = [];
+  for (let i = 0; i < 60 && targets.length === 0; i++) {
+    try {
+      targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as typeof targets;
+    } catch {
+      await sleep(200);
+    }
+  }
+  const t = targets.find((x) => x.type === "page");
+  if (!t) throw new Error("Chrome に接続できませんでした");
+  const ws = new WebSocket(t.webSocketDebuggerUrl);
+  await new Promise((r) => (ws.onopen = r));
+  const page = new Page(ws);
+  await page.send("Runtime.enable");
+  await page.send("Page.enable");
+  await page.send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: false });
+  return {
+    page,
+    close: () => {
+      ws.close();
+      chrome.kill();
+      setTimeout(() => rmSync(profile, { recursive: true, force: true }), 500);
+    },
+  };
+}
+
+/** 画面の流れ（screencast）を ffmpeg に流して MP4 にする。届いた時刻をそのまま使い、30fps にそろえる */
+function startRecorder(page: Page, file: string): { stop: () => Promise<void> } {
+  const ff: ChildProcessWithoutNullStreams = spawn("ffmpeg", [
+    "-y",
+    "-loglevel",
+    "error",
+    "-use_wallclock_as_timestamps",
+    "1",
+    "-f",
+    "image2pipe",
+    "-c:v",
+    "mjpeg",
+    "-i",
+    "-",
+    "-vf",
+    `fps=30,scale=${W}:${H},format=yuv420p`,
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-crf",
+    "18",
+    file,
+  ]);
+  ff.stderr.on("data", (d) => process.stderr.write(d));
+  page.on("Page.screencastFrame", (p) => {
+    ff.stdin.write(Buffer.from(String(p.data), "base64"));
+    void page.send("Page.screencastFrameAck", { sessionId: p.sessionId });
+  });
+  void page.send("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth: W, maxHeight: H, everyNthFrame: 1 });
+  return {
+    stop: async () => {
+      await page.send("Page.stopScreencast");
+      ff.stdin.end();
+      await new Promise((r) => ff.on("close", r));
+    },
+  };
+}
+
+interface Marker {
+  t: number;
+  label: string;
+}
+
+/** 1本の録画（take）。手順の中で「いつ何をしたか」を記録する */
+async function record(name: string, url: string, script: (s: Step) => Promise<void>): Promise<void> {
+  mkdirSync(values.out!, { recursive: true });
+  const file = join(values.out!, `${name}.mp4`);
+  const { page, close } = await openChrome();
+  await page.send("Page.navigate", { url });
+  for (let i = 0; i < 100; i++) {
+    if (await page.eval<boolean>("typeof window.sentakuatsu === 'object'")) break;
+    await sleep(200);
+  }
+  await sleep(800);
+  const markers: Marker[] = [];
+  const t0 = Date.now();
+  const rec = startRecorder(page, file);
+  const mark = (label: string) => {
+    markers.push({ t: Math.round((Date.now() - t0) / 100) / 10, label });
+    console.log(`  ${((Date.now() - t0) / 1000).toFixed(1)}秒 ${label}`);
+  };
+  const step: Step = {
+    page,
+    mark,
+    press: async (action, label) => {
+      await page.eval(`window.sentakuatsu.press(${JSON.stringify(action)})`);
+      mark(label ?? action);
+    },
+    hold: async (ms) => {
+      await sleep(ms);
+    },
+    until: async (phase, timeoutMs = 8 * 60_000) => {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        if ((await page.eval<string>("window.sentakuatsu.current")) === phase) {
+          mark(`画面：${phase}`);
+          return;
+        }
+        await sleep(200);
+      }
+      throw new Error(`${phase} の画面になりませんでした`);
+    },
+    scrollTo: async (selector) => {
+      await page.eval(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ behavior: "smooth", block: "center" })`);
+    },
+  };
+  console.log(`録画：${name}（${url}）`);
+  try {
+    await script(step);
+  } finally {
+    await rec.stop();
+    close();
+  }
+  writeFileSync(join(values.out!, `${name}.json`), JSON.stringify({ url, seed: Number(values.seed), width: W, height: H, markers }, null, 2));
+  console.log(`  → ${file}`);
+}
+
+interface Step {
+  page: Page;
+  mark: (label: string) => void;
+  press: (action: string, label?: string) => Promise<void>;
+  hold: (ms: number) => Promise<void>;
+  until: (phase: string, timeoutMs?: number) => Promise<void>;
+  scrollTo: (selector: string) => Promise<void>;
+}
+
+const base = values.base!.replace(/\/$/, "");
+const url = (auto?: string) => `${base}/?model=A&seed=${values.seed}&r=1.5${auto ? `&auto=${auto}` : ""}`;
+
+/** ステージ1 → 結果 → 2050年 → 結果（乱用・適正で共通の流れ） */
+async function playthrough(s: Step, withFinal: boolean): Promise<void> {
+  await s.hold(2500);
+  await s.press("start", "タイトル → 遊び方");
+  await s.hold(1500);
+  await s.press("start", "遊び方 → ブリーフィング（ステージ1）");
+  await s.hold(6000);
+  await s.press("play", "ステージ1を始める");
+  await s.until("result1");
+  await s.hold(3000);
+  await s.scrollTo(".rtable");
+  await s.hold(7000);
+  await s.press("future", "結果1 → ブリーフィング（2050年）");
+  await s.hold(3000);
+  await s.scrollTo("table.timeline");
+  await s.hold(7000);
+  await s.press("play", "2050年を始める");
+  await s.until("result2");
+  await s.hold(3000);
+  await s.scrollTo(".rtable");
+  await s.hold(6000);
+  if (withFinal) {
+    await s.press("final", "結果2 → まとめ");
+    await s.hold(8000);
+  }
+}
+
+const takes: Record<string, () => Promise<void>> = {
+  title: () =>
+    record("title", url(), async (s) => {
+      await s.hold(6000);
+      await s.press("howto", "タイトル → 遊び方");
+      await s.hold(4000);
+      await s.scrollTo(".soldier-legend");
+      await s.hold(8000);
+    }),
+  abuse: () => record(`abuse-seed${values.seed}`, url("demo-abuse"), (s) => playthrough(s, false)),
+  proper: () => record(`proper-seed${values.seed}`, url("demo-proper"), (s) => playthrough(s, true)),
+};
+
+const names = values.take === "all" ? Object.keys(takes) : values.take!.split(",");
+for (const n of names) {
+  const fn = takes[n];
+  if (!fn) throw new Error(`take ${n} はない（${Object.keys(takes).join(", ")}）`);
+  await fn();
+}

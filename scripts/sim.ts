@@ -6,6 +6,8 @@ import {
   appropriateBot,
   costPerDose,
   broadBot,
+  demoAbuseBot,
+  demoProperBot,
   idleBot,
   loadGameData,
   randomBot,
@@ -54,6 +56,8 @@ const botMakers: Record<string, (seed: number) => Bot> = {
   single: () => singleDrugBot("LVFX_PO"),
   random: (s) => randomBot(s),
   idle: () => idleBot(),
+  "demo-abuse": () => demoAbuseBot(),
+  "demo-proper": () => demoProperBot(),
 };
 const botIds = values.bot === "all" ? Object.keys(botMakers) : values.bot!.split(",");
 

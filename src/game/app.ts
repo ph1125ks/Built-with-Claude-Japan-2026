@@ -10,6 +10,8 @@ import {
   getResistanceModel,
   loadGameData,
   randomBot,
+  demoAbuseBot,
+  demoProperBot,
   resistanceTableFor,
   stageResult,
   usedDrugsOf,
@@ -193,6 +195,11 @@ export class App {
         return broadBot();
       case "random":
         return randomBot(this.params.seed);
+      // 録画用の操作シナリオ（docs/DEMO.md のシーン3〜5）
+      case "demo-abuse":
+        return demoAbuseBot();
+      case "demo-proper":
+        return demoProperBot();
       default:
         return undefined;
     }

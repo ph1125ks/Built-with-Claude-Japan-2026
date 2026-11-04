@@ -4,6 +4,8 @@
 # 依存パッケージとビルド結果
 node_modules/
 dist/
+# デモ動画の録画（scripts/record-demo.ts の書き出し先。大きいので Git に入れない）
+recordings/
 coverage/
 test-results/
 *.log

@@ -11,4 +11,5 @@ export { stageResult, spectrumUse, ahi, type StageResult, type SpectrumUse } fro
 export { drawShortage, withShortage, stageSpecies, MAX_CARDS, DEFAULT_KEEP_SUSCEPTIBLE } from "./shortage.ts";
 export { getResistanceModel, noResistanceModel, selectionModel, gaugeModel, breadthOf, balanceFactor, diffTables, futureYear, usedDrugsOf, type ResistanceModel } from "./resistance.ts";
 export { appropriateBot, broadBot, singleDrugBot, randomBot, idleBot, expectedEffect, knowledgeFor, type Bot, type Knowledge } from "./bots.ts";
+export { demoAbuseBot, demoProperBot } from "./demo.ts";
 export { runStage, runScenario, type ScenarioRun } from "./simulate.ts";
