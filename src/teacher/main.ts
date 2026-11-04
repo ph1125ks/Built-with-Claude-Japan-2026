@@ -50,6 +50,29 @@ interface DraftRecord {
 
 const root = document.getElementById("teacher")!;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+/** Claude のまとめの文の、簡単な書式（見出し・太字・コード・箇条書き・表）だけを HTML にする。中身はすべてエスケープしてから */
+function miniMarkdown(src: string): string {
+  const inline = (t: string) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const out: string[] = [];
+  const lines = src.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i]!;
+    if (/^\s*\|/.test(l)) {
+      const rows: string[][] = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i]!)) {
+        const cells = lines[i]!.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+        if (!cells.every((c) => /^:?-+:?$/.test(c))) rows.push(cells);
+        i++;
+      }
+      i--;
+      out.push(`<table class="t-md">${rows.map((r, j) => `<tr>${r.map((c) => (j === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`)).join("")}</tr>`).join("")}</table>`);
+    } else if (/^#{1,4}\s/.test(l)) out.push(`<h5>${inline(l.replace(/^#+\s*/, ""))}</h5>`);
+    else if (/^\s*([-*]|\d+\.)\s/.test(l)) out.push(`<p class="t-li">${inline(l.trim().replace(/^([-*])\s/, "・"))}</p>`);
+    else if (l.trim()) out.push(`<p>${inline(l)}</p>`);
+  }
+  return out.join("");
+}
+
 const TOOL_ICON: Record<string, IconName> = { get_region_data: "chart", list_catalog: "dish", simulate_stage: "fast", validate_stage: "shield", submit_stage: "star" };
 
 let meta: Meta | null = null;
@@ -89,7 +112,7 @@ function render(m: Meta): void {
     </section>
     <section class="t-panel t-work">
       <h2><span class="t-step">2</span>Claude の作業<span class="t-timer" id="timer"></span></h2>
-      <div class="t-log" id="log"><p class="t-empty">「ステージを作る」を押すと、ここに Claude の考えと作業が流れます。</p></div>
+      <div class="t-log" id="log"><p class="t-empty">「ステージを作る」を押すと、ここに Claude の作業の経過が流れます。</p></div>
       <div class="t-result" id="result" hidden></div>
     </section>
   </main>`;
@@ -157,7 +180,7 @@ async function design(): Promise<void> {
   };
   const stream = (kind: "thinking" | "text", text: string) => {
     if (!block || blockKind !== kind) {
-      block = add(kind === "thinking" ? `<span class="t-tag">考え</span><span class="t-body"></span>` : `<span class="t-body"></span>`, kind === "thinking" ? "thinking" : "note");
+      block = add(kind === "thinking" ? `<span class="t-tag">経過</span><span class="t-body"></span>` : `<span class="t-body"></span>`, kind === "thinking" ? "thinking" : "note");
       blockKind = kind;
     }
     block.querySelector(".t-body")!.textContent += text;
@@ -176,6 +199,14 @@ async function design(): Promise<void> {
         stream("text", e.text);
         break;
       case "block_end":
+        // まとめの文は、書き終えたら簡単な書式に整える
+        if (block && blockKind === "text") {
+          const body = block.querySelector<HTMLElement>(".t-body")!;
+          if (/[#|*`]/.test(body.textContent ?? "")) {
+            body.innerHTML = miniMarkdown(body.textContent ?? "");
+            block.classList.add("md");
+          }
+        }
         block = null;
         blockKind = "";
         break;

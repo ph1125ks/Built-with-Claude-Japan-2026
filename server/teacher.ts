@@ -87,7 +87,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     const id = d.scenario.id;
     mkdirSync(join("public", "stages"), { recursive: true });
     const out = {
-      _comment: `教員モードで作ったステージ（${d.createdAt.slice(0, 10)}、${d.model}）。地域：${d.input.region}／対象：${d.input.audience}／教えたいこと：${d.input.goal}。承認時の確かめ（各ボット100回、種2001〜）：${r.evaluation!.checks.map((c) => `${c.label} ${c.value}`).join("、")}`,
+      _comment: `教員モードで作ったステージ（${new Date(d.createdAt).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" })}、${d.model}）。地域：${d.input.region}／対象：${d.input.audience}／教えたいこと：${d.input.goal}。承認時の確かめ（各ボット100回、種2001〜）：${r.evaluation!.checks.map((c) => `${c.label} ${c.value}`).join("、")}`,
       ...d.scenario,
     };
     const file = join("public", "stages", `${id}.json`);
@@ -106,8 +106,9 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       return json(res, 400, { error: "API キーがありません。.env に ANTHROPIC_API_KEY=… を書いて、npm run teacher を動かし直してください" });
     busy = true;
     res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store", Connection: "keep-alive" });
+    // 画面が閉じられたら止める（req の close は本文を読み終えたときにも出るので、応答の close で見る）
     const abort = new AbortController();
-    req.on("close", () => {
+    res.on("close", () => {
       if (!res.writableEnded) abort.abort();
     });
     const send = (e: DesignEvent) => {

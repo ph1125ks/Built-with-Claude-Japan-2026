@@ -5,7 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import type { Focus, ScenarioDef } from "../src/engine/index.ts";
-import { catalog, MAX_SIMULATIONS, regionData, saveDraft, simulate, validate, type DraftRecord } from "./tools.ts";
+import { catalog, loadDraft, MAX_SIMULATIONS, regionData, saveDraft, simulate, validate, type DraftRecord } from "./tools.ts";
 
 export const MODEL = "claude-opus-5-5";
 /** Claude Opus 5.5 の料金（1M トークンあたりの米ドル。入力・出力・キャッシュの読み出し・書き込み） */
@@ -80,9 +80,9 @@ function systemPrompt(): string {
 3. simulate_stage で確かめ、合格の目安に届かない点を直す（1回に2〜3か所まで）。上限は ${MAX_SIMULATIONS} 回
 4. 目安をすべて満たしたら submit_stage で提出する。満たせないときは、満たせない目安と理由を正直に書いて止まる
 
-書き方：
-- 画面には、ツールを呼ぶ前のあなたの短い文がそのまま作業の記録として流れます。各ツールを呼ぶ前に、何を確かめるか・何をなぜ直すかを日本語で1〜2文で書いてください。データの数値を書くときは、ツールで得た値だけを使い、作らないでください
-- 感受性や薬の性質の数値は変えられません。ステージの文章には「患者」「症例」「病棟」の語、投与量の数値、診療の指示を書かないでください
+守ること：
+- 日本語で書く。データの数値を書くときは、ツールで得た値だけを使い、作らない
+- 感受性や薬の性質の数値は変えられない。ステージの文章には「患者」「症例」「病棟」の語、投与量の数値、診療の指示を書かない
 
 以下は、ステージ設計の知識（スキル stage-design）です。
 
@@ -108,7 +108,7 @@ export async function designStage(input: DesignInput, emit: (e: DesignEvent) => 
 
   const getRegion = betaZodTool({
     name: "get_region_data",
-    description: "地域の公開データ（JANIS 2025年報）を返す：尿から分離される菌の割合（%）と、菌 × 薬の感性率（%）。自然耐性・効かない扱い・代用の印つき",
+    description: "地域の公開データ（JANIS 2025年報）を返す：尿から分離される菌の割合（%）と、菌 × 薬の感性率（%。すべての検査材料の集計で、尿だけの値ではない）。自然耐性・効かない扱い・代用の印つき",
     inputSchema: z.object({ region: z.string().describe("全国 か 府県名") }),
     run: async ({ region }) => {
       emit({ type: "tool_call", name: "get_region_data", label: `${region}の公開データを読む` });
@@ -212,10 +212,12 @@ export async function designStage(input: DesignInput, emit: (e: DesignEvent) => 
     {
       model: MODEL,
       max_tokens: 64000,
-      thinking: { type: "adaptive", display: "summarized" },
+      // ツールの合間の短い経過の知らせ（progress updates）だけを返してもらい、画面の作業の記録に出す。
+      // 考えの過程そのものは求めない（「考えを書き出して」と指示すると reasoning_extraction として断られた。2026-11-05）
+      thinking: { type: "adaptive", display: "updates" },
       output_config: { effort: "high" },
       // 安全のための判定で断られたときは、サーバー側で推奨のモデルに切り替えて続ける
-      betas: ["server-side-fallback-2026-07-01"],
+      betas: ["server-side-fallback-2026-07-01", "thinking-display-updates-2026-08-18"],
       fallbacks: "default",
       system: [{ type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } }],
       tools: [getRegion, listCatalog, simulateStage, validateStage, submitStage],
@@ -257,7 +259,10 @@ export async function designStage(input: DesignInput, emit: (e: DesignEvent) => 
         const hasToolUse = message.content.some((b) => b.type === "tool_use");
         if (message.stop_reason === "max_tokens" && hasToolUse) throw new TruncatedToolInput("ツールの入力が途中で切れました（max_tokens）");
         if (message.stop_reason === "refusal") {
-          emit({ type: "error", message: "Claude が依頼を断りました。教えたいことの書き方を変えて、もう一度試してください" });
+          const d = message.stop_details as { category?: string | null; explanation?: string | null } | null | undefined;
+          const ran = (message.usage as { iterations?: { type?: string; model?: string }[] }).iterations?.map((i) => `${i.type}:${i.model ?? ""}`).join(" → ") ?? "";
+          console.error(`refusal: model=${message.model} category=${d?.category ?? "null"} explanation=${d?.explanation ?? ""} iterations=${ran}`);
+          emit({ type: "error", message: `Claude が依頼を断りました（${d?.category ?? "理由の分類なし"}）。教えたいことの書き方を変えて、もう一度試してください` });
           break;
         }
       }
@@ -282,7 +287,13 @@ export async function designStage(input: DesignInput, emit: (e: DesignEvent) => 
     }
   }
   const seconds = Math.round((Date.now() - t0) / 1000);
-  emit({ type: "usage", ...usage, costUsd: Math.round(cost(usage) * 100) / 100, seconds });
+  const costUsd = Math.round(cost(usage) * 100) / 100;
+  emit({ type: "usage", ...usage, costUsd, seconds });
+  // 1回のステージ作成のトークンと費用を下書きに残す（SPEC.md 5.5：実測して記録する）
+  if (draftId) {
+    const rec = loadDraft(draftId);
+    if (rec) saveDraft({ ...rec, usage: { ...usage, costUsd, seconds }, log });
+  }
   emit({ type: "done", draftId, stopReason });
   return draftId;
 }

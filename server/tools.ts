@@ -54,7 +54,7 @@ export function regionData(region: string) {
     source: "厚生労働省 院内感染対策サーベイランス（JANIS）検査部門 2025年報（全集計対象医療機関・入院検体）を加工",
     urineSharePct: urineShare,
     susceptibilityPct,
-    note: "感性率は S の株の割合。CLSI 2012 の判定基準。この値はステージの設計の手がかりで、変えられない",
+    note: "感性率は S の株の割合（CLSI 2012 の判定基準）。感性率は、その地域のすべての検査材料（入院検体）の集計で、尿だけの値ではない（尿の値は urineSharePct の菌の割合だけ）。また菌全体の値で、「CTRX が効かない大腸菌のうち CMZ が効く割合」のような、ほかの薬に耐性の株だけの値ではない。文章に書くときは「大阪府の大腸菌（すべての検査材料）の CTRX 感性率」のように書く。この値は変えられない",
   };
 }
 
@@ -124,6 +124,8 @@ export interface DraftRecord {
   createdAt: string;
   summary: string;
   log: string[];
+  /** 1回のステージ作成のトークンと費用（終わってから足す） */
+  usage?: { input: number; output: number; cacheRead: number; cacheWrite: number; costUsd: number; seconds: number };
 }
 
 export function draftPath(id: string): string {
