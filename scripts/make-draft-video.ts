@@ -2,7 +2,8 @@
 // 録画（scripts/record-demo.ts の recordings/*.mp4 と目印の *.json）を切り出して早送りし、台本のナレーションを字幕と声にして重ね、つなぐ。
 // 字幕は画面なしの Chrome で透明な PNG に描き、ffmpeg で重ねる（手元の ffmpeg には文字を描く機能がないため）。
 // 声：recordings/voice/scene{N}.wav（m4a・aiff・mp3 も可）があれば作者の録音を使う。なければ macOS の読み上げ（say）で仮の声を作る。
-//     仮の声は尺を確かめるためだけのもの（提出版は作者の録音にする）。仮の声のときは、字幕の時刻を声の区切りに合わせる
+//     仮の声は尺を確かめるためだけのもの（提出版は作者の録音にする）。仮の声のときは、字幕の時刻を声の区切りに合わせる。
+//     録音のときは、頭と終わりの無音を切り、声の中の無音を手がかりに字幕の時刻を合わせる（scripts/lib/align.ts）
 //   npx tsx scripts/make-draft-video.ts [--rec recordings] [--seed 570] [--voice Kyoko]
 //   → recordings/draft-video.mp4（1920×1080、30fps、声は AAC）、ナレーションの字幕 recordings/draft-video.srt、
 //     シーンごとの記録 recordings/draft-video.json（絵コンテ表を作る scripts/make-storyboard.ts が読む）
@@ -10,6 +11,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { alignChunks, silences } from "./lib/align.ts";
+import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 import { openChrome, sleep, type Page } from "./lib/chrome.ts";
 
 const { values } = parseArgs({
@@ -48,26 +51,6 @@ function readScript(): Map<number, SceneText> {
     out.set(n, { narration, main, supplements, intro });
   }
   return out;
-}
-
-/** ナレーションを字幕の区切りに分ける（句点で切り、長い文は読点で切る） */
-function chunks(text: string, max = 32): string[] {
-  const out: string[] = [];
-  for (const s of text.match(/[^。]+。?/g) ?? [text]) {
-    if (s.length <= max) {
-      out.push(s);
-      continue;
-    }
-    let cur = "";
-    for (const part of s.match(/[^、]+、?/g) ?? [s]) {
-      if (cur && (cur + part).length > max) {
-        out.push(cur);
-        cur = part;
-      } else cur += part;
-    }
-    if (cur) out.push(cur);
-  }
-  return out.map((x) => x.trim()).filter(Boolean);
 }
 
 // ---------- 録画の目印 ----------
@@ -200,7 +183,13 @@ const GAP = 0.12;
 function voiceFor(n: number, text: string, from: number, anchors: [string, number][]): Voice {
   for (const ext of ["wav", "m4a", "aiff", "mp3"]) {
     const f = join(REC, "voice", `scene${n}.${ext}`);
-    if (existsSync(f)) return { file: f, dur: probe(f), source: "録音" };
+    if (existsSync(f)) {
+      // 録音の頭と終わりの無音を切る（声をシーンの頭から from 秒に置き、余りを正しく測るため）
+      const out = join(TMP, `rec${n}.wav`);
+      const trim = "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB";
+      ff(["-i", f, "-af", `${trim},areverse,${trim},areverse`, "-ac", "1", "-ar", "48000", out]);
+      return { file: out, dur: probe(out), source: "録音" };
+    }
   }
   const parts: Sub[] = [];
   const files: string[] = [];
@@ -245,6 +234,7 @@ interface SceneSpec {
   overlays: Overlay[];
   /** ナレーションを始める秒 */
   from?: number;
+  /** 画面に合わせて待たせる区切り（省くと scripts/lib/video-cues.ts の ANCHORS） */
   anchors?: [string, number][];
   /** ナレーションの語に合わせて出す絵（その語で始まる字幕と同時に出し、len 秒出す） */
   cues?: { word: string; len: number; png: string; kind: Kind; text: string }[];
@@ -277,24 +267,15 @@ async function main(): Promise<void> {
     const speedBadge = (k: number, start: number, end: number, kind: Kind = "speed") => ov(kind, `早送り ×${Math.round(k)}`, start, end);
 
     const scene = async (s: SceneSpec) => {
-      const from = s.from ?? 0.3;
+      const from = s.from ?? VOICE_FROM;
       const base = s.parts.length === 1 ? s.parts[0]! : concat(s.parts, join(TMP, `base${s.n}.mp4`));
       const text = script.get(s.n)?.narration;
-      const voice = text ? voiceFor(s.n, text, from, s.anchors ?? []) : undefined;
-      // 字幕：仮の声は区切りの時刻どおり。録音は声の長さを文字数の割合で分ける
+      const anchors = s.anchors ?? (ANCHORS[s.n] ?? []).map((a): [string, number] => [a.word, a.at]);
+      const voice = text ? voiceFor(s.n, text, from, anchors) : undefined;
+      // 字幕：仮の声は区切りの時刻どおり。録音は、無音を除いて話している時間を文字数の割合で分け、近くの無音にそろえる（scripts/lib/align.ts）
       let subs: Sub[] = [];
       if (text && voice?.parts) subs = voice.parts.map((p) => ({ start: from + p.start, end: from + p.end, text: p.text }));
-      else if (text && voice) {
-        const cs = chunks(text);
-        const total = cs.reduce((a, c) => a + c.length, 0);
-        let t = from;
-        subs = cs.map((c) => {
-          const d = (voice.dur * c.length) / total;
-          const sub = { start: t, end: t + d, text: c };
-          t += d;
-          return sub;
-        });
-      }
+      else if (text && voice) subs = alignChunks(chunks(text), voice.dur, silences(voice.file)).map((p) => ({ start: from + p.start, end: from + p.end, text: p.text }));
       const subOvs: Overlay[] = [];
       // 字幕は、次の字幕まで間が短ければ次が出るまで残す（重ならないように）
       for (const [i, sb] of subs.entries()) {
@@ -377,17 +358,16 @@ async function main(): Promise<void> {
       screen: `乱用のステージ1の続き（早送り ×${Math.round(k3)}。カルバペネム系を連打して勝つ）→ 結果画面（等倍）`,
       parts: [clip(ABUSE, s1 + 80, r1, k3), clip(ABUSE, r1, r1 + 10)],
       overlays: [await speedBadge(k3, 0, 11), ...(sup3 ? [await ov("top", sup3, 11, 21)] : [])],
-      anchors: [["ところが", 11.3]],
     });
-    // 4 2050年 乱用（22秒）：推移の表（9秒）→ 2050年を早送り（10秒）→ 敗北（3秒）。題「あなたの選択が…」はナレーションに合わせる
-    const k4 = (r2 - s2) / 10;
+    // 4 2050年 乱用（22秒）：推移の表（8秒）→ 2050年を早送り（11秒）→ 敗北（3秒）。題「あなたの選択が…」はナレーションに合わせる
+    // （表を 9 → 8秒にしたのは、録音で「手札の薬が」の前にあける間を約1秒に縮め、1秒に5字で読んでも収まるようにするため。2026-11-05）
+    const k4 = (r2 - s2) / 11;
     await scene({
       n: 4,
       dur: 22,
       screen: `2050年のブリーフィングと耐性率の推移の表（等倍）→ 乱用の2050年（早送り ×${Math.round(k4)}）→ 敗北`,
-      parts: [clip(ABUSE, b2, b2 + 9), clip(ABUSE, s2, r2, k4), clip(ABUSE, r2, r2 + 3)],
-      overlays: [await speedBadge(k4, 9, 19)],
-      anchors: [["手札の薬が", 9.3]],
+      parts: [clip(ABUSE, b2, b2 + 8), clip(ABUSE, s2, r2, k4), clip(ABUSE, r2, r2 + 3)],
+      overlays: [await speedBadge(k4, 8, 19)],
       cues: [{ word: "あなたの選択が", len: 3.6, png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), kind: "big", text: "あなたの選択が、未来の敵をつくる" }],
     });
     // 5 やり直し 適正（24秒）：ステージ1（14秒）→ 2050年（7秒）→ 守り切った（3秒）。
