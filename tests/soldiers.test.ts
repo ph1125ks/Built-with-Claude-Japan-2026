@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "../src/engine/index.ts";
 import { spectrumOf } from "../src/game/format.ts";
-import { CLASS_LOOKS, drugSoldierSvg, lookOf } from "../src/game/soldiers.ts";
+import { CLASS_LOOKS, lookOf } from "../src/game/soldiers.ts";
 
 const data = loadGameData();
 
@@ -38,20 +38,7 @@ describe("兵士の姿（系統ごと。2026-11-03 作者の案と判断）", ()
     }
   });
 
-  it("内服は足元がカプセルで、絵の面積が吸収率に比例する。注射は大きさ 1", () => {
-    for (const d of data.drugs) {
-      const look = lookOf(data, d);
-      expect(look.oral, d.id).toBe(d.route === "po");
-      const area = d.route === "po" ? (d.bioavailability ?? 1) : 1;
-      expect(look.scale * look.scale, d.id).toBeCloseTo(area, 6);
-    }
-  });
-
-  it("SVG は外部の素材を読まない（コードで描いた図形だけ）", () => {
-    for (const d of data.drugs) {
-      const svg = drugSoldierSvg(data, d, 64);
-      expect(svg.startsWith("<svg"), d.id).toBe(true);
-      expect(svg, d.id).not.toMatch(/<image|href=|url\(/);
-    }
+  it("内服の印は、内服薬だけに付く（吸収率は絵の大きさでは表さない。2026-11-04 作者の判断）", () => {
+    for (const d of data.drugs) expect(lookOf(data, d).oral, d.id).toBe(d.route === "po");
   });
 });

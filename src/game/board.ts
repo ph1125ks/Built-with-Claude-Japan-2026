@@ -2,9 +2,8 @@
 // 操作（カードとレーンの選択）は DOM（hud.ts）で受ける。座標は 1280×720 を基準にし、カメラの拡大で高解像度に描く。
 import Phaser from "phaser";
 import { loadGameData, susceptibility, type Bacterium, type GameEvent } from "../engine/index.ts";
-import { bugExtent, drawBug } from "./bugs.ts";
+import { FRAMES, LEVELS, STYLE, bugFrame, bugScale, levelForAmount, soldierFrame, soldierPx, toCanvas, type Frame } from "./pixel/index.ts";
 import type { PlaySession } from "./session.ts";
-import { drugSoldierSvg, soldierKey } from "./soldiers.ts";
 
 export const W = 1280;
 export const H = 720;
@@ -28,10 +27,15 @@ export const laneTopY = (lane: number) => LAYOUT.laneTop + lane * LAYOUT.laneH;
 const bugY = (lane: number) => laneTopY(lane) + 86;
 const unitY = (lane: number) => laneTopY(lane) + 36;
 const unitX = (slot: number) => LAYOUT.x0 + 48 + slot * 84;
-/** 盤面の兵士の大きさ（px）と、兵士の中心・名札の中心の高さ（unitY から） */
-const SOLDIER = 60;
+/** 兵士の中心・名札の中心の高さ（unitY から）。兵士の大きさは作風で決まる（pixel/） */
 const SOLDIER_Y = -4;
-const PLATE_Y = 36;
+/** 呼び出したときに薬の粒が流れ込む時間（ms） */
+const STREAM_MS = 900;
+/** 攻撃のコマ：振りかぶり → 振り抜き（ms） */
+const ATK0_MS = 110;
+const ATK1_MS = 280;
+/** 名札は兵士の足元より下に（内服のカプセルの台が隠れないように。試遊の指摘） */
+const PLATE_Y = 40;
 const PLATE_W = 60;
 
 const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif';
@@ -39,7 +43,8 @@ const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu 
 interface BugView {
   uid: number;
   c: Phaser.GameObjects.Container;
-  body: Phaser.GameObjects.Graphics;
+  /** 菌のドット絵（2コマでくねる） */
+  body: Phaser.GameObjects.Image;
   hp: Phaser.GameObjects.Graphics;
   name: Phaser.GameObjects.Text;
   /** 近い位置での札：獲得耐性（赤）と、自然耐性・効かない扱い（紫）。菌の右に出す */
@@ -47,8 +52,13 @@ interface BugView {
   tagB: Phaser.GameObjects.Text;
   /** 札を出したいか（重なるときは declutter が隠す） */
   want: { name: boolean; a: boolean; b: boolean };
-  /** 菌の絵の幅 */
+  /** 菌の絵の幅と高さ */
   w: number;
+  h: number;
+  species: string;
+  /** べん毛のない絵（菌名が分かるまで。グラム染色ではべん毛は見えない） */
+  bare: boolean;
+  frame: number;
   level: string;
   jitter: number;
   phase: number;
@@ -62,13 +72,21 @@ interface UnitView {
   c: Phaser.GameObjects.Container;
   /** 名札の入れ物（菌の名前と耐性の札より上の層） */
   p: Phaser.GameObjects.Container;
-  /** 兵士の絵（soldiers.ts の SVG をテクスチャにしたもの） */
+  /** 兵士のドット絵（pixel/ の作風。コマと濃さごとのテクスチャを差し替える） */
   body: Phaser.GameObjects.Image;
   bar: Phaser.GameObjects.Graphics;
   slot: number;
   lane: number;
   fireIn: number;
   color: number;
+  drug: string;
+  /** いま出しているテクスチャ */
+  key: string;
+  /** 最後に撃った時刻（攻撃のコマ） */
+  atkAt: number;
+  /** 呼び出した時刻と、出てきたときの体内の薬の量（粒が流れ込む間は、届いたぶんだけ濃くする） */
+  bornAt: number;
+  start: number;
 }
 
 const hex = (s: string) => Number.parseInt(s.replace("#", ""), 16);
@@ -92,19 +110,31 @@ export class BoardScene extends Phaser.Scene {
     this.R = data.R;
   }
 
-  /** 抗菌薬の兵士の絵を、カタログの全部の薬についてテクスチャにする（盤面の解像度に合わせて描く） */
-  preload(): void {
+  private unitKey(drug: string, frame: Frame, level: number): string {
+    return `px:${STYLE.id}:${drug}:${frame}:${level}`;
+  }
+
+  private bugKey(species: string, frame: number, bare: boolean): string {
+    return `bug:${STYLE.id}:${species}:${frame}:${bare ? "bare" : "full"}`;
+  }
+
+  /**
+   * 兵士と細菌のドット絵を、カタログの全部についてテクスチャにする。
+   * 兵士はコマ（待機2・攻撃2）× 濃さ（体内の薬の量、8段）。等倍で作り、拡大はぼかさない（NEAREST）
+   */
+  private makeTextures(): void {
     const data = loadGameData();
-    const urls: string[] = [];
-    for (const d of data.drugs) {
-      const url = URL.createObjectURL(new Blob([drugSoldierSvg(data, d, 64)], { type: "image/svg+xml" }));
-      urls.push(url);
-      this.load.svg(soldierKey(d.id), url, { scale: (SOLDIER * this.R) / 64 });
-    }
-    this.load.once("complete", () => urls.forEach((u) => URL.revokeObjectURL(u)));
+    const add = (key: string, c: HTMLCanvasElement) => {
+      if (this.textures.exists(key)) return;
+      this.textures.addCanvas(key, c)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    };
+    for (const d of data.drugs)
+      for (const f of FRAMES) for (let l = 1; l <= LEVELS; l++) add(this.unitKey(d.id, f, l), toCanvas(soldierFrame(data, d, f, l)));
+    for (const def of data.bacteria) for (const fr of [0, 1]) for (const bare of [true, false]) add(this.bugKey(def.id, fr, bare), toCanvas(bugFrame(def, fr, bare)));
   }
 
   create(): void {
+    this.makeTextures();
     const cam = this.cameras.main;
     cam.setOrigin(0, 0);
     cam.setZoom(this.R);
@@ -215,6 +245,12 @@ export class BoardScene extends Phaser.Scene {
     for (const b of s.state.bacteria) {
       alive.add(b.uid);
       const v = this.bugs.get(b.uid) ?? this.createBug(b);
+      // 2コマでくねる
+      const fr = Math.floor(t / 260 + v.phase) % 2;
+      if (fr !== v.frame) {
+        v.frame = fr;
+        v.body.setTexture(this.bugKey(v.species, fr, v.bare));
+      }
       const prev = s.prevX.get(b.uid) ?? b.x;
       const x = this.px(prev + (b.x - prev) * (s.paused ? 1 : s.alpha));
       const y = bugY(b.lane) + v.jitter + Math.sin(t / 260 + v.phase) * 2.5;
@@ -268,12 +304,12 @@ export class BoardScene extends Phaser.Scene {
     const def = this.session!.state.data.bacteriumById.get(b.species)!;
     const c = this.add.container(this.px(b.x), bugY(b.lane));
     c.setDepth(10);
-    const body = this.add.graphics();
-    drawBug(body, def, false);
+    // 菌名が分かるまでは、べん毛のない絵（グラム染色ではべん毛は見えない。動きの速さは最初から見える）
+    const body = this.add.image(0, 0, this.bugKey(def.id, 0, true)).setScale(bugScale());
     const hp = this.add.graphics();
-    const { h } = bugExtent(def);
+    const w = body.displayWidth;
+    const h = body.displayHeight;
     const name = this.text(0, -h / 2 - 10, "", 13, "#3b0a24", { fontStyle: "bold", backgroundColor: "rgba(255,255,255,0.82)", padding: { x: 4, y: 1 } }).setOrigin(0.5, 1);
-    const { w } = bugExtent(def);
     const tagStyle = { fontStyle: "bold", backgroundColor: "#ffffff", padding: { x: 4, y: 1 } };
     const tagA = this.text(w / 2 + 8, 0, "", 12, "#b91c1c", tagStyle).setOrigin(0, 0.5);
     const tagB = this.text(w / 2 + 8, 0, "", 12, "#5b21b6", tagStyle).setOrigin(0, 0.5);
@@ -281,7 +317,7 @@ export class BoardScene extends Phaser.Scene {
     tagA.setVisible(false);
     tagB.setVisible(false);
     c.add([body, hp, name, tagA, tagB]);
-    const v: BugView = { uid: b.uid, c, body, hp, name, tagA, tagB, want: { name: false, a: false, b: false }, w, level: "gram", jitter: ((b.uid * 37) % 29) - 14, phase: b.uid, dying: false, last: { x: c.x, y: c.y } };
+    const v: BugView = { uid: b.uid, c, body, hp, name, tagA, tagB, want: { name: false, a: false, b: false }, w, h, species: def.id, bare: true, frame: 0, level: "gram", jitter: ((b.uid * 37) % 29) - 14, phase: b.uid, dying: false, last: { x: c.x, y: c.y } };
     this.bugs.set(b.uid, v);
     if (b.level !== "gram") this.updateLevel(v, b, this.session!);
     return v;
@@ -292,7 +328,8 @@ export class BoardScene extends Phaser.Scene {
     const def = data.bacteriumById.get(b.species)!;
     v.level = b.level;
     if (b.level === "species" || b.level === "susceptibility") {
-      drawBug(v.body, def, true);
+      v.bare = false;
+      v.body.setTexture(this.bugKey(def.id, v.frame, false));
       v.name.setText(def.name).setVisible(true);
       v.want.name = true;
     }
@@ -340,8 +377,7 @@ export class BoardScene extends Phaser.Scene {
     g.clear();
     if (b.hp >= b.maxHp) return;
     const w = 30;
-    const def = this.session!.state.data.bacteriumById.get(b.species)!;
-    const y = bugExtent(def).h / 2 + 3;
+    const y = v.h / 2 + 3;
     g.fillStyle(0x000000, 0.18);
     g.fillRect(-w / 2, y, w, 3);
     g.fillStyle(0x16a34a, 1);
@@ -368,9 +404,11 @@ export class BoardScene extends Phaser.Scene {
         this.units.delete(uid);
       }
     }
+    const now = this.time.now;
     for (const u of s.state.units) {
       let v = this.units.get(u.uid);
-      if (!v) v = this.createUnit(u.uid, u.drug, u.lane);
+      // 呼び出したばかりの兵士には、薬の粒が流れ込む演出を付ける
+      if (!v) v = this.createUnit(u.uid, u.drug, u.lane, u.hp / full, s.state.tick - u.bornTick < 5);
       const f = Math.max(0, u.hp / full);
       // 体内の薬の量（名札の下の帯）
       const bar = v.bar;
@@ -380,10 +418,18 @@ export class BoardScene extends Phaser.Scene {
       bar.fillRoundedRect(-bw / 2, PLATE_Y + 3.5, bw, 4, 2);
       bar.fillStyle(v.color, 1);
       bar.fillRoundedRect(-bw / 2, PLATE_Y + 3.5, Math.max(2, bw * f), 4, 2);
-      const alpha = 0.55 + 0.45 * Math.min(1, f * 3);
-      v.c.setAlpha(alpha);
-      v.p.setAlpha(alpha);
-      v.body.y = SOLDIER_Y + Math.sin(this.time.now / 320 + v.uid) * 0.8;
+      // 兵士の濃さ＝いま体内にある薬の量（点描）。吸収率の低い内服は、はじめの量が少ないので薄く出て、早く尽きる。粒が流れ込む間は、届いたぶんだけ濃くする
+      const age = now - v.bornAt;
+      const shown = age < STREAM_MS ? Math.min(f, v.start * Math.max(1 / LEVELS, Math.min(1, (age - 150) / (STREAM_MS - 250)))) : f;
+      const level = levelForAmount(shown);
+      const since = now - v.atkAt;
+      const frame: Frame = since < ATK0_MS ? "attack0" : since < ATK1_MS ? "attack1" : Math.floor(now / 480 + v.uid * 0.37) % 2 ? "idle1" : "idle0";
+      const key = this.unitKey(v.drug, frame, level);
+      if (key !== v.key) {
+        v.key = key;
+        v.body.setTexture(key);
+      }
+      v.p.setAlpha(0.75 + 0.25 * Math.min(1, f * 3));
       // 弾（見た目だけ。効き目はエンジンが毎ティック計算している）
       if (!s.paused) {
         v.fireIn -= delta * s.speed;
@@ -395,7 +441,7 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
-  private createUnit(uid: number, drugId: string, lane: number): UnitView {
+  private createUnit(uid: number, drugId: string, lane: number, start: number, fresh: boolean): UnitView {
     const data = this.session!.state.data;
     const drug = data.drugById.get(drugId)!;
     const color = hex(data.classById.get(drug.class)?.color ?? "#64748b");
@@ -408,7 +454,9 @@ export class BoardScene extends Phaser.Scene {
     c.setDepth(8);
     const p = this.add.container(unitX(slot), unitY(lane));
     p.setDepth(30);
-    const body = this.add.image(0, SOLDIER_Y, soldierKey(drugId)).setDisplaySize(SOLDIER, SOLDIER);
+    const S = soldierPx();
+    const key = this.unitKey(drugId, "idle0", fresh ? 1 : levelForAmount(start));
+    const body = this.add.image(0, SOLDIER_Y, key).setDisplaySize(S, S);
     // 名札：略号と、下に体内の薬の量の帯
     const g = this.add.graphics();
     g.fillStyle(0xffffff, 0.94);
@@ -422,9 +470,52 @@ export class BoardScene extends Phaser.Scene {
     c.setScale(0.4);
     p.setScale(0.4);
     this.tweens.add({ targets: [c, p], scale: 1, duration: 260, ease: "Back.Out" });
-    const v: UnitView = { uid, c, p, body, bar, slot, lane, fireIn: 120, color };
+    const now = this.time.now;
+    const v: UnitView = { uid, c, p, body, bar, slot, lane, fireIn: 120, color, drug: drugId, key, atkAt: -1e9, bornAt: fresh ? now : now - STREAM_MS, start };
     this.units.set(uid, v);
+    if (fresh) this.stream(unitX(slot), unitY(lane) + SOLDIER_Y, lane, start, color, drug.route === "po");
     return v;
+  }
+
+  /**
+   * 呼び出したときの演出：薬の粒が20個、レーンの下から兵士に流れ込む（内服はカプセル、注射は丸い粒）。
+   * 内服は、体に届かなかった粒（吸収率の残り）が途中で灰色になって落ちる（作者の判断：点描の濃さ＋この演出）。
+   * 20個にしたのは、CFDN（吸収率25%）がちょうど5粒になるように（10個だと四捨五入で3粒＝30%になり、出典の 20〜25% から外れる。data-auditor の指摘）
+   */
+  private stream(x: number, y: number, lane: number, start: number, color: number, oral: boolean): void {
+    const n = 20;
+    const ok = Math.round(n * start);
+    const bottom = laneTopY(lane) + LAYOUT.laneH - 6;
+    for (let i = 0; i < n; i++) {
+      const sx = x - 38 + i * 4;
+      const g = this.add.container(sx, bottom);
+      const a = oral ? this.add.rectangle(-2.5, 0, 5, 4, color).setStrokeStyle(1, 0x3b0a24, 0.7) : this.add.circle(0, 0, 3, color).setStrokeStyle(1, 0xffffff, 0.9);
+      const b = oral ? this.add.rectangle(2.5, 0, 5, 4, 0xffffff).setStrokeStyle(1, 0x3b0a24, 0.7) : null;
+      g.add(b ? [a, b] : [a]);
+      g.setAlpha(0);
+      this.fx.add(g);
+      const delay = i * 20;
+      if (i < ok) {
+        this.tweens.add({ targets: g, alpha: 1, duration: 120, delay });
+        this.tweens.add({ targets: g, x, y, duration: 520, delay: delay + 80, ease: "Quad.In", onComplete: () => g.destroy() });
+      } else {
+        // 体に届かなかった粒：途中で止まり、灰色になって落ちる
+        this.tweens.add({ targets: g, alpha: 1, duration: 120, delay });
+        this.tweens.add({
+          targets: g,
+          x: sx + (x - sx) * 0.4,
+          y: bottom + (y - bottom) * 0.45,
+          duration: 300,
+          delay: delay + 80,
+          ease: "Quad.Out",
+          onComplete: () => {
+            a.setFillStyle(0xb8aab2);
+            b?.setFillStyle(0xddd3d8);
+            this.tweens.add({ targets: g, y: bottom + 10, alpha: 0, delay: 180, duration: 800, ease: "Quad.In", onComplete: () => g.destroy() });
+          },
+        });
+      }
+    }
   }
 
   private fire(v: UnitView, drugId: string, s: PlaySession): void {
@@ -434,7 +525,8 @@ export class BoardScene extends Phaser.Scene {
     const tv = this.bugs.get(target.uid);
     if (!tv) return;
     const resisted = target.resistant.has(drugId);
-    // 兵士が少し前に出る
+    // 攻撃のコマ（振りかぶり → 振り抜き）と、少し前に出る動き
+    v.atkAt = this.time.now;
     this.tweens.add({ targets: v.body, x: 3, duration: 90, yoyo: true, ease: "Quad.Out" });
     const dot = this.add.circle(v.c.x + 24, v.c.y - 16, 4, v.color, 1);
     dot.setStrokeStyle(1.2, 0xffffff, 1);
@@ -500,7 +592,7 @@ export class BoardScene extends Phaser.Scene {
           const drug = data.drugById.get(e.drug);
           if (drug?.bioavailability != null) {
             // 3つめの兵士の右に出す
-            this.float(unitX(2) + 170, unitY(e.lane), `内服：吸収率 ${Math.round(drug.bioavailability * 100)}% のぶん弱く出る`, "#0f766e", 13);
+            this.float(unitX(2) + 170, unitY(e.lane), `内服：体に届くのは ${Math.round(drug.bioavailability * 100)}%（吸収率）`, "#0f766e", 13);
           }
           break;
         }

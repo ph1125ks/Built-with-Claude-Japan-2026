@@ -3,7 +3,7 @@
 import { futureYear, susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
 import { escapeHtml, genericName, modelLabel, pct, yen } from "./format.ts";
-import { drugSoldierSvg } from "./soldiers.ts";
+import { SOLID_AT, bugImg, levelForAmount, soldierImg } from "./pixel/index.ts";
 
 const css = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 const GN = css(GRAM_COLORS.negative.fill);
@@ -26,7 +26,7 @@ export function notice(data: GameData): string {
 export function titleScreen(data: GameData, scenario: ScenarioDef, model: ResistanceModelId, showDev = false): string {
   return `
   <div class="screen title-screen">
-    <div class="title-art">${miniBugs()}</div>
+    <div class="title-art" aria-hidden="true">${titleArt(data)}</div>
     <h1>センタクアツ<small>（仮）</small></h1>
     <p class="tagline">あなたの選択が、未来の敵をつくる</p>
     <p class="lead">細菌から膀胱を守る、抗菌薬のタワーディフェンス。<br>選んだ抗菌薬しだいで耐性菌が増え、「${escapeHtml(scenario.future.title)}」で、自分が育てた耐性菌と戦います。</p>
@@ -52,14 +52,11 @@ function modelPicker(model: ResistanceModelId): string {
   </div>`;
 }
 
-function miniBugs(): string {
-  const rod = (x: number, y: number, w: number, h: number, a: number) =>
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${GN}" stroke="#9d1f52" transform="rotate(${a} ${x + w / 2} ${y + h / 2})"/>`;
-  const cocci = (x: number, y: number) =>
-    [0, 13, 28, 41].map((dx) => `<circle cx="${x + dx}" cy="${y}" r="6.5" fill="${GP}" stroke="#2e1260"/>`).join("");
-  return `<svg viewBox="0 0 260 60" width="260" height="60" aria-hidden="true">
-    ${rod(10, 22, 30, 13, -12)}${rod(60, 30, 36, 15, 8)}<rect x="112" y="16" width="40" height="8" rx="4" fill="${GN}" stroke="#9d1f52"/>${cocci(170, 34)}${rod(220, 18, 28, 12, 20)}
-  </svg>`;
+/** タイトルの絵：盤面と同じドット絵の兵士と細菌が向かい合う（2026-11-04 ドット絵にそろえた。試遊の指摘） */
+function titleArt(data: GameData): string {
+  const soldiers = ["ABPC", "CTRX", "MEPM"].filter((id) => data.drugById.has(id)).map((id) => soldierImg(data, data.drugById.get(id)!, "lane"));
+  const bugs = ["ecoli", "kpneumoniae", "efaecalis"].filter((id) => data.bacteriumById.has(id)).map((id) => bugImg(data.bacteriumById.get(id)!));
+  return `<div class="title-side">${soldiers.join("")}</div><div class="title-side bugs">${bugs.join("")}</div>`;
 }
 
 /** 遊び方の「兵士の姿」の見本：系統ごとに代表の薬を1つ（カタログにない薬は飛ばす） */
@@ -79,21 +76,41 @@ function soldierLegend(data: GameData): string {
   const figs = LEGEND.filter(([id]) => data.drugById.has(id))
     .map(([id, cls, look]) => {
       const d = data.drugById.get(id)!;
-      return `<figure>${drugSoldierSvg(data, d, 58)}<figcaption><b>${escapeHtml(d.abbr)}</b><span>${escapeHtml(cls)}</span><small>${escapeHtml(look)}</small></figcaption></figure>`;
+      return `<figure><div class="px-stage">${soldierImg(data, d, "lane")}</div><figcaption><b>${escapeHtml(d.abbr)}</b><span>${escapeHtml(cls)}</span><small>${escapeHtml(look)}</small></figcaption></figure>`;
     })
     .join("");
   return `
       <section class="soldier-legend">
         <h3>4. 兵士の姿は、抗菌薬の系統</h3>
         <div class="legend-row">${figs}</div>
+        ${densityLegend(data)}
         <ul>
           <li>剣を持つのは β-ラクタム系です（機械兵のカルバペネム系も剣を持っています）。盾は、菌が作る「β-ラクタム系の薬を壊す酵素（β-ラクタマーゼ）」の多くを抑える薬を配合した印です。</li>
           <li>セフェム系は、世代が上がるほど鎧が豪華になります（おおまかに、効くグラム陰性菌の種類が増えます）。ただし得意・不得意があります。第3世代はグラム陽性菌への効き目が第1世代より弱く、セファマイシン系の CMZ（第2世代の段）は ESBL に分解されないので、第3・第4世代が効かない菌に効くことがあります。</li>
-          <li>胸や盾の紋章は、緑膿菌にも効く見込みがある薬（カードの「緑膿菌」と同じ、ゲーム内の目安）。足元のカプセルは内服薬で、吸収率が低いほど小さく、早く消えます。</li>
-          <li>同じ系統・同じ世代の薬は同じ姿です（見分けは名札の略号で）。服の色は系統の色で、菌の色（ピンク＝陰性、紫＝陽性）とは関係ありません。</li>
+          <li>胸や盾の紋章は、緑膿菌にも効く見込みがある薬（カードの「緑膿菌」と同じ、ゲーム内の目安）。足元のカプセルは内服薬です。</li>
+          <li>兵士の濃さは、いま体内にある薬の量です（薬の良し悪しや、菌に効くかどうかとは別です）。量が6割を切ると点が抜けて薄くなり、0 になると消えます。内服薬は吸収率の割合の量で出ます。減る速さは吸収率で変わらないので、吸収率の低い薬ほど、はじめの量が少ないぶん攻撃が弱く、早く尽きます（呼び出したとき、体に届かなかった薬の粒が灰色になって落ちます）。吸収率が6割以上の内服薬は、注射と同じ濃さで出ます。</li>
+          <li>同じ系統・同じ世代の薬は同じ姿です（見分けは名札の略号で）。絵に使っている系統の色（服・鉢巻き・マントなど）は、菌の色（ピンク＝陰性、紫＝陽性）とは関係ありません。</li>
         </ul>
         <p class="caution"><b>姿が立派でも、強い薬・良い薬という意味ではありません。</b>鎧はセフェム系の世代の印で、ほかの系統の広さは表していません（鎧のない弓の LVFX や、機械兵のカルバペネム系は、効く範囲がとても広い薬です）。どの薬も使えば耐性菌が選ばれて残りますが、効く範囲の広い薬は、ねらった菌だけでなくほかの多くの菌にも選択圧をかけるので、使いすぎると耐性菌が増えやすくなります。</p>
       </section>`;
+}
+
+/** 遊び方の「兵士の濃さ」の見本：注射（満タン）・吸収率の高い内服・吸収率の低い内服・薬が切れかけ（試遊の指摘：見本が注射ばかり） */
+function densityLegend(data: GameData): string {
+  const items: [string, number, string][] = [
+    ["CTRX", 1, "注射：出てきたとき"],
+    ["AMPC_PO", data.drugById.get("AMPC_PO")?.bioavailability ?? 1, "内服（吸収率 92%）：注射と同じ濃さ"],
+    ["CFDN_PO", data.drugById.get("CFDN_PO")?.bioavailability ?? 1, "内服（吸収率 25%）：はじめから薄い"],
+    ["CTRX", 0.15, "薬が切れかけ"],
+  ];
+  const figs = items
+    .filter(([id]) => data.drugById.has(id))
+    .map(([id, f, cap]) => {
+      const d = data.drugById.get(id)!;
+      return `<figure><div class="px-stage">${soldierImg(data, d, "lane", levelForAmount(f))}</div><figcaption><b>${escapeHtml(d.abbr)}</b><small>${escapeHtml(cap)}</small></figcaption></figure>`;
+    })
+    .join("");
+  return `<div class="legend-row density" title="体内の薬の量が${Math.round(SOLID_AT * 100)}%を切ると薄くなる">${figs}</div>`;
 }
 
 export function howtoScreen(data: GameData): string {
@@ -128,7 +145,7 @@ export function howtoScreen(data: GameData): string {
         <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると召喚されます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。遊ぶたびに、手札の何枚かが供給制限で使えなくなります。</p>
         <ul>
           <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
-          <li><b>内服薬</b>は吸収率のぶん弱い状態で出ます。</li>
+          <li><b>内服薬</b>は、飲んだ薬のうち体に届く割合（<b>吸収率</b>。バイオアベイラビリティ）の量で出ます。吸収率の低い薬は、はじめから兵士が薄く出ます。</li>
           <li>効かない菌には弾がはじかれます。<b>耐性</b>＝その個体が耐性を獲得している。<b>自然耐性</b>＝その菌種がもともと効かない。<b>効かない扱い</b>＝このゲームで効かないことにしている組み合わせ（腸球菌に MEPM・IPM/CS）。</li>
           <li>薬を使うと、その薬にさらされた菌の中で耐性菌が選ばれて残り（<b>選択圧</b>）、<b>耐性率が上がります</b>。このゲームでは、同じ系統ばかり使うと、その系統の耐性が早く進みます。耐性の進み方は、タイトル画面で A（薬ごと）と B（系統ごと）から選べます。</li>
         </ul>
@@ -146,7 +163,7 @@ function handChips(data: GameData, stage: StageDef, short: readonly string[] = [
       const d = data.drugById.get(h.drug)!;
       const color = data.classById.get(d.class)?.color ?? "#64748b";
       const out = short.includes(d.id);
-      return `<span class="chip${out ? " short" : ""}" style="--cls:${color}" title="${escapeHtml(d.name)}${out ? "（供給制限で今回は使えません）" : ""}">${drugSoldierSvg(data, d, 26)}${escapeHtml(d.abbr)}</span>`;
+      return `<span class="chip${out ? " short" : ""}" style="--cls:${color}" title="${escapeHtml(d.name)}${out ? "（供給制限で今回は使えません）" : ""}">${soldierImg(data, d, "chip")}${escapeHtml(d.abbr)}</span>`;
     })
     .join("");
 }
@@ -597,7 +614,7 @@ const GLOSSARY: [string, string][] = [
   ["DOT（使用日数）", "抗菌薬を使った日数を、薬ごとに数えたもの。このゲームでは、1回の召喚で投与間隔の長さを数えます。"],
   ["ASC スコア・DASC/DOT", "ASC スコアは、薬が効く菌の範囲（スペクトラム）の広さを点数にしたもの（米国の状況で作られた点数）。DASC は ASC スコア × 使用日数の合計で、DASC/DOT はそれを使用日数で割った、使った薬の広さの平均です。"],
   ["効かない扱い", "このゲームで効かないことにしている組み合わせ（腸球菌の MEPM と IPM/CS）。EUCAST の自然耐性の表にはありませんが、MEPM は判定の基準の表で「その菌の治療には適さない」とされ、IPM/CS は公開データに値がなく、EUCAST の基準でも通常量で感性（S）とは判定されません。感受性試験の中間（I）や判定不能も、このゲームでは効かない扱いです。"],
-  ["兵士の姿", "このゲームで、抗菌薬の系統を表した姿。剣は β-ラクタム系（機械兵のカルバペネム系も剣を持つ）、盾は β-ラクタマーゼ阻害薬を配合した TAZ/PIPC、機械兵はカルバペネム系、槌は AMK（アミノグリコシド系）、弓は LVFX（キノロン系）です。鎧はセフェム系の世代だけの印で（第1世代は革の胸当て、セファマイシン系の CMZ は第2世代の段で鉄の胸当て、第3世代は全身の鎧、第4世代は金の縁と羽飾り）、世代が上がるほど、おおまかに効くグラム陰性菌の種類が増えます（第3世代はグラム陽性菌への効き目が第1世代より弱い、CMZ は ESBL に分解されないなど、得意・不得意があります）。ほかの系統の広さは表していません（鎧のない LVFX も、効く範囲がとても広い薬です）。姿が立派でも、強い・良いという意味ではありません。範囲の広い薬を使いすぎると、耐性菌が増えやすくなります。胸や盾の紋章は緑膿菌にも効く見込み（カードの「緑膿菌」と同じ、ゲーム内の目安）、足元のカプセルは内服で、絵の面積は吸収率に合わせています。"],
+  ["兵士の姿", "このゲームで、抗菌薬の系統を表した姿。剣は β-ラクタム系（機械兵のカルバペネム系も剣を持つ）、盾は β-ラクタマーゼ阻害薬を配合した TAZ/PIPC、機械兵はカルバペネム系、槌は AMK（アミノグリコシド系）、弓は LVFX（キノロン系）です。鎧はセフェム系の世代だけの印で（第1世代は革の胸当て、セファマイシン系の CMZ は第2世代の段で鉄の胸当て、第3世代は全身の鎧、第4世代は金の縁と羽飾り）、世代が上がるほど、おおまかに効くグラム陰性菌の種類が増えます（第3世代はグラム陽性菌への効き目が第1世代より弱い、CMZ は ESBL に分解されないなど、得意・不得意があります）。ほかの系統の広さは表していません（鎧のない LVFX も、効く範囲がとても広い薬です）。姿が立派でも、強い・良いという意味ではありません。範囲の広い薬を使いすぎると、耐性菌が増えやすくなります。胸や盾の紋章は緑膿菌にも効く見込み（カードの「緑膿菌」と同じ、ゲーム内の目安）、足元のカプセルは内服です。兵士の濃さ（点の詰まり具合）は、いま体内にある薬の量です（薬の良し悪しではありません）。吸収率の低い内服薬は、はじめから薄く出ます。"],
   ["デエスカレーション", "菌名や感受性が分かったあとに、効く範囲の狭い薬に切り替えたり、要らなくなった薬をやめたりすること（狭域化）。"],
   ["グラム染色・薬剤感受性試験", "グラム染色は、菌を色（陰性はピンク〜赤、陽性は紫）と形で分ける検査。薬剤感受性試験は、どの薬が効くかを調べる検査です。"],
   ["手引き", "厚生労働省「抗微生物薬適正使用の手引き 第四版」（医科・入院編、医科・外来編、歯科編、薬剤耐性菌感染症の抗菌薬適正使用編）。"],

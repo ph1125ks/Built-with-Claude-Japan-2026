@@ -3,7 +3,7 @@ import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type 
 import { LAYOUT, laneTopY } from "./board.ts";
 import { cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
-import { drugSoldierSvg } from "./soldiers.ts";
+import { soldierImg } from "./pixel/index.ts";
 
 export interface HudOptions {
   root: HTMLElement;
@@ -73,7 +73,7 @@ export class Hud {
         const gauge = s.model.id === "B" ? `<div class="gauge"><div class="gbar"><i></i></div><span class="glabel"></span></div>` : "";
         return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color}" title="${escapeHtml(d.name)}">
           <div class="card-head">
-            <div class="portrait">${drugSoldierSvg(data, d, 36)}<span class="key">${keys.get(d.id)}</span></div>
+            <div class="portrait">${soldierImg(data, d, "card")}<span class="key">${keys.get(d.id)}</span></div>
             <div class="card-head-text">
               <div class="abbr${d.abbr.length > 5 ? " long" : ""}">${escapeHtml(d.abbr)}</div>
               <div class="tags"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="route ${d.route}">${routeLabel(d)}</span></div>

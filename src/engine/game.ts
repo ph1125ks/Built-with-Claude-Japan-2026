@@ -208,7 +208,7 @@ function summon(state: GameState, cmd: Command, events: GameEvent[]): void {
     uid: state.nextUid++,
     drug: drug.id,
     lane: cmd.lane,
-    // 内服は吸収率のぶん削れた状態で出る
+    // 内服は吸収率の割合の量で出る（残りは体に届かない。例：25% なら HP 25）
     hp: full * (drug.bioavailability ?? 1),
     // 投与間隔の長さで 0 になる速さで減る
     decayPerTick: full / interval,

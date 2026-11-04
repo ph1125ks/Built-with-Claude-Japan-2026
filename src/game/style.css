@@ -309,7 +309,7 @@ button {
   color: #9b8790;
 }
 
-.card.unusable .portrait svg {
+.card.unusable .portrait img {
   opacity: 0.5;
   filter: grayscale(0.7);
 }
@@ -323,15 +323,22 @@ button {
 
 .card .portrait {
   position: relative;
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   background: #fbf5f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.card .portrait svg {
+/* ドット絵：前もって整数倍に拡大してあるので、ぼかさずにそのまま出す（pixel/index.ts） */
+img.px {
   display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: none;
 }
 
 .card .card-head-text {
@@ -342,10 +349,11 @@ button {
 }
 
 /* 数字キー：兵士の絵の左上に重ねる */
+/* 兵士の頭にかからないよう、絵の左下に置く（試遊の指摘） */
 .card .key {
   position: absolute;
   left: -4px;
-  top: -3px;
+  bottom: -3px;
   font-size: 10px;
   line-height: 1.25;
   color: #8a7480;
@@ -914,7 +922,12 @@ button {
   text-align: center;
 }
 
-.legend-row svg {
+.legend-row .px-stage {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fbf5f8;
   border-radius: 10px;
 }
@@ -929,6 +942,36 @@ button {
   display: block;
   font-size: 13px;
   color: var(--ink);
+}
+
+/* 濃さの見本（遊び方）：4つを左に寄せて並べる */
+.legend-row.density {
+  justify-content: flex-start;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.legend-row.density figure {
+  width: 132px;
+}
+
+/* タイトルの絵：兵士と細菌が向かい合う */
+.title-art {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 56px;
+}
+
+.title-side {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.title-side.bugs {
+  align-items: center;
+  gap: 14px;
 }
 
 /* 系統名が2行になるもの（TAZ/PIPC）があっても、下の「剣＋盾」などの高さをそろえる */
@@ -1052,7 +1095,7 @@ button {
   background: #fff;
 }
 
-.chip.short svg {
+.chip.short img {
   opacity: 0.45;
   filter: grayscale(0.8);
 }
