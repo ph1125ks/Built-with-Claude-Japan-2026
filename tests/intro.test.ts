@@ -114,12 +114,12 @@ describe("動画用の見せ方の時刻表", () => {
     for (let i = 1; i < entries.length; i++) expect(entries[i]!.at).toBeGreaterThan(entries[i - 1]!.at);
   });
 
-  it("1 は短く、2〜4 は 5〜8 秒、5 は動く絵の場面を含めて 14 秒まで（動画のナレーションの区切りに合わせる）", () => {
+  it("1 は短く、2〜4 は 3.5〜8 秒、5 は動く絵の場面を含めて 14 秒まで（動画のナレーションの区切りに合わせる。台本 第4版で短くした）", () => {
     for (const s of PRESENT_STEPS) {
       if (s.step === 1) expect(s.dur).toBeLessThanOrEqual(6);
       else if (s.step === 5) expect(s.dur).toBeLessThanOrEqual(14);
       else {
-        expect(s.dur).toBeGreaterThanOrEqual(5);
+        expect(s.dur).toBeGreaterThanOrEqual(3.5);
         expect(s.dur).toBeLessThanOrEqual(8);
       }
     }

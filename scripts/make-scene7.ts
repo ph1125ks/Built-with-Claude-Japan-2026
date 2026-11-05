@@ -6,6 +6,8 @@
 //   eval.png   ：スキル stage-design あり・なしで教員モードを各3回動かした比べ（docs/eval/skill/summary.json。scripts/eval-skill.ts）
 //   models.png ：耐性モデル A／B をボットで比べた勝率（docs/DEVLOG.md「既定ステージを『そろう作り』の①＋③にするかの再試算」の「①だけ」の行。各200回・種1〜200）
 //   hook.png   ：コミット前のフックが、見本のキーを含むコミットを止めたときの出力（recordings/scene7/hook.txt）
+//   review.png ：台本 第4版のシーン9。Claude Code と作ったもの／作者が公的な文書と照らして確かめた値（data/catalog/drugs.json の出典と確認の数）
+//   （第4版の動画で使うのは git.png・review.png・eval.png。audit.png・hook.png・models.png は README などのために残す）
 //   npx tsx scripts/make-scene7.ts
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -228,6 +230,55 @@ function gitHtml(): string {
 <div class="term"><div class="cmd">$ git log --reverse --format='%h %ad %s'</div>${shown.join("")}</div></div></div>`;
 }
 
+/**
+ * 台本 第4版のシーン9「道のり：値はすべて自分で確かめた」の絵（review.png）。左に Claude Code と作ったもの、右に作者が公的な文書と照らして確かめた値。
+ * 数は data/catalog/drugs.json（出典の欄と review.status）と git log から数え直す
+ */
+function reviewHtml(): string {
+  const drugs = (JSON.parse(readFileSync("data/catalog/drugs.json", "utf8")) as { drugs: { sources?: Record<string, string>; review?: { status?: string } }[] }).drugs;
+  const sourced = drugs.reduce((a, d) => a + Object.keys(d.sources ?? {}).length, 0);
+  const checked = drugs.filter((d) => d.review?.status === "確認済み").length;
+  const pending = drugs.filter((d) => d.review?.status === "仮").length;
+  const commits = execFileSync("git", ["rev-list", "--count", "HEAD"]).toString().trim();
+  const left = [
+    ["ゲームのしくみと画面", `期間中のコミット ${commits} 回`],
+    ["耐性の進み方のシミュレーション", "自動のプレイヤー（ボット）で、くり返し試す"],
+    ["教員モード", "Claude がステージを作り、自分で試して直す"],
+    ["知識のメモ・確認係の AI・見張り", "スキル・サブエージェント・フック"],
+  ];
+  const right = [
+    ["効く確率", "JANIS 2025年 年報（厚生労働省）"],
+    ["投与の間隔・飲み薬の吸収率", "抗微生物薬適正使用の手引き 第四版 ほか"],
+    ["もともと効かない組み合わせ", "EUCAST Expected Resistant Phenotypes v1.2"],
+    ["薬の値段", "薬価基準（令和8年11月1日適用）"],
+    ["耐性が進む速さの上限", "薬剤耐性ワンヘルス動向調査 2024 の実測の最速"],
+  ];
+  const li = (rows: string[][]) => rows.map(([a, b]) => `<li><b>${esc(a!)}</b><small>${esc(b!)}</small></li>`).join("");
+  return `<style>${BASE}
+h1{font-size:46px}
+.wrap{display:flex;gap:36px;flex:1;min-height:0;align-items:stretch}
+.col{flex:1;background:#160f22;padding:22px 30px;box-sizing:border-box;display:flex;flex-direction:column}
+.col.ai{box-shadow:inset 0 0 0 3px #3f2f5e}
+.col.me{box-shadow:inset 0 0 0 4px #ffb347;flex:1.25}
+.col h2{margin:0 0 6px;font-size:30px}
+.col.ai h2{color:#3be0c6}.col.me h2{color:#ffb347}
+ul{list-style:none;margin:0;padding:0}
+li{padding:8px 0;border-bottom:1px solid #33274f}
+li b{display:block;font-size:26px}
+li small{display:block;font-size:19px;color:#cdbfe0;margin-top:2px}
+.col.me li b::before{content:"✓ ";color:#5ef0a0}
+.stamp{margin:auto 0 0;padding-top:10px;font-size:24px;font-weight:800;color:#5ef0a0}
+.stamp span{color:#cdbfe0;font-weight:600;font-size:18px;display:block;margin-top:2px}
+</style>
+<p class="kicker">作る道のり</p>
+<h1>作るのは Claude Code と。値は、作者が公的な文書と照らして確かめた<small>Claude には数値を作らせない。出典を書き、作者が確かめてから使う</small></h1>
+<div class="wrap">
+<div class="col ai"><h2>Claude Code と作ったもの</h2><ul>${li(left)}</ul></div>
+<div class="col me"><h2>作者（AST の薬剤師）が確かめた値</h2><ul>${li(right)}</ul>
+<p class="stamp">抗菌薬 ${drugs.length} 種類：確認済み ${checked}・監修待ち ${pending}<span>出典を書いた項目 ${sourced} か所。確認係の AI にも元の表と照合させた</span></p></div>
+</div>`;
+}
+
 function hookHtml(text: string): string {
   const lines = text.trimEnd().split("\n");
   const body = lines
@@ -258,6 +309,7 @@ const { page, close } = await openChrome({ width: W, height: H });
 try {
   const shots: [string, string][] = [
     ["git.png", gitHtml()],
+    ["review.png", reviewHtml()],
     ["models.png", modelsHtml()],
     ...(existsSync("docs/eval/skill/summary.json") ? [["eval.png", evalHtml(JSON.parse(readFileSync("docs/eval/skill/summary.json", "utf8")))] as [string, string]] : []),
     ["hook.png", hookHtml(readFileSync(join(OUT, "hook.txt"), "utf8"))],

@@ -23,6 +23,10 @@ const READINGS: [RegExp, string][] = [
   [/JANIS/, "JANIS＝ジャニス"],
   [/2050年/, "2050年＝にせんごじゅうねん"],
   [/第3世代/, "第3世代＝だいさんせだい"],
+  [/入職/, "入職＝にゅうしょく"],
+  [/10年/, "10年＝じゅうねん"],
+  [/膀胱炎/, "膀胱炎＝ぼうこうえん"],
+  [/一手/, "一手＝いって"],
   [/選択圧/, "選択圧＝せんたくあつ"],
   [/1,000万人/, "1,000万人＝いっせんまんにん"],
   [/沢田/, "沢田＝さわだ"],
@@ -50,21 +54,21 @@ const cards = rows
     const limit = r.dur - VOICE_FROM * 2;
     const need = r.text.length / PACE;
     const lines = chunks(r.text);
-    let before = 0;
+    // t：シーンの頭からの秒。間をあけたら、そのあとの文はその分だけ遅れて始まる（2026-11-05 第4版：間が2つ以上あるシーンで、
+    // 前の間を足さずに数えていたので、間を多く見積もっていた）
+    let t = VOICE_FROM;
     let pauseTotal = 0;
     const body = lines
       .map((line) => {
         let html = "";
         const a = (ANCHORS[r.n] ?? []).find((x) => line.startsWith(x.word));
-        if (a) {
-          const pause = a.at - (VOICE_FROM + before / PACE);
-          if (pause > 0.3) {
-            const shown = Math.round(pause * 2) / 2;
-            pauseTotal += shown;
-            html += `<p class="pause"><span>間</span>ここで約${shown.toFixed(1)}秒あける（${esc(a.why)}）</p>`;
-          }
+        if (a && a.at > t) {
+          const pause = a.at - t;
+          pauseTotal += pause;
+          t = a.at;
+          if (pause > 0.3) html += `<p class="pause"><span>間</span>ここで約${(Math.round(pause * 2) / 2).toFixed(1)}秒あける（${esc(a.why)}）</p>`;
         }
-        before += line.length;
+        t += line.length / PACE;
         return `${html}<p class="line">${esc(line)}</p>`;
       })
       .join("");
@@ -80,7 +84,7 @@ const cards = rows
     <div><dt>枠</dt><dd>${r.dur}秒</dd></div>
     <div><dt>読み終える上限</dt><dd>${limit.toFixed(1)}秒</dd></div>
     <div><dt>字数</dt><dd>${r.text.length}字</dd></div>
-    <div><dt>1秒に${PACE}字なら</dt><dd>${need.toFixed(1)}秒${pauseTotal ? `＋間 ${pauseTotal.toFixed(1)}秒` : ""}</dd></div>
+    <div><dt>1秒に${PACE}字なら</dt><dd>${need.toFixed(1)}秒${pauseTotal >= 0.05 ? `＋間 ${pauseTotal.toFixed(1)}秒` : ""}</dd></div>
     <div class="${slack < 1 ? "tight" : ""}"><dt>余り</dt><dd>${slack.toFixed(1)}秒</dd></div>
   </dl>
   <p class="screen"><span>画面</span>${esc(r.screen)}</p>
@@ -150,7 +154,8 @@ input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   <section class="how">
     <h2>録り方</h2>
     <ol>
-      <li><b>台本 第3.1版</b>（2026-11-05）。シーンの番号と文が第2版から変わったので、前に録った第2版の録音（<code>recordings/voice/_v2/</code> に移した）は使えない。読む速さは、その録音で測った1秒に約${PACE}字で計算している</li>
+      <li><b>台本 第4版</b>（2026-11-05。作者の物語を軸に）。シーンの番号と文が第3.1版から変わった。シーン0（負ける場面）とシーン11（エンドカード）は声がないので、録るのはシーン1〜10の10本。前に録った第2版の録音（<code>recordings/voice/_v2/</code>）は使えない。読む速さは、その録音で測った1秒に約${PACE}字で計算している</li>
+      <li>シーン1と10は作者自身の話。気持ちを込めて、少しゆっくりでよい（締めのシーン10は、余りの範囲でゆっくり読む）</li>
       <li>シーンごとに1つのファイルに録る。ファイル名は <code>scene1.m4a</code> のようにシーンの番号で（wav・m4a・aiff・mp3 のどれでもよい）</li>
       <li>録ったファイルは、リポジトリの <code>recordings/voice/</code> に置く</li>
       <li>読む速さの目安は1秒に${PACE}字。「読み終える上限」より前に読み終える。録り始めと終わりの無音は自動で切るので、気にしなくてよい</li>
