@@ -1,5 +1,7 @@
-// 仮の動画（3分）を作る（docs/DEMO.md の時間配分どおり）。
+// 仮の動画（3分）を作る（docs/DEMO.md の時間配分どおり。台本 第2版、2026-11-05）。
 // 録画（scripts/record-demo.ts の recordings/*.mp4 と目印の *.json）を切り出して早送りし、台本のナレーションを字幕と声にして重ね、つなぐ。
+// 冒頭の図は scripts/make-hook-chart.ts（recordings/hook/hook.mp4）、シーン7の絵は scripts/make-scene7.ts（recordings/scene7/）。
+// BGM：scripts/make-bgm.ts があれば、シーンの区切りから曲の区間（cue）を作って合成し、声の下で小さく流す（声が出ている間はさらに下げる）
 // 字幕は画面なしの Chrome で透明な PNG に描き、ffmpeg で重ねる（手元の ffmpeg には文字を描く機能がないため）。
 // 声：recordings/voice/scene{N}.wav（m4a・aiff・mp3 も可）があれば作者の録音を使う。なければ macOS の読み上げ（say）で仮の声を作る。
 //     仮の声は尺を確かめるためだけのもの（提出版は作者の録音にする）。仮の声のときは、字幕の時刻を声の区切りに合わせる。
@@ -36,6 +38,8 @@ interface SceneText {
   main?: string;
   supplements: string[];
   intro: string[];
+  /** シーン8：使っていく場面（「**使っていく場面**」の下の箇条書き） */
+  places: string[];
 }
 function readScript(): Map<number, SceneText> {
   const md = readFileSync("docs/DEMO.md", "utf8");
@@ -48,7 +52,9 @@ function readScript(): Map<number, SceneText> {
     const supplements = supLine ? [...supLine.matchAll(/「([^」]+)」/g)].map((m) => m[1]!) : [];
     const introBlock = part.match(/\*\*字幕（作者紹介[^\n]*\n((?:[ \t]+- .+\n)+)/)?.[1];
     const intro = introBlock ? introBlock.split("\n").map((l) => l.replace(/^\s+- /, "").trim()).filter(Boolean) : [];
-    out.set(n, { narration, main, supplements, intro });
+    const placeBlock = part.match(/\*\*使っていく場面\*\*[^\n]*\n((?:[ \t]+- .+\n)+)/)?.[1];
+    const places = placeBlock ? placeBlock.split("\n").map((l) => l.replace(/^\s+- /, "").trim()).filter(Boolean) : [];
+    out.set(n, { narration, main, supplements, intro, places });
   }
   return out;
 }
@@ -68,7 +74,7 @@ const PROPER = `proper-seed${values.seed}`;
 
 const FONT = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
-type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card";
+type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact";
 
 function html(kind: Kind, text: string, extra?: string[]): string {
   const base = `html,body{margin:0;width:${W}px;height:${H}px;font-family:${FONT};}`;
@@ -92,9 +98,40 @@ function html(kind: Kind, text: string, extra?: string[]): string {
     case "places":
       // 使っていく場面（シーン8）。タイトルのロゴに重ならないよう、右の盤面の上に出す
       return `<style>${base}div{position:absolute;right:90px;top:270px;padding:26px 36px 22px;background:rgba(14,9,22,.88);box-shadow:inset 6px 0 0 #3be0c6;color:#fff}h2{margin:0 0 6px;font-size:28px;color:#3be0c6;letter-spacing:.08em}p{margin:12px 0;font-size:46px;font-weight:800}</style><div><h2>${esc(text)}</h2>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+    case "loop": {
+      // シーン6の工程の図。text は光らせる段階（"3+" は、直したあとの2回目のシミュレーション）
+      const active = Number(text.replace("+", ""));
+      const again = text.endsWith("+");
+      const steps = [
+        ["データを読む", "地域の公開データ・使える薬"],
+        ["案を作る", "見本をもとに手札と敵の出し方"],
+        ["シミュレーション", "4つのボット × 60回"],
+        ["直す", "目安に近い・届かない点を"],
+        ["提出", "別の種で各100回、確かめ直す"],
+      ];
+      const rows = steps
+        .map(([a, b], i) => {
+          const n = i + 1;
+          const state = n === active ? "on" : n < active || (again && n === 4) ? "done" : "todo";
+          const label = n === 3 && again ? `${a}（2回目）` : a;
+          return `<li class="${state}"><i>${n < active || (again && n === 4) ? "✓" : n}</i><span><b>${esc(label!)}</b><small>${esc(b!)}</small></span></li>`;
+        })
+        .join("");
+      return `<style>${base}div{position:absolute;right:36px;top:170px;width:380px;box-sizing:border-box;padding:16px 18px 12px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #3be0c6;color:#fff}h2{margin:0 0 10px;font-size:24px;color:#3be0c6;letter-spacing:.08em}ol{list-style:none;margin:0;padding:0}li{display:flex;gap:14px;align-items:center;padding:8px 10px;margin:4px 0}li i{font-style:normal;width:40px;height:40px;display:grid;place-items:center;font-size:24px;font-weight:800;background:#2a2238;flex:none}li b{display:block;font-size:26px}li small{display:block;font-size:16px;color:#a493b6}li.on{background:#3be0c6;color:#0b0812}li.on i{background:#0b0812;color:#3be0c6}li.on small{color:#0b3a33}li.done{opacity:.55}li.todo{opacity:.4}p{margin:10px 0 0;font-size:18px;color:#a493b6}</style><div><h2>Claude の作業の流れ</h2><ol>${rows}</ol><p>③と④を、目安を満たすまでくり返す</p></div>`;
+    }
+    case "fact":
+      // シーン6：Claude が自分で見つけて直した数字（右下。字幕の上）
+      return `<style>${base}div{position:absolute;right:36px;bottom:160px;width:380px;box-sizing:border-box;padding:14px 18px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #ffb347;color:#fff}h2{margin:0;font-size:22px;color:#ffb347}b{display:block;font-size:48px;font-weight:800;margin:4px 0;white-space:nowrap}p{margin:0;font-size:18px;color:#cdbfe0;line-height:1.45}</style><div><h2>${esc(text)}</h2><b>${esc(extra?.[0] ?? "")}</b><p>${esc(extra?.[1] ?? "")}</p></div>`;
     case "card":
       return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}h1{margin:0;font-size:72px}p{margin:0;font-size:36px;opacity:.92;max-width:1500px}</style><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}`;
   }
+}
+
+/** 順に（同じページで描くので、並べて動かさない） */
+async function seq<T>(fs: (() => Promise<T>)[]): Promise<T[]> {
+  const out: T[] = [];
+  for (const f of fs) out.push(await f());
+  return out;
 }
 
 let pngCount = 0;
@@ -108,7 +145,11 @@ async function render(page: Page, kind: Kind, text: string, extra?: string[]): P
 
 // ---------- 動画の部品（ffmpeg） ----------
 
-const ENC = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-r", "30"];
+// 色の範囲は tv（限定範囲）にそろえる。録画（pc）と、図や静止画（tv）が1つのシーンで混ざると、つなぎ目でフィルタが組み直され、
+// 字幕の重ね合わせが消える（2026-11-05、シーン0で起きた）。動画全体でもそろえておく。色の行列は録画と同じ bt470bg（図や静止画も
+// RGB からの変換は既定で同じ行列なので、印を付けるだけで色は変わらない）。印がないと x264 が範囲を書かず「未指定」と読まれる
+const COLOR = "setparams=range=tv:colorspace=bt470bg";
+const ENC = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-color_range", "tv", "-colorspace", "bt470bg", "-r", "30"];
 let segCount = 0;
 const ff = (args: string[]) => execFileSync("ffmpeg", ["-y", "-v", "error", ...args], { stdio: "inherit" });
 const probe = (file: string) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString().trim());
@@ -116,14 +157,20 @@ const probe = (file: string) => Number(execFileSync("ffprobe", ["-v", "error", "
 /** 録画の from〜to 秒を speed 倍で切り出す。長さは (to - from) / speed。crop は拡大する範囲（ffmpeg の crop。t は切り出した部品の中の秒） */
 function clip(take: string, from: number, to: number, speed = 1, crop?: string): string {
   const out = join(TMP, `seg${++segCount}.mp4`);
-  const vf = [`setpts=(PTS-STARTPTS)/${speed}`, "fps=30", ...(crop ? [crop] : []), `scale=${W}:${H}:flags=lanczos`].join(",");
+  const vf = [`setpts=(PTS-STARTPTS)/${speed}`, "fps=30", ...(crop ? [crop] : []), `scale=${W}:${H}:flags=lanczos:out_range=tv`, COLOR].join(",");
   ff(["-ss", String(from), "-t", String(to - from), "-i", join(REC, `${take}.mp4`), "-vf", vf, "-t", String((to - from) / speed), ...ENC, out]);
+  return out;
+}
+/** 録画以外の動画ファイル（冒頭の図など）を、頭から dur 秒の部品にする */
+function fileClip(file: string, dur: number): string {
+  const out = join(TMP, `seg${++segCount}.mp4`);
+  ff(["-i", file, "-vf", `fps=30,scale=${W}:${H}:out_range=tv,${COLOR}`, "-t", String(dur), ...ENC, out]);
   return out;
 }
 /** 静止画を dur 秒の動画にする */
 function still(png: string, dur: number): string {
   const out = join(TMP, `seg${++segCount}.mp4`);
-  ff(["-loop", "1", "-t", String(dur), "-i", png, "-vf", `fps=30,scale=${W}:${H}`, ...ENC, out]);
+  ff(["-loop", "1", "-t", String(dur), "-i", png, "-vf", `fps=30,scale=${W}:${H}:out_range=tv,${COLOR}`, ...ENC, out]);
   return out;
 }
 function concat(parts: string[], out: string): string {
@@ -322,71 +369,78 @@ async function main(): Promise<void> {
     // タイトル画面（後ろで適正ボットが遊ぶデモが動いている）。シーン1と8で別の場面を使う
     if (at("title", "タイトル → 遊び方") < 38) throw new Error("title の録画のタイトル画面が短い（scripts/record-demo.ts の title で撮り直す）");
 
-    // 0 つかみ（4秒）：2050年で膀胱が破られる直前
+    // 0 つかみ（12.5秒）：2050年の試算の図（9.5秒。scripts/make-hook-chart.ts）→ ゲームの2050年で膀胱が破られる直前（3秒）
+    const HOOK = join(REC, "hook", "hook.mp4");
+    if (!existsSync(HOOK)) throw new Error("冒頭の図がない（npx tsx scripts/make-hook-chart.ts で作る）");
+    const hookDur = probe(HOOK);
     await scene({
       n: 0,
-      dur: 4,
-      screen: "乱用の2050年、膀胱が破られる直前（等倍）",
-      parts: [clip(ABUSE, r2 - 5, r2 - 1)],
-      overlays: [await ov("big", script.get(0)?.main ?? "抗菌薬が、効かなくなる。", 0, 4)],
+      dur: 12.5,
+      screen: "図「薬剤耐性（AMR）に起因する死亡者数の推定（年間）」：2050年の棒が 1,000万人まで伸び、がんを超える（O'Neill 2014 p.5 の数値から描いた）→ 乱用の2050年、膀胱が破られる直前（等倍）",
+      parts: [fileClip(HOOK, hookDur), clip(ABUSE, r2 - 1 - (12.5 - hookDur), r2 - 1)],
+      overlays: [await ov("big", script.get(0)?.main ?? "抗菌薬が、効かなくなる。", hookDur, 12.5)],
     });
-    // 1 課題・作者紹介（22秒）：タイトル画面（後ろのデモが動く）。作者紹介は「そこで、…私が」に合わせて出す
+    // 1 誰が・なぜ（21.5秒）：タイトル画面（後ろのデモが動く）。作者紹介は「病院で」（名乗りの文）に合わせて出す
     const intro = script.get(1)?.intro ?? [];
     await scene({
       n: 1,
-      dur: 22,
+      dur: 21.5,
       screen: "タイトル画面（後ろでボットが遊ぶデモが動く。等倍）＋ 作者紹介のカード",
-      parts: [clip("title", 1, 23)],
+      parts: [clip("title", 1, 22.5)],
       overlays: [],
-      cues: intro.length ? [{ word: "そこで", len: 7.5, png: await render(page, "intro", intro[0]!, intro.slice(1)), kind: "intro", text: intro.join(" ／ ") }] : [],
+      cues: intro.length ? [{ word: "病院で", len: 7, png: await render(page, "intro", intro[0]!, intro.slice(1)), kind: "intro", text: intro.join(" ／ ") }] : [],
     });
-    // 2 遊び方（20秒）：ステージ1の始まり（×4）
+    // 2 遊び方（15秒）：ステージ1の始まり（×4）
     const sup2 = script.get(2)?.supplements[0];
     await scene({
       n: 2,
-      dur: 20,
+      dur: 15,
       screen: "乱用のステージ1の始まり（早送り ×4）。細菌が近づくにつれ、菌名・効かない薬が出る",
-      parts: [clip(ABUSE, s1, s1 + 80, 4)],
-      overlays: [await speedBadge(4, 0, 20), ...(sup2 ? [await ov("top", sup2, 0, 20)] : [])],
+      parts: [clip(ABUSE, s1, s1 + 60, 4)],
+      overlays: [await speedBadge(4, 0, 15), ...(sup2 ? [await ov("top", sup2, 0, 15)] : [])],
     });
-    // 3 ステージ1 乱用（21秒）：残りを早送り（11秒）→ 結果1（10秒）。「ところが結果を見ると」を結果画面に合わせる
-    const k3 = (r1 - (s1 + 80)) / 11;
+    // 3 ステージ1 乱用（20秒）：残りを早送り（10秒）→ 結果1（10秒）。「ところが結果を見ると」を結果画面に合わせる
+    const k3 = (r1 - (s1 + 60)) / 10;
     const sup3 = script.get(3)?.supplements[0];
     await scene({
       n: 3,
-      dur: 21,
+      dur: 20,
       screen: `乱用のステージ1の続き（早送り ×${Math.round(k3)}。カルバペネム系を連打して勝つ）→ 結果画面（等倍）`,
-      parts: [clip(ABUSE, s1 + 80, r1, k3), clip(ABUSE, r1, r1 + 10)],
-      overlays: [await speedBadge(k3, 0, 11), ...(sup3 ? [await ov("top", sup3, 11, 21)] : [])],
+      parts: [clip(ABUSE, s1 + 60, r1, k3), clip(ABUSE, r1, r1 + 10)],
+      overlays: [await speedBadge(k3, 0, 10), ...(sup3 ? [await ov("top", sup3, 10, 20)] : [])],
     });
-    // 4 2050年 乱用（22秒）：推移の表（8秒）→ 2050年を早送り（11秒）→ 敗北（3秒）。題「あなたの選択が…」はナレーションに合わせる
-    // （表を 9 → 8秒にしたのは、録音で「手札の薬が」の前にあける間を約1秒に縮め、1秒に5字で読んでも収まるようにするため。2026-11-05）
-    const k4 = (r2 - s2) / 11;
+    // 4 2050年 乱用（18秒）：推移の表（7秒）→ 2050年を早送り（8秒）→ 敗北（3秒）。題「あなたの選択が…」と名前の由来はナレーションに合わせる
+    const k4 = (r2 - s2) / 8;
+    const sup4 = script.get(4)?.supplements[0];
     await scene({
       n: 4,
-      dur: 22,
+      dur: 18,
       screen: `2050年のブリーフィングと耐性率の推移の表（等倍）→ 乱用の2050年（早送り ×${Math.round(k4)}）→ 敗北`,
-      parts: [clip(ABUSE, b2, b2 + 8), clip(ABUSE, s2, r2, k4), clip(ABUSE, r2, r2 + 3)],
-      overlays: [await speedBadge(k4, 8, 19)],
-      cues: [{ word: "あなたの選択が", len: 3.6, png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), kind: "big", text: "あなたの選択が、未来の敵をつくる" }],
+      parts: [clip(ABUSE, b2, b2 + 7), clip(ABUSE, s2, r2, k4), clip(ABUSE, r2, r2 + 3)],
+      overlays: [await speedBadge(k4, 7, 15)],
+      cues: [
+        { word: "あなたの選択が", len: 3.6, png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), kind: "big", text: "あなたの選択が、未来の敵をつくる" },
+        ...(sup4 ? [{ word: "あなたの選択が", len: 3.6, png: await render(page, "top", sup4), kind: "top" as Kind, text: sup4 }] : []),
+      ],
     });
-    // 5 やり直し 適正（24秒）：ステージ1（14秒）→ 2050年（7秒）→ 守り切った（3秒）。
+    // 5 やり直し 適正（23秒）：ステージ1（13.5秒）→ 2050年（6.5秒）→ 守り切った（3秒）。
     // 最後は結果画面ではなく、盤面に「守り切った！」の帯と紙吹雪が出る場面を等倍で（2026-11-04 作者の判断「見せ方で対処」：
     // 適正でも上がる組が結果の表に大きく映り、「今度は2050年も守り切れました」と食い違って見えたため）
     const won2 = pr2 - 3.1;
-    const k5a = (pr1 - p1) / 14;
-    const k5b = (won2 - p2) / 7;
+    const k5a = (pr1 - p1) / 13.5;
+    const k5b = (won2 - p2) / 6.5;
     const sup5 = script.get(5)?.supplements[0];
     await scene({
       n: 5,
-      dur: 24,
+      dur: 23,
       screen: `適正のステージ1（早送り ×${Math.round(k5a)}）→ 2050年（早送り ×${Math.round(k5b)}）→ 盤面の「守り切った！」と紙吹雪（等倍）`,
       parts: [clip(PROPER, p1, pr1, k5a), clip(PROPER, p2, won2, k5b), clip(PROPER, won2, pr2 - 0.1)],
-      overlays: [await speedBadge(k5a, 0, 14), await speedBadge(k5b, 14, 21), ...(sup5 ? [await ov("top", sup5, 0, 24)] : [])],
+      overlays: [await speedBadge(k5a, 0, 13.5), await speedBadge(k5b, 13.5, 20), ...(sup5 ? [await ov("top", sup5, 0, 23)] : [])],
     });
-    // 6 教える側（38秒）：教員モードの録画（record-demo.ts の teacher）。
-    // 入力（全体、8秒）→ Claude の作業を拡大して早送り（14秒）→ できたステージと承認・QR を拡大して下へ送る（10秒）→ 学生が遊ぶ（6秒）
-    // 教員用の画面は字が小さいので、作業の記録（右の欄）を約1.8倍、できたステージを1.5倍に切り出す。補足の字幕は、拡大した画面に重ならない場面に出す
+    // 6 教える側（39.5秒）：教員モードの録画（record-demo.ts の teacher。本物の Claude を動かした回）。
+    // 入力（全体、8秒）→ Claude の作業を拡大（18秒。自分で見つけて直す場面はゆっくり）→ できたステージと承認・QR を拡大（8秒）→ 学生が遊ぶ（5.5秒）
+    // 作業の記録の時刻（録画の秒）：1回目のシミュレーションの合格が約40秒、「乱用の2050年の勝率 27% は上限 30% に近い」と書いて
+    // 波を増やすのが約48秒、2回目（17%）が約72秒、提出が約78秒から（2026-11-05 に録画のコマを見て確かめた）
     const sup6 = script.get(6)?.supplements ?? [];
     const TEACHER = "teacher";
     const tReg = at(TEACHER, "地域：大阪府");
@@ -395,54 +449,96 @@ async function main(): Promise<void> {
     const tUrl = at(TEACHER, "学生用の URL");
     const tPlay = at(TEACHER, "できたステージを遊ぶ");
     const kIn = (tGo + 1 - (tReg - 1)) / 8;
-    const kWork = (tEnd - (tGo + 1)) / 14;
-    const kRes = (tUrl + 5 - tEnd) / 10;
+    // 作業の記録の欄を約1.33倍にして左に寄せ、右の約400px を工程の図と直した数字の欄にする
+    // （約1.8倍で画面いっぱいにすると、右の図が Claude の書いた肝心の一文の右端を隠した。2026-11-05）
+    const WORK = "crop=1080:608:730:93,scale=1440:810:flags=lanczos,pad=1920:1080:40:135:color=0x0d0915";
+    // 作業の区切り（録画の秒、速さ）。合わせて18秒にする
+    const wA = [tGo + 1, 44, 8] as const; // データを読む → 案 → 1回目のシミュレーション
+    const wB = [44, 56, 2] as const; // 1回目の結果と「27% は上限に近い → 波を増やす」（ゆっくり）
+    const wC = [56, 78, 6] as const; // 2回目のシミュレーション（17%）
+    const dA = (wA[1] - wA[0]) / wA[2];
+    const dB = (wB[1] - wB[0]) / wB[2];
+    const dC = (wC[1] - wC[0]) / wC[2];
+    const kD = (tEnd - 78) / (18 - dA - dB - dC); // 提出
+    const kRes = (tUrl + 5 - tEnd) / 8;
+    const w0 = 8; // 作業の場面が始まる秒（シーンの中）
+    const at6 = (rec: number) => {
+      // 録画の秒 → シーンの中の秒
+      if (rec <= wA[1]) return w0 + (rec - wA[0]) / wA[2];
+      if (rec <= wB[1]) return w0 + dA + (rec - wB[0]) / wB[2];
+      if (rec <= wC[1]) return w0 + dA + dB + (rec - wC[0]) / wC[2];
+      return w0 + dA + dB + dC + (rec - 78) / kD;
+    };
+    const loopAt: [string, number, number][] = [
+      ["1", at6(tGo + 1), at6(20)],
+      ["2", at6(20), at6(37)],
+      ["3", at6(37), at6(47)],
+      ["4", at6(47), at6(58)],
+      ["3+", at6(58), at6(77)],
+      ["5", at6(77), w0 + 18],
+    ];
+    const factHead = "乱用ボットの2050年の勝率";
+    const factNote = "目安は 30% 以下。合格していたが、上限に近いので、Claude が自分で波を増やして確かめ直した";
     await scene({
       n: 6,
-      dur: 38,
-      screen: `教員モード：地域と教えたいことを入力（全体）→ Claude の作業の記録を拡大（早送り ×${Math.round(kWork)}）→ できたステージと承認・QR を拡大 → できたステージで遊ぶ`,
+      dur: 39.5,
+      screen: `教員モード：地域と教えたいことを入力（全体）→ Claude の作業の記録を拡大（早送り ×${wA[2]} → 自分で直す場面 ×${wB[2]} → ×${wC[2]} → ×${Math.round(kD)}）＋ 右に工程の図・右下に直した数字 → できたステージと承認・QR を拡大 → できたステージで遊ぶ`,
       parts: [
         clip(TEACHER, tReg - 1, tGo + 1, kIn),
-        clip(TEACHER, tGo + 1, tEnd, kWork, "crop=1080:608:730:93"),
-        clip(TEACHER, tEnd, tUrl + 5, kRes, "crop=w=1280:h=720:x=630:y='min(360,36*t)'"),
-        clip(TEACHER, tPlay + 3, tPlay + 9),
+        clip(TEACHER, wA[0], wA[1], wA[2], WORK),
+        clip(TEACHER, wB[0], wB[1], wB[2], WORK),
+        clip(TEACHER, wC[0], wC[1], wC[2], WORK),
+        clip(TEACHER, 78, tEnd, kD, WORK),
+        clip(TEACHER, tEnd, tUrl + 5, kRes, "crop=w=1280:h=720:x=630:y='min(360,45*t)'"),
+        clip(TEACHER, tPlay + 3, tPlay + 8.5),
       ],
       overlays: [
-        ...(sup6[0] ? [await ov("top", sup6[0], 0, 8)] : []),
-        await speedBadge(kWork, 8, 22, "speedLow"),
-        ...(sup6[1] ? [await ov("top", sup6[1], 32, 38)] : []),
+        ...(sup6[1] ? [await ov("top", sup6[1], 0, 8)] : []),
+        await speedBadge(wA[2], w0, w0 + dA, "speedLow"),
+        await ov("speedLow", `ゆっくり ×${wB[2]}`, w0 + dA, w0 + dA + dB),
+        await speedBadge(wC[2], w0 + dA + dB, w0 + dA + dB + dC, "speedLow"),
+        await speedBadge(kD, w0 + dA + dB + dC, w0 + 18, "speedLow"),
+        ...(await seq(loopAt.map(([k, a, b]) => () => ov("loop", k, a, b)))),
+        { ...(await ov("fact", factHead, at6(48), at6(72), ["27% → ？", factNote])), text: `${factHead} 27%（上限 30% に近い）→ 波を増やす` },
+        { ...(await ov("fact", factHead, at6(72), w0 + 18, ["27% → 17%", factNote])), text: `${factHead} 27% → 17%` },
+        ...(sup6[2] ? [await ov("top", sup6[2], 34, 39.5)] : []),
       ],
     });
-    // 7 作り方（15秒）：scripts/make-scene7.ts が作った絵（開発の記録・データ監査・耐性モデルの比較・フック）を順に
+    // 7 作り方（16秒）：scripts/make-scene7.ts が作った絵（開発の記録・スキルの評価・データ監査・フック）を順に
     const sc7: [string, number][] = [
-      ["git.png", 3],
+      ["git.png", 3.5],
+      ["eval.png", 5],
       ["audit.png", 4],
-      ["models.png", 4.5],
       ["hook.png", 3.5],
     ];
     const have7 = sc7.filter(([f]) => existsSync(join(REC, "scene7", f)));
     if (have7.length !== sc7.length) warnings.push(`シーン7：絵が足りない（${sc7.map(([f]) => f).filter((f) => !have7.some(([g]) => g === f)).join("・")}）。npx tsx scripts/make-scene7.ts で作る`);
-    const scale7 = 15 / have7.reduce((a, [, d]) => a + d, 0);
+    const scale7 = 16 / have7.reduce((a, [, d]) => a + d, 0);
+    const name7: Record<string, string> = { "git.png": "Git の記録（期間中の開発）", "eval.png": "スキルあり・なしの評価", "audit.png": "データ監査の報告", "hook.png": "フックがコミットを止めた画面" };
     await scene({
       n: 7,
-      dur: 15,
-      screen: `開発の画面を順に：${have7.map(([f, d]) => `${{ "git.png": "Git の記録（期間中の開発）", "audit.png": "データ監査の報告", "models.png": "耐性モデル A/B の比較", "hook.png": "フックがコミットを止めた画面" }[f]}（${(d * scale7).toFixed(1)}秒）`).join(" → ")}`,
+      dur: 16,
+      screen: `開発の画面を順に：${have7.map(([f, d]) => `${name7[f]}（${(d * scale7).toFixed(1)}秒）`).join(" → ")}`,
       parts: have7.map(([f, d]) => still(join(REC, "scene7", f), d * scale7)),
       overlays: [],
     });
-    // 8 使い続ける場面（11秒）：タイトル画面（シーン1とは別の場面のデモ）
-    const PLACES = ["病院実務実習", "院内の新人研修", "大学・専門学校の講義"];
+    // 8 使い続ける場面（10.5秒）：タイトル画面（シーン1とは別の場面のデモ）
+    const PLACES = script.get(8)?.places?.length ? script.get(8)!.places! : ["病院実務実習", "院内の新人研修", "大学・専門学校の講義"];
     await scene({
       n: 8,
-      dur: 11,
+      dur: 10.5,
       screen: "タイトル画面（後ろのデモが動く。シーン1とは別の場面）＋ 右に使っていく場面",
-      parts: [clip("title", 27, 38)],
-      overlays: [{ ...(await ov("places", "使っていく場面", 0.3, 10.6, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
+      parts: [clip("title", 27, 37.5)],
+      overlays: [{ ...(await ov("places", "使っていく場面", 0.3, 10.2, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
     });
-    // 9 エンドカード（2秒）
-    const endLines = ["あそぶ：ph1125ks.github.io/Built-with-Claude-Japan-2026", "コード：github.com/ph1125ks/Built-with-Claude-Japan-2026"];
-    await scene({ n: 9, dur: 2, screen: "エンドカード", parts: [still(await render(page, "card", "センタクアツ（仮）", endLines), 2)], overlays: [] });
-    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ（仮）", ...endLines].join(" ／ "), start: 0, end: 2 });
+    // 9 エンドカード（3秒）
+    const endLines = [
+      "あそぶ：ph1125ks.github.io/Built-with-Claude-Japan-2026",
+      "Claude の作業記録を見る：ph1125ks.github.io/Built-with-Claude-Japan-2026/replay.html",
+      "コード：github.com/ph1125ks/Built-with-Claude-Japan-2026",
+    ];
+    await scene({ n: 9, dur: 3, screen: "エンドカード", parts: [still(await render(page, "card", "センタクアツ（仮）", endLines), 3)], overlays: [] });
+    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ（仮）", ...endLines].join(" ／ "), start: 0, end: 3 });
   } finally {
     close();
   }
@@ -457,7 +553,17 @@ async function main(): Promise<void> {
     built.map((b) => b.audio),
     join(TMP, "all.wav"),
   );
-  ff(["-i", join(TMP, "all.mp4"), "-i", join(TMP, "all.wav"), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest", out]);
+  // BGM：シーンの区切りから曲の区間を作り、scripts/make-bgm.ts で合成する（このリポジトリのコードで作った曲だけを使う）
+  const bgm = makeBgm(built, warnings);
+  if (bgm) {
+    // 声の大きさをそろえてから、BGM を声の下に小さく重ねる。声が出ている間は、さらに下げる（サイドチェーンのコンプレッサー）
+    const mix =
+      `[1:a]aresample=48000,loudnorm=I=-16:TP=-1.5:LRA=11,asplit=2[v1][v2];` +
+      `[2:a]aresample=48000,aformat=channel_layouts=stereo,volume=${BGM_DB}dB[b];` +
+      `[b][v2]sidechaincompress=threshold=0.02:ratio=4:attack=20:release=400[bd];` +
+      `[v1][bd]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.89[out]`;
+    ff(["-i", join(TMP, "all.mp4"), "-i", join(TMP, "all.wav"), "-i", bgm, "-filter_complex", mix, "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest", out]);
+  } else ff(["-i", join(TMP, "all.mp4"), "-i", join(TMP, "all.wav"), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest", out]);
 
   // ナレーションの字幕（.srt）：録音や YouTube の字幕の下書きに使う
   const ts = (t: number) => {
@@ -480,6 +586,49 @@ async function main(): Promise<void> {
   writeFileSync(join(REC, "draft-video.json"), JSON.stringify({ made: new Date().toISOString(), total: offset, voice: values.voice, warnings, scenes: report }, null, 2));
   console.log(`→ ${out}（${offset} 秒）と draft-video.srt・draft-video.json`);
   for (const w of warnings) console.warn(`⚠ ${w}`);
+}
+
+/** BGM の大きさ（make-bgm.ts の書き出しは約 -18 LUFS。声（-16 LUFS）より 12 dB ほど下に置き、声の間はさらに下がる） */
+const BGM_DB = -10;
+/** シーンごとの曲の気分（scripts/make-bgm.ts の mood） */
+const MOOD: Record<number, string> = { 0: "hook", 1: "play", 2: "play", 3: "play", 4: "tension", 5: "hope", 6: "build", 7: "build", 8: "outro", 9: "outro" };
+
+/** シーンの区切りから cue を作り、BGM を合成する。スクリプトがない・失敗したときは BGM なしで続ける */
+function makeBgm(built: Built[], warnings: string[]): string | null {
+  if (!existsSync("scripts/make-bgm.ts")) {
+    warnings.push("BGM：scripts/make-bgm.ts がないので、BGM なしで書き出した");
+    return null;
+  }
+  const dir = join(REC, "bgm");
+  mkdirSync(dir, { recursive: true });
+  const sections: { from: number; to: number; mood: string }[] = [];
+  const hits: number[] = [];
+  let t = 0;
+  for (const b of built) {
+    const mood = MOOD[b.n] ?? "build";
+    const last = sections.at(-1);
+    if (last && last.mood === mood) last.to = t + b.dur;
+    else {
+      sections.push({ from: t, to: t + b.dur, mood });
+      if (t > 0) hits.push(t);
+    }
+    // シーン0の中で、図からゲームの場面に切り替わるところ
+    if (b.n === 0) {
+      const cut = b.overlays.find((o) => o.kind === "big")?.start;
+      if (cut) hits.push(cut);
+    }
+    t += b.dur;
+  }
+  const cues = join(dir, "cues.json");
+  writeFileSync(cues, JSON.stringify({ total: t, sections, hits: hits.sort((a, b) => a - b) }, null, 2));
+  const out = join(dir, "bgm.wav");
+  try {
+    execFileSync("npx", ["tsx", "scripts/make-bgm.ts", "--cues", cues, "--out", out], { stdio: "inherit" });
+    return out;
+  } catch (e) {
+    warnings.push(`BGM：合成に失敗したので、BGM なしで書き出した（${(e as Error).message.split("\n")[0]}）`);
+    return null;
+  }
 }
 
 await main();

@@ -1,0 +1,289 @@
+/* 作業の記録の再生（replay.html）。土台は教員モードの画面（src/teacher/style.css）で、ここには再生だけの部品と、狭い画面の直しを書く */
+#replay {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 22px 28px 40px;
+}
+
+/* ---------- この記録について ---------- */
+.r-about {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -4px 0 18px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  background: rgba(59, 224, 198, 0.06);
+  box-shadow: inset 0 0 0 2px rgba(59, 224, 198, 0.35);
+}
+
+.r-about img {
+  margin-top: 4px;
+  flex: none;
+}
+
+.r-about a {
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+#replay a.t-btn {
+  text-decoration: none;
+}
+
+/* 条件（記録したときの入力。読むだけ） */
+.r-value {
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 9px 12px;
+  background: var(--bg0);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+/* ---------- 再生の操作 ---------- */
+.r-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.r-controls .t-btn {
+  font-size: 16px;
+  padding: 7px 16px 9px;
+}
+
+.r-play {
+  min-width: 132px;
+}
+
+.r-speed {
+  display: inline-flex;
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.r-speed button {
+  border: 0;
+  cursor: pointer;
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--muted);
+  background: transparent;
+  padding: 7px 12px;
+}
+
+.r-speed button[aria-pressed="true"] {
+  color: #06231f;
+  background: var(--teal);
+}
+
+.r-speed button:focus-visible,
+.r-controls input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.r-bar {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.r-track {
+  position: relative;
+}
+
+.r-track input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin: 6px 0;
+  cursor: pointer;
+  background: linear-gradient(to right, var(--accent) var(--p, 0%), var(--bg0) var(--p, 0%));
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.r-track input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 22px;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--edge),
+    0 3px 0 #7a4a06;
+}
+
+.r-track input::-moz-range-thumb {
+  width: 12px;
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--edge),
+    0 3px 0 #7a4a06;
+}
+
+/* シミュレーションと提出の位置の印（バーの下に小さく） */
+.r-ticks {
+  position: relative;
+  height: 6px;
+  pointer-events: none;
+}
+
+.r-ticks i,
+.r-legend i {
+  display: inline-block;
+  width: 3px;
+  height: 6px;
+  background: var(--teal);
+}
+
+.r-ticks i {
+  position: absolute;
+  top: 0;
+  transform: translateX(-1px);
+}
+
+.r-ticks i.sub,
+.r-legend i.sub {
+  background: var(--gold);
+}
+
+.r-clock {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+#clock {
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--gold);
+}
+
+.r-legend i {
+  margin: 0 5px 0 10px;
+  vertical-align: middle;
+}
+
+/* ---------- 狭い画面 ---------- */
+@media (max-width: 1100px) {
+  /* 1列にしたとき、感性率の表の幅で欄が画面からはみ出さないように（表は欄の中で横に送る） */
+  #replay .t-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* スマホ */
+@media (max-width: 640px) {
+  #replay {
+    padding: 14px 16px 32px;
+  }
+
+  #replay .t-head {
+    gap: 10px;
+  }
+
+  #replay .t-logo {
+    gap: 10px;
+  }
+
+  #replay .t-logo h1 {
+    font-size: 30px;
+    white-space: nowrap;
+  }
+
+  #replay .t-badge {
+    font-size: 13px;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+
+  #replay .t-cap span {
+    white-space: nowrap;
+  }
+
+  #replay .t-lead {
+    min-width: 0;
+    flex-basis: 100%;
+    font-size: 14px;
+  }
+
+  .r-about {
+    font-size: 12.5px;
+  }
+
+  #replay .t-panel {
+    padding: 14px 12px 16px;
+  }
+
+  #replay .t-panel h2 {
+    font-size: 20px;
+  }
+
+  #replay .t-log {
+    height: 62vh;
+    padding: 8px 10px;
+    font-size: 13.5px;
+  }
+
+  #replay .t-ev.call {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  #replay .t-checks span {
+    display: block;
+    margin-left: 1.2em;
+  }
+
+  #replay .t-md {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  #replay .t-result {
+    padding: 12px;
+  }
+
+  #replay .t-result h3 {
+    flex-wrap: wrap;
+    font-size: 19px;
+  }
+
+  #replay .t-result h3 code {
+    margin-left: 0;
+    word-break: break-all;
+  }
+
+  #replay .t-stages {
+    grid-template-columns: 1fr;
+  }
+
+  #replay .t-actions .t-btn {
+    flex: 1;
+  }
+
+  .r-controls {
+    gap: 8px;
+  }
+
+  .r-play {
+    flex: 1;
+  }
+
+  .r-bar {
+    flex-basis: 100%;
+  }
+}

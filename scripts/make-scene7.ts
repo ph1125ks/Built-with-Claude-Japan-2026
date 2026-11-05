@@ -3,11 +3,12 @@
 //   git.png    ：このリポジトリの Git の記録（最初のコミットの日時、日ごとのコミット数、Claude との共同コミットの数、最初と最後のコミット）。
 //                ハッカソンの期間中に作ったことを見せる（作るたびに git log から数え直すので、提出の直前に作り直す）
 //   audit.png  ：サブエージェント data-auditor の報告の表（recordings/scene7/audit.md。報告の最後の表をそのまま写す）
+//   eval.png   ：スキル stage-design あり・なしで教員モードを各3回動かした比べ（docs/eval/skill/summary.json。scripts/eval-skill.ts）
 //   models.png ：耐性モデル A／B をボットで比べた勝率（docs/DEVLOG.md「既定ステージを『そろう作り』の①＋③にするかの再試算」の「①だけ」の行。各200回・種1〜200）
 //   hook.png   ：コミット前のフックが、見本のキーを含むコミットを止めたときの出力（recordings/scene7/hook.txt）
 //   npx tsx scripts/make-scene7.ts
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { openChrome, sleep } from "./lib/chrome.ts";
 
@@ -54,7 +55,7 @@ td:first-child{color:#fff;font-weight:700;white-space:nowrap}
 td:last-child{font-weight:700;color:#5ef0a0}
 code{font-size:.85em;color:#b8fff3}
 </style>
-<p class="kicker">開発の中心は Claude Code ② データの照合</p>
+<p class="kicker">開発の中心は Claude Code ③ データの照合</p>
 <h1>サブエージェント <code style="font-size:42px;color:#b8fff3">data-auditor</code> が、公開データの元の表と照合<small>読み取り専用。データや文章を変えたら、そのたびに点検させた</small></h1>
 <div class="panel"><div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i>　Claude Code ／ サブエージェントの報告（2026-11-05）</div>
 <table><thead><tr>${(head ?? []).map((c) => `<th>${cell(c)}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${cell(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
@@ -110,11 +111,63 @@ function modelsHtml(): string {
 .charts{display:flex;justify-content:space-between}
 .note{font-size:20px;color:#a493b6;margin-top:12px}
 </style>
-<p class="kicker">開発の中心は Claude Code ③ ゲームバランスの検証</p>
+<p class="kicker">開発の中心は Claude Code（参考）ゲームバランスの検証</p>
 <h1>耐性の進み方を2通り作り、サブエージェント <code style="font-size:42px;color:#b8fff3">balance-tester</code> がボットで比べた<small>勝率（各200回）。乱用は「いま」は勝てても2050年に負け、適正は両方守り切る</small></h1>
 <div class="panel"><div class="legend"><span><i style="background:${C[0]}"></i>いま</span><span><i style="background:${C[1]}"></i>2050年</span><span class="ref"><b></b>乱用ボットの2050年の目安（30%以下）</span></div>
 <div class="charts">${panel("A")}${panel("B")}</div>
 <p class="note">既定ステージ・全国・種 1〜200。数値は開発の記録（docs/DEVLOG.md）の実測。耐性化の速さはゲーム用に誇張している</p></div>`;
+}
+
+interface EvalRun {
+  condition: "skill" | "noskill";
+  n: number;
+  submitted: boolean;
+  simulations: number;
+  firstSimulationPassed: boolean | null;
+  ruleErrors: number;
+  seconds: number;
+  costUsd: number;
+}
+/** スキルの評価：同じ入力で、スキルあり・なしを各3回。少ない件数なので、1回ずつの値をマスで見せ、平均は棒で */
+function evalHtml(summary: { runs: EvalRun[] }): string {
+  const C = { skill: "#26a894", noskill: "#6b6378" } as const;
+  const conds = ["skill", "noskill"] as const;
+  const name = { skill: "スキルあり", noskill: "スキルなし" } as const;
+  const runs = (c: "skill" | "noskill") => summary.runs.filter((r) => r.condition === c).sort((a, b) => a.n - b.n);
+  const avg = (c: "skill" | "noskill", f: (r: EvalRun) => number) => runs(c).reduce((a, r) => a + f(r), 0) / Math.max(1, runs(c).length);
+  const cells = (c: "skill" | "noskill", f: (r: EvalRun) => string) => runs(c).map((r) => `<span class="cell" style="--c:${C[c]}">${f(r)}</span>`).join("");
+  const bar = (c: "skill" | "noskill", v: number, max: number, label: string) =>
+    `<div class="hb"><i style="width:${Math.round((v / max) * 520)}px;background:${C[c]}"></i><b>${label}</b></div>`;
+  const maxSec = Math.max(...conds.map((c) => avg(c, (r) => r.seconds)));
+  const maxCost = Math.max(...conds.map((c) => avg(c, (r) => r.costUsd)));
+  const row = (title: string, f: (c: "skill" | "noskill") => string) =>
+    `<tr><th>${title}</th>${conds.map((c) => `<td>${f(c)}</td>`).join("")}</tr>`;
+  return `<style>${BASE}
+table{width:100%;border-collapse:collapse}
+th{font-size:24px;color:#cdbfe0;text-align:left;font-weight:700;padding:12px 18px 12px 0;width:330px;white-space:nowrap}
+thead th{font-size:30px;color:#f4ecf7}
+thead th span{display:inline-block;width:20px;height:20px;margin-right:10px;vertical-align:-2px}
+td{padding:12px 18px;border-top:1px solid #2a2040;font-size:24px}
+.cell{display:inline-grid;place-items:center;width:66px;height:52px;margin-right:8px;background:var(--c);color:#fff;font-size:26px;font-weight:800}
+.cell.no{background:transparent;box-shadow:inset 0 0 0 3px var(--c);color:#a493b6}
+.hb{display:flex;align-items:center;gap:14px}
+.hb i{display:block;height:34px}
+.hb b{font-size:26px}
+.note{font-size:20px;color:#a493b6;margin-top:14px}
+</style>
+<p class="kicker">開発の中心は Claude Code ② スキルの評価</p>
+<h1>設計の知識をスキルで渡すと、Claude の試行錯誤が減った<small>本番と同じ入力で、教員モードをスキルあり・なしで各${runs("skill").length}回。変えたのはスキルの有無だけ</small></h1>
+<div class="panel"><table>
+<thead><tr><th></th>${conds.map((c) => `<th><span style="background:${C[c]}"></span>${name[c]}</th>`).join("")}</tr></thead>
+<tbody>
+${row("提出できた", (c) => runs(c).map((r) => `<span class="cell${r.submitted ? "" : " no"}" style="--c:${C[c]}">${r.submitted ? "○" : "×"}</span>`).join(""))}
+${row("1回目のシミュレーションで合格", (c) => runs(c).map((r) => `<span class="cell${r.firstSimulationPassed ? "" : " no"}" style="--c:${C[c]}">${r.firstSimulationPassed ? "○" : "×"}</span>`).join(""))}
+${row("提出までのシミュレーション", (c) => cells(c, (r) => `${r.simulations}回`))}
+${row("規則の検査で止まった", (c) => runs(c).map((r) => `<span class="cell${r.ruleErrors ? "" : " no"}" style="--c:${C[c]}">${r.ruleErrors ? `${r.ruleErrors}回` : "0"}</span>`).join(""))}
+${row("時間（平均）", (c) => bar(c, avg(c, (r) => r.seconds), maxSec, `${Math.round(avg(c, (r) => r.seconds))}秒`))}
+${row("費用（平均）", (c) => bar(c, avg(c, (r) => r.costUsd), maxCost, `${avg(c, (r) => r.costUsd).toFixed(2)}ドル`))}
+</tbody></table>
+<p class="note">入力：大阪府・病院実務実習の薬学生・「第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい」。claude-opus-5-5。件数が少ないので目安。記録は docs/eval/skill/</p></div>`;
 }
 
 /** Git の記録：日ごとのコミット数（1系列なので凡例なし・棒に数を直接書く。色は models と同じ #26a894）と、最初と最後のコミット */
@@ -206,6 +259,7 @@ try {
   const shots: [string, string][] = [
     ["git.png", gitHtml()],
     ["models.png", modelsHtml()],
+    ...(existsSync("docs/eval/skill/summary.json") ? [["eval.png", evalHtml(JSON.parse(readFileSync("docs/eval/skill/summary.json", "utf8")))] as [string, string]] : []),
     ["hook.png", hookHtml(readFileSync(join(OUT, "hook.txt"), "utf8"))],
   ];
   try {

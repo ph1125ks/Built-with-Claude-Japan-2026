@@ -1,0 +1,387 @@
+{
+  "made": "2026-11-05T01:26:34.972Z",
+  "model": "claude-opus-5-5",
+  "input": {
+    "region": "大阪府",
+    "audience": "病院実務実習の薬学生",
+    "goal": "第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい"
+  },
+  "conditions": [
+    {
+      "condition": "skill",
+      "runs": 3,
+      "submitted": 3,
+      "firstSimulationPassed": 2,
+      "avgSimulations": 2.7,
+      "avgSeconds": 138.7,
+      "avgCostUsd": 0.63,
+      "totalCostUsd": 1.88
+    },
+    {
+      "condition": "noskill",
+      "runs": 3,
+      "submitted": 3,
+      "firstSimulationPassed": 0,
+      "avgSimulations": 3.7,
+      "avgSeconds": 189,
+      "avgCostUsd": 0.9,
+      "totalCostUsd": 2.7
+    }
+  ],
+  "runs": [
+    {
+      "condition": "skill",
+      "n": 1,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 3,
+      "firstSimulationPassed": true,
+      "simulationsFailed": 0,
+      "ruleErrors": 0,
+      "submitAttempts": 1,
+      "seconds": 151,
+      "costUsd": 0.72,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 92%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 7%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 43% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.43",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 8.0 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）：CTRXが効かない大腸菌"
+    },
+    {
+      "condition": "noskill",
+      "n": 1,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 4,
+      "firstSimulationPassed": false,
+      "simulationsFailed": 1,
+      "ruleErrors": 1,
+      "submitAttempts": 2,
+      "seconds": 227,
+      "costUsd": 1.13,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 93%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 23%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 64% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.36",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 10.2 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）第3世代セフェムが効かない大腸菌"
+    },
+    {
+      "condition": "skill",
+      "n": 2,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 2,
+      "firstSimulationPassed": true,
+      "simulationsFailed": 0,
+      "ruleErrors": 0,
+      "submitAttempts": 1,
+      "seconds": 110,
+      "costUsd": 0.47,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 81%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 17%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 26% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.43",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 8.0 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）：第3世代セフェムが効かない大腸菌"
+    },
+    {
+      "condition": "noskill",
+      "n": 2,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 4,
+      "firstSimulationPassed": false,
+      "simulationsFailed": 2,
+      "ruleErrors": 1,
+      "submitAttempts": 1,
+      "seconds": 186,
+      "costUsd": 0.82,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 93%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 18%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 58% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.40",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 9.6 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）：第3世代セフェムが効かない大腸菌"
+    },
+    {
+      "condition": "skill",
+      "n": 3,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 3,
+      "firstSimulationPassed": false,
+      "simulationsFailed": 2,
+      "ruleErrors": 0,
+      "submitAttempts": 1,
+      "seconds": 155,
+      "costUsd": 0.69,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 84%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 19%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 74% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.35",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 8.0 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）：CTRXが効かない大腸菌"
+    },
+    {
+      "condition": "noskill",
+      "n": 3,
+      "submitted": true,
+      "stopReason": "end_turn",
+      "error": null,
+      "simulations": 3,
+      "firstSimulationPassed": false,
+      "simulationsFailed": 1,
+      "ruleErrors": 1,
+      "submitAttempts": 1,
+      "seconds": 154,
+      "costUsd": 0.75,
+      "finalChecks": [
+        {
+          "ok": true,
+          "label": "適正ボットは、いまも2050年も守り切る",
+          "value": "勝率 100%／100%",
+          "target": "勝率 どちらも 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットも、いまは勝てる",
+          "value": "勝率 90%",
+          "target": "勝率 80% 以上"
+        },
+        {
+          "ok": true,
+          "label": "乱用ボットは、2050年に負ける",
+          "value": "勝率 15%",
+          "target": "勝率 30% 以下"
+        },
+        {
+          "ok": true,
+          "label": "でたらめに選ぶより、適正に選ぶほうが強い",
+          "value": "勝率 64% < 100%",
+          "target": "ランダム < 適正"
+        },
+        {
+          "ok": true,
+          "label": "何もしなければ負ける",
+          "value": "勝率 0%",
+          "target": "勝率 0%"
+        },
+        {
+          "ok": true,
+          "label": "適正ボットの系統の使い分け（AHI）",
+          "value": "0.34",
+          "target": "0.3 以上（仮）"
+        },
+        {
+          "ok": true,
+          "label": "教えたい場面：大腸菌（CTRX 耐性）が出てくる",
+          "value": "平均 11.6 体",
+          "target": "2 体以上"
+        }
+      ],
+      "title": "尿路（大阪府）：第3世代セフェムが効かない大腸菌"
+    }
+  ]
+}

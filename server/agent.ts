@@ -71,8 +71,9 @@ function skillBody(): string {
   return raw.replace(/^---[\s\S]*?---\s*/, "");
 }
 
-function systemPrompt(): string {
-  return `あなたは、教育用タワーディフェンス「センタクアツ」のステージを設計する担当です。教える人（薬剤師・教員）が選んだ地域と、教えたいことをもとに、学生が遊んで体感できるステージを作ります。
+/** skill が false のときは、スキル stage-design の本文を入れない（スキルの効果を比べるとき。scripts/eval-skill.ts） */
+function systemPrompt(skill = true): string {
+  const base = `あなたは、教育用タワーディフェンス「センタクアツ」のステージを設計する担当です。教える人（薬剤師・教員）が選んだ地域と、教えたいことをもとに、学生が遊んで体感できるステージを作ります。
 
 進め方：
 1. get_region_data と list_catalog で、その地域の公開データと、使える薬・菌を確かめる
@@ -82,11 +83,12 @@ function systemPrompt(): string {
 
 守ること：
 - 日本語で書く。データの数値を書くときは、ツールで得た値だけを使い、作らない
-- 感受性や薬の性質の数値は変えられない。ステージの文章には「患者」「症例」「病棟」の語、投与量の数値、診療の指示を書かない
+- 感受性や薬の性質の数値は変えられない。ステージの文章には「患者」「症例」「病棟」の語、投与量の数値、診療の指示を書かない`;
+  return skill ? `${base}
 
 以下は、ステージ設計の知識（スキル stage-design）です。
 
-${skillBody()}`;
+${skillBody()}` : base;
 }
 
 function cost(u: { input: number; output: number; cacheRead: number; cacheWrite: number }): number {
@@ -98,7 +100,7 @@ class TruncatedToolInput extends Error {}
 /**
  * ステージを設計する。作業の流れは emit で画面に送る。提出されたステージは .drafts/ に下書きとして保存する
  */
-export async function designStage(input: DesignInput, emit: (e: DesignEvent) => void, signal?: AbortSignal): Promise<string | null> {
+export async function designStage(input: DesignInput, emit: (e: DesignEvent) => void, signal?: AbortSignal, opts: { skill?: boolean } = {}): Promise<string | null> {
   const client = new Anthropic();
   const t0 = Date.now();
   const log: string[] = [];
@@ -219,7 +221,7 @@ export async function designStage(input: DesignInput, emit: (e: DesignEvent) => 
       // 安全のための判定で断られたときは、サーバー側で推奨のモデルに切り替えて続ける
       betas: ["server-side-fallback-2026-07-01", "thinking-display-updates-2026-08-18"],
       fallbacks: "default",
-      system: [{ type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } }],
+      system: [{ type: "text", text: systemPrompt(opts.skill ?? true), cache_control: { type: "ephemeral" } }],
       tools: [getRegion, listCatalog, simulateStage, validateStage, submitStage],
       messages: [{ role: "user", content: userText }],
       max_iterations: 30,
