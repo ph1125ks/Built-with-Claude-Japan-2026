@@ -14,6 +14,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import QRCode from "qrcode";
 import { alignChunks, silences } from "./lib/align.ts";
 import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 import { openChrome, sleep, type Page } from "./lib/chrome.ts";
@@ -75,9 +76,12 @@ const PROPER = `proper-seed${values.seed}`;
 
 const FONT = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
-type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "photo" | "gap" | "bigLow";
+type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "photo" | "gap" | "bigLow" | "end";
 /** 背景まで描く絵（透明にしない） */
-const OPAQUE: Kind[] = ["card", "photo", "gap"];
+const OPAQUE: Kind[] = ["card", "photo", "gap", "end"];
+/** エンドカードの QR（学生用の URL。評価役の「2.5秒では URL を読めない」を受けて足した） */
+const PLAY_URL = "https://ph1125ks.github.io/Built-with-Claude-Japan-2026/";
+const PLAY_QR = await QRCode.toDataURL(PLAY_URL, { margin: 1, width: 360, color: { dark: "#0b0812", light: "#ffffff" } });
 
 // ゲームと同じドット絵の文字（DotGothic16。@fontsource/dotgothic16 に同梱。SIL OFL 1.1）。16px 以上の見出しにだけ使う
 const fontData = (f: string) => readFileSync(join("node_modules/@fontsource/dotgothic16/files", f)).toString("base64");
@@ -105,7 +109,7 @@ function html(kind: Kind, text: string, extra?: string[]): string {
       return `<style>${base}div{position:absolute;left:0;right:0;top:${kind === "bigLow" ? 68 : 50}%;transform:translateY(-50%);padding:40px 0;background:rgba(20,8,14,.62);color:#fff;font-size:88px;font-weight:800;text-align:center;letter-spacing:.04em;text-shadow:0 4px 18px rgba(0,0,0,.5)}</style><div>${esc(text)}</div>`;
     case "intro":
       // 経歴のカード（シーン1）。左に作者の写真があるので、右に置く
-      return `<style>${base}div{position:absolute;left:820px;top:120px;width:1000px;box-sizing:border-box;padding:30px 38px 22px;background:rgba(14,9,22,.9);box-shadow:inset 8px 0 0 #3be0c6;color:#f4ecf7}b{display:block;font-size:54px;margin-bottom:14px;letter-spacing:.02em}p{margin:0;padding:12px 0;font-size:28px;font-weight:600;line-height:1.45;border-top:1px solid #33274f;color:#d9cce4}p:nth-of-type(3),p:nth-of-type(4){color:#fff;font-weight:800}</style><div><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+      return `<style>${base}div{position:absolute;left:820px;top:120px;width:1000px;box-sizing:border-box;padding:30px 38px 22px;background:rgba(14,9,22,.9);box-shadow:inset 8px 0 0 #3be0c6;color:#f4ecf7}b{display:block;font-size:60px;margin-bottom:14px;letter-spacing:.02em}p{margin:0;padding:14px 0;font-size:34px;font-weight:700;line-height:1.45;border-top:1px solid #33274f;color:#f4ecf7}p:first-of-type{font-size:30px}p:nth-of-type(2){color:#fff;font-weight:800}p:last-of-type{font-size:22px;font-weight:600;color:#a493b6}</style><div><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
     case "label":
       // 左上の札（シーン0の「いま」「2050年」）
       return `<style>${DOT_CSS}${base}div{position:absolute;left:180px;top:104px;padding:10px 24px;background:rgba(14,9,22,.86);box-shadow:inset 6px 0 0 #ffb347;color:#ffd38a;font-family:${DOT};font-size:40px}</style><div>${esc(text)}</div>`;
@@ -132,7 +136,7 @@ small{display:block;margin-top:14px;font-size:30px;color:#cdbfe0;font-weight:600
 .arrow span{display:block;width:300px;text-align:center;font-family:${DOT};font-size:28px;color:#ffd38a;line-height:1.35}
 </style><p class="k">現場で見てきたこと</p>
 <div class="box now"><h2>いま</h2><div class="mark">✓</div><b>切り札の薬で、よくなる</b><small>効いているから、変えにくい</small></div>
-<div class="arrow"><span>結果が返ってくるのは</span><i></i><span style="margin-top:30px">何年も先</span></div>
+<div class="arrow"><span>耐性は目に見えにくく</span><i></i><span style="margin-top:30px">何年もかけて返る</span></div>
 <div class="box later"><h2>何年も先</h2><div class="mark">✗</div><b>効かない細菌が増える</b><small>そのときには、効く薬が少ない</small></div>`;
     }
     case "speed":
@@ -175,6 +179,9 @@ small{display:block;margin-top:14px;font-size:30px;color:#cdbfe0;font-weight:600
         `<section class="${c.bad ? "bad" : "good"}"><h2>${esc(c.head)}</h2>${c.rows.map((r) => `<p>${esc(r)}</p>`).join("")}</section>`;
       return `<style>${base}body{background:#0b0812;color:#f4ecf7;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:34px}h1{margin:0;font-size:46px;letter-spacing:.04em}div{display:flex;gap:40px}section{width:720px;padding:30px 36px;background:#160f22}section.bad{box-shadow:inset 0 0 0 4px #ff6352}section.good{box-shadow:inset 0 0 0 4px #3be0c6}h2{margin:0 0 18px;font-size:40px}section.bad h2{color:#ff8a7a}section.good h2{color:#3be0c6}p{margin:12px 0;font-size:32px;font-weight:700}</style><h1>同じ細菌、同じ手札。ちがうのは選び方だけ</h1><div>${cols.map(col).join("")}</div>`;
     }
+    case "end":
+      // エンドカード（第4版）：左に作品名・一般の人への一言・URL、右に学生用の URL の QR
+      return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;align-items:center;justify-content:center;gap:80px}.t{max-width:1180px;display:flex;flex-direction:column;gap:22px}h1{margin:0 0 6px;font-size:76px}p{margin:0;font-size:32px;opacity:.95}p:first-of-type{font-size:38px;font-weight:700;opacity:1;margin-bottom:10px;line-height:1.5}figure{margin:0;text-align:center}figure img{width:340px;height:340px;display:block;image-rendering:pixelated}figcaption{font-size:28px;margin-top:12px}</style><div class="t"><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div><figure><img src="${PLAY_QR}"><figcaption>あそぶ</figcaption></figure>`;
     case "card":
       return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}h1{margin:0;font-size:72px}p{margin:0;font-size:36px;opacity:.92;max-width:1500px}</style><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}`;
   }
@@ -433,27 +440,29 @@ async function main(): Promise<void> {
     for (const f of ["photo1.jpg", "photo2.jpg"]) if (!existsSync(join(REC, "author", f))) throw new Error(`作者の写真 recordings/author/${f} がない（作者が用意した写真を置く。Git に入れない）`);
 
     // 台本 第4版（2026-11-05。作者の物語を軸に。docs/DEMO.md・docs/PLAIN-LANGUAGE.md）
-    // 0 負ける（9秒、声なし）：乱用のステージ1の終わり（×8、3秒）→ 2050年に膀胱が破られる（等倍、6秒）。大きな字幕「楽勝だったはずなのに。」
+    // 0 負ける（8秒、声なし）：乱用のステージ1の終わり（×8、3秒）→ 2050年に膀胱が破られる（等倍、5秒）。大きな字幕「楽勝だったはずなのに。」
     const sup0 = script.get(0)?.supplements ?? [];
     await scene({
       n: 0,
-      dur: 9,
+      dur: 8,
       screen: "乱用のステージ1の終わり（早送り ×8。切り札を連打して楽勝）→ 乱用の2050年、押し寄せる細菌に弾がはじかれ、膀胱が破られる（等倍）→ 負けの結果画面。声なし",
-      parts: [clip(ABUSE, r1 - 24, r1, 8), clip(ABUSE, r2 - 5, r2 + 1)],
+      parts: [clip(ABUSE, r1 - 24, r1, 8), clip(ABUSE, r2 - 4.5, r2 + 0.5)],
       overlays: [
         await ov("label", sup0[0] ?? "いま", 0, 3),
-        await ov("label", sup0[1] ?? "2050年", 3, 9),
-        await ov("bigLow", script.get(0)?.main ?? "楽勝だったはずなのに。", 4.8, 9),
+        await ov("label", sup0[1] ?? "2050年", 3, 8),
+        await ov("bigLow", script.get(0)?.main ?? "楽勝だったはずなのに。", 4.3, 8),
       ],
     });
-    // 1 種明かし（17.5秒）：作者の写真（1枚目）がゆっくり寄る。経歴のカードは右に
+    // 1 種明かし（18秒）：作者の写真（1枚目）がゆっくり寄る。経歴のカードは右に
     const intro = script.get(1)?.intro ?? [];
     await scene({
       n: 1,
-      dur: 17.5,
+      dur: 18,
+      // 声は少し早めに始める（仮の読み上げが作者より遅く、枠からはみ出すため。作者の速さなら約1秒余る）
+      from: 0.15,
       screen: "作者の写真（1枚目。白衣）がゆっくり寄る ＋ 右に経歴のカード",
-      parts: [stillZoom(await render(page, "photo", "photo1.jpg"), 17.5)],
-      overlays: intro.length ? [{ ...(await ov("intro", intro[0]!, 0.6, 17.5, intro.slice(1))), text: intro.join(" ／ ") }] : [],
+      parts: [stillZoom(await render(page, "photo", "photo1.jpg"), 18)],
+      overlays: intro.length ? [{ ...(await ov("intro", intro[0]!, 0.6, 18, intro.slice(1))), text: intro.join(" ／ ") }] : [],
     });
     // 2 2050年の試算（11秒）：試算の図（9.5秒。scripts/make-hook-chart.ts）→ 最後の場面のまま
     const HOOK = join(REC, "hook", "hook.mp4");
@@ -467,14 +476,14 @@ async function main(): Promise<void> {
       parts: [fileClip(HOOK, hookDur), ...(11 - hookDur > 0.05 && existsSync(HOOK_LAST) ? [still(HOOK_LAST, 11 - hookDur)] : [])],
       overlays: [],
     });
-    // 3 現場で見てきたこと・なぜゲームか（19.5秒）：時間のずれの図（いま → 何年も先）→「それを数分で」でタイトル画面
+    // 3 現場で見てきたこと・なぜゲームか（21秒）：時間のずれの図（いま → 何年も先）→「それを数分で」でタイトル画面
     const sup3 = script.get(3)?.supplements ?? [];
-    const toTitle3 = ANCHORS[3]?.find((a) => a.word === "それを数分で")?.at ?? 14.3;
+    const toTitle3 = ANCHORS[3]?.find((a) => a.word === "それを数分で")?.at ?? 15.6;
     await scene({
       n: 3,
-      dur: 19.5,
-      screen: "時間のずれの図（コードで描いた）：いま「切り札の薬で、よくなる」→ 何年も先「効かない細菌が増える」と「結果が返ってくるのは、何年も先」→ タイトル画面（後ろでボットが遊ぶデモが動く。等倍）",
-      parts: [still(await render(page, "gap", "1"), 7), still(await render(page, "gap", "2"), toTitle3 - 7), clip("title", 1, 1 + 19.5 - toTitle3)],
+      dur: 21,
+      screen: "時間のずれの図（コードで描いた）：いま「切り札の薬で、よくなる」→ 何年も先「効かない細菌が増える」と「耐性は目に見えにくく、何年もかけて返る」→ タイトル画面（後ろでボットが遊ぶデモが動く。等倍）",
+      parts: [still(await render(page, "gap", "1"), 7), still(await render(page, "gap", "2"), toTitle3 - 7), clip("title", 1, 1 + 21 - toTitle3)],
       overlays: [],
       cues: [
         ...(sup3[0] ? [{ word: "現場では", len: 6.5, png: await render(page, "top", sup3[0]), kind: "top" as Kind, text: sup3[0] }] : []),
@@ -527,13 +536,16 @@ async function main(): Promise<void> {
         ...(sup6 ? [{ word: "最初の場面は", len: 4.6, png: await render(page, "top", sup6), kind: "top" as Kind, text: sup6 }] : []),
       ],
     });
-    // 7 やり直し 適正（12.5秒）：ステージ1（6.5秒）→ 2050年（3秒）→ 守り切った（1.5秒）→ 1回目と2回目の並べ比べ（1.5秒）。
+    // 7 やり直し 適正（14秒）：合う薬に替える瞬間（等倍 1.8秒）→ ステージ1の続き（4.2秒）→ 2050年（3秒）→ 守り切った（1.5秒）→ 1回目と2回目の並べ比べ（3.5秒）。
+    // 替える瞬間：録画（proper-seed570）の 18.8〜20.6秒。大腸菌に「効かない：ABPC CTRX CAZ CFDN」と出て、セフメタゾール（CMZ）の兵士を呼ぶ（2026-11-05 にコマを見て確かめた）。
+    // 評価役4人の「何を変えたら勝てたのかが見えない」「並べ比べが1.5秒で消える」を受けて足した（docs/eval/story/）
     // 最後は結果画面ではなく、盤面に「守り切った！」の帯と紙吹雪が出る場面（2026-11-04 作者の判断「見せ方で対処」）。
     // 並べ比べの数字は、録画（種 570・モデル A）の結果画面の値（2026-11-05 に確かめた）：
     //   乱用：ステージ1の切り札（カルバペネム系）100% → 2050年に膀胱が破られた（手札のどの薬も効かない細菌 12%）
     //   適正：ステージ1の切り札 3% → 2050年も守り切った（膀胱 88／100、手札のどの薬も効かない細菌 0%）
     const won2 = pr2 - 3.1;
-    const k7a = (pr1 - p1) / 6.5;
+    const SWITCH = [18.8, 20.6] as const;
+    const k7a = (pr1 - SWITCH[1]) / 4.2;
     const k7b = (won2 - p2) / 3;
     const sup7 = script.get(7)?.supplements[0];
     const COMPARE = [
@@ -542,14 +554,14 @@ async function main(): Promise<void> {
     ];
     await scene({
       n: 7,
-      dur: 12.5,
-      screen: `適正のステージ1（早送り ×${Math.round(k7a)}）→ 2050年（早送り ×${Math.round(k7b)}）→ 盤面の「守り切った！」（等倍）→ 1回目と2回目の並べ比べ`,
-      parts: [clip(PROPER, p1, pr1, k7a), clip(PROPER, p2, won2, k7b), clip(PROPER, won2, won2 + 1.5), still(await render(page, "compare", JSON.stringify(COMPARE)), 1.5)],
-      overlays: [await speedBadge(k7a, 0, 6.5), await speedBadge(k7b, 6.5, 9.5), ...(sup7 ? [await ov("top", sup7, 0, 11)] : [])],
+      dur: 14,
+      screen: `適正のステージ1、大腸菌の正体が分かってセフメタゾールに替える瞬間（等倍）→ ステージ1の続き（早送り ×${Math.round(k7a)}）→ 2050年（早送り ×${Math.round(k7b)}）→ 盤面の「守り切った！」（等倍）→ 1回目と2回目の並べ比べ`,
+      parts: [clip(PROPER, SWITCH[0], SWITCH[1]), clip(PROPER, SWITCH[1], pr1, k7a), clip(PROPER, p2, won2, k7b), clip(PROPER, won2, won2 + 1.5), still(await render(page, "compare", JSON.stringify(COMPARE)), 3.5)],
+      overlays: [await ov("speed", "等倍：合う薬に替える", 0, 1.8), await speedBadge(k7a, 1.8, 6), await speedBadge(k7b, 6, 9), ...(sup7 ? [await ov("top", sup7, 1.8, 6)] : [])],
     });
-    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.join("／")}`).join(" ｜ "), start: 11, end: 12.5 });
+    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.join("／")}`).join(" ｜ "), start: 10.5, end: 14 });
     // 8 教える側（24秒）：教員モードの録画（record-demo.ts の teacher。本物の Claude を動かした回）。
-    // 入力（全体、4秒）→ Claude の作業を拡大（14秒。自分で見つけて直す場面はゆっくり）→ できたステージと承認・QR（4秒）→ 学生が遊ぶ（2秒）
+    // 入力（全体、3.5秒）→ Claude の作業を拡大（13秒。自分で見つけて直す場面はゆっくり）→ できたステージと承認・QR（3.5秒）→ 学生が遊ぶ（1.5秒）
     // 作業の記録の時刻（録画の秒）：1回目のシミュレーションの合格が約40秒、「乱用の2050年の勝率 27% は上限 30% に近い」と書いて
     // 波を増やすのが約48秒、2回目（17%）が約72秒、提出が約78秒から（2026-11-05 に録画のコマを見て確かめた）
     const sup8 = script.get(8)?.supplements ?? [];
@@ -559,21 +571,21 @@ async function main(): Promise<void> {
     const tEnd = at(TEACHER, "設計の終わり：done");
     const tUrl = at(TEACHER, "学生用の URL");
     const tPlay = at(TEACHER, "できたステージを遊ぶ");
-    const w0 = 4; // 作業の場面が始まる秒（シーンの中）
+    const w0 = 3.5; // 作業の場面が始まる秒（シーンの中）
     const kIn = (tGo + 1 - (tReg - 1)) / w0;
     // 作業の記録の欄を約1.33倍にして左に寄せ、右の約400px を工程の図と直した数字の欄にする
     // （約1.8倍で画面いっぱいにすると、右の図が Claude の書いた肝心の一文の右端を隠した。2026-11-05）
     const WORK = "crop=1080:608:730:93,scale=1440:810:flags=lanczos,pad=1920:1080:40:135:color=0x0d0915";
-    // 作業の区切り（録画の秒、速さ）。合わせて14秒にする
-    const wA = [tGo + 1, 44, 6.5] as const; // データを読む → 案 → 1回目の試し
+    // 作業の区切り（録画の秒、速さ）。合わせて13秒にする
+    const wA = [tGo + 1, 44, 8] as const; // データを読む → 案 → 1回目の試し
     const wB = [44, 56, 2.4] as const; // 1回目の結果と「27% は上限に近い → 波を増やす」（ゆっくり）
     const wC = [56, 78, 9] as const; // 2回目の試し（17%）
     const dA = (wA[1] - wA[0]) / wA[2];
     const dB = (wB[1] - wB[0]) / wB[2];
     const dC = (wC[1] - wC[0]) / wC[2];
-    const WORKLEN = 14;
+    const WORKLEN = 13;
     const kD = (tEnd - 78) / (WORKLEN - dA - dB - dC); // 提出
-    const kRes = (tUrl + 5 - tEnd) / 4;
+    const kRes = (tUrl + 5 - tEnd) / 3.5;
     const at8 = (rec: number) => {
       // 録画の秒 → シーンの中の秒
       if (rec <= wA[1]) return w0 + (rec - wA[0]) / wA[2];
@@ -593,7 +605,7 @@ async function main(): Promise<void> {
     const factNote = "目安は 30% 以下（低いほど、乱用では勝てない）。合格していたが、上限に近いので、AI が自分で敵を増やして確かめ直した";
     await scene({
       n: 8,
-      dur: 24,
+      dur: 21.5,
       screen: `教員モード：地域と教えたいことを入力（全体）→ AI（Claude）の作業の記録を拡大（早送り ×${wA[2]} → 自分で直す場面 ×${wB[2]} → ×${wC[2]} → ×${Math.round(kD)}）＋ 右に工程の図・右下に直した数字 → できたステージと承認・QR を拡大 → できたステージで遊ぶ`,
       parts: [
         clip(TEACHER, tReg - 1, tGo + 1, kIn),
@@ -602,7 +614,7 @@ async function main(): Promise<void> {
         clip(TEACHER, wC[0], wC[1], wC[2], WORK),
         clip(TEACHER, 78, tEnd, kD, WORK),
         clip(TEACHER, tEnd, tUrl + 5, kRes, "crop=w=1280:h=720:x=630:y='min(360,90*t)'"),
-        clip(TEACHER, tPlay + 3, tPlay + 5),
+        clip(TEACHER, tPlay + 3, tPlay + 4.5),
       ],
       overlays: [
         ...(sup8[0] ? [await ov("top", sup8[0], 0, w0)] : []),
@@ -613,23 +625,24 @@ async function main(): Promise<void> {
         ...(await seq(loopAt.map(([k, a, b]) => () => ov("loop", k, a, b)))),
         { ...(await ov("fact", factHead, at8(48), at8(72), ["27% → ？", factNote])), text: `${factHead} 27%（上限 30% に近い）→ 敵を増やす` },
         { ...(await ov("fact", factHead, at8(72), w0 + WORKLEN, ["27% → 17%", factNote])), text: `${factHead} 27% → 17%` },
-        ...(sup8[2] ? [await ov("top", sup8[2], w0 + WORKLEN, 24)] : []),
+        // 第4版の直し：「数値は国の公開データのまま」は声から字幕に移した。できたステージの場面で出す
+        ...(sup8[1] ? [await ov("top", sup8[1], w0 + WORKLEN, w0 + WORKLEN + 2.5)] : []),
+        ...(sup8[2] ? [await ov("top", sup8[2], w0 + WORKLEN + 2.5, 21.5)] : []),
       ],
-      cues: [...(sup8[1] ? [{ word: "数値は", len: 3.6, png: await render(page, "top", sup8[1]), kind: "top" as Kind, text: sup8[1] }] : [])],
     });
-    // 9 道のり（11.5秒）：scripts/make-scene7.ts の絵（期間中の開発の記録 → Claude Code と作ったもの／作者が確かめた値 → スキルの評価）
+    // 9 道のり（11秒）：scripts/make-scene7.ts の絵（Claude Code と作ったもの／作者が確かめた値 → スキルの評価）。
+    // Git の記録の絵は、評価の直しの尺を作るため外した（期間中のコミット数は review.png に出る）
     const sc9: [string, number][] = [
-      ["git.png", 3.3],
-      ["review.png", 5],
-      ["eval.png", 3.2],
+      ["review.png", 6],
+      ["eval.png", 5],
     ];
     const have9 = sc9.filter(([f]) => existsSync(join(REC, "scene7", f)));
     if (have9.length !== sc9.length) warnings.push(`シーン9：絵が足りない（${sc9.map(([f]) => f).filter((f) => !have9.some(([g]) => g === f)).join("・")}）。npx tsx scripts/make-scene7.ts で作る`);
-    const scale9 = 11.5 / have9.reduce((a, [, d]) => a + d, 0);
+    const scale9 = 11 / have9.reduce((a, [, d]) => a + d, 0);
     const name9: Record<string, string> = { "git.png": "Git の記録（期間中の開発）", "review.png": "Claude Code と作ったもの／作者が国の文書と照らして確かめた値", "eval.png": "スキル（知識のメモ）あり・なしの評価" };
     await scene({
       n: 9,
-      dur: 11.5,
+      dur: 11,
       screen: `開発の画面を順に：${have9.map(([f, d]) => `${name9[f]}（${(d * scale9).toFixed(1)}秒）`).join(" → ")}`,
       parts: have9.map(([f, d]) => still(join(REC, "scene7", f), d * scale9)),
       overlays: [],
@@ -646,15 +659,15 @@ async function main(): Promise<void> {
       overlays: [{ ...(await ov("places", "使っていく場面", 0.3, toTitle10, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
       cues: [{ word: "いまの一手が", len: 17.5 - toTitle10, png: await render(page, "big", main10), kind: "big", text: main10 }],
     });
-    // 11 エンドカード（2.5秒）。一般の人への一言（作者の方針。第3版の締めの声から移した）
+    // 11 エンドカード（4秒）。一般の人への一言（作者の方針。第3版の締めの声から移した）と、学生用の URL の QR
     const endLines = [
       "なぜ抗菌薬を正しく使うのか。知ることは、抗菌薬を受け取る人の理解にもつながる。",
       "あそぶ：ph1125ks.github.io/Built-with-Claude-Japan-2026",
       "はじめての人へ・Claude の作業記録：同じサイトの intro.html・replay.html",
       "コード：github.com/ph1125ks/Built-with-Claude-Japan-2026",
     ];
-    await scene({ n: 11, dur: 2.5, screen: "エンドカード", parts: [still(await render(page, "card", "センタクアツ（仮）", endLines), 2.5)], overlays: [] });
-    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ（仮）", ...endLines].join(" ／ "), start: 0, end: 2.5 });
+    await scene({ n: 11, dur: 4, screen: "エンドカード（右に学生用の URL の QR）", parts: [still(await render(page, "end", "センタクアツ（仮）", endLines), 4)], overlays: [] });
+    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ（仮）", ...endLines, "QR：学生用の URL"].join(" ／ "), start: 0, end: 4 });
   } finally {
     close();
   }

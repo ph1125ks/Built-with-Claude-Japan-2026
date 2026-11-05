@@ -36,7 +36,7 @@ for (const m of readFileSync("docs/DEMO.md", "utf8").matchAll(/^### シーン(\d
 const ff = (args: string[]) => execFileSync("ffmpeg", ["-y", "-v", "error", ...args], { stdio: "inherit" });
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 const tc = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
-const KIND: Record<string, string> = { big: "大きな字幕", bigLow: "大きな字幕", top: "補足（上）", intro: "作者紹介", speed: "早送り", speedLow: "早送り", places: "使う場面", card: "カード", label: "左上の札", loop: "工程の図", fact: "直した数字", compare: "並べ比べ" };
+const KIND: Record<string, string> = { big: "大きな字幕", bigLow: "大きな字幕", top: "補足（上）", intro: "作者紹介", speed: "早送り", speedLow: "早送り", places: "使う場面", card: "カード", end: "カード", label: "左上の札", loop: "工程の図", fact: "直した数字", compare: "並べ比べ" };
 
 // サムネイル（各シーンの 30% と 75% の位置）と縮小版の動画（15MB 以下に収める）
 const video = join(REC, "draft-video.mp4");
