@@ -187,8 +187,8 @@ small{display:block;margin-top:14px;font-size:30px;color:#cdbfe0;font-weight:600
       return `<style>${base}div{position:absolute;right:36px;top:170px;width:380px;box-sizing:border-box;padding:16px 18px 12px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #3be0c6;color:#fff}h2{margin:0 0 10px;font-size:24px;color:#3be0c6;letter-spacing:.08em}ol{list-style:none;margin:0;padding:0}li{display:flex;gap:14px;align-items:center;padding:8px 10px;margin:4px 0}li i{font-style:normal;width:40px;height:40px;display:grid;place-items:center;font-size:24px;font-weight:800;background:#2a2238;flex:none}li b{display:block;font-size:26px}li small{display:block;font-size:16px;color:#a493b6}li.on{background:#3be0c6;color:#0b0812}li.on i{background:#0b0812;color:#3be0c6}li.on small{color:#0b3a33}li.done{opacity:.55}li.todo{opacity:.4}p{margin:10px 0 0;font-size:18px;color:#a493b6}</style><div><h2>AI（Claude）の作業の流れ</h2><ol>${rows}</ol><p>③と④を、目安を満たすまでくり返す</p></div>`;
     }
     case "fact":
-      // シーン7：Claude が自分で見つけて直した数字（右下。字幕の上）
-      return `<style>${base}div{position:absolute;right:36px;bottom:160px;width:380px;box-sizing:border-box;padding:14px 18px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #ffb347;color:#fff}h2{margin:0;font-size:22px;color:#ffb347}b{display:block;font-size:48px;font-weight:800;margin:4px 0;white-space:nowrap}p{margin:0;font-size:18px;color:#cdbfe0;line-height:1.45}</style><div><h2>${esc(text)}</h2><b>${esc(extra?.[0] ?? "")}</b><p>${esc(extra?.[1] ?? "")}</p></div>`;
+      // シーン8：Claude が自分で見つけて直した数字（右下。字幕の上）。第5版の評価（審査員「大きな文字で」）を受けて数字を 48 → 66px に
+      return `<style>${base}div{position:absolute;right:36px;bottom:160px;width:404px;box-sizing:border-box;padding:14px 18px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #ffb347;color:#fff}h2{margin:0;font-size:24px;color:#ffb347;line-height:1.3}b{display:block;font-size:66px;font-weight:800;margin:6px 0;white-space:nowrap}p{margin:0;font-size:19px;color:#cdbfe0;line-height:1.45}</style><div><h2>${esc(text)}</h2><b>${esc(extra?.[0] ?? "")}</b><p>${esc(extra?.[1] ?? "")}</p></div>`;
     case "compare": {
       // シーン6の最後：1回目（切り札を連打）と2回目（その細菌に合う薬へ）の並べ比べ。text は JSON
       const cols = JSON.parse(text) as { head: string; rows: string[]; bad: boolean }[];
@@ -561,7 +561,8 @@ async function main(): Promise<void> {
         ...(sup6 ? [{ word: "最初の場面は", len: 4.6, png: await render(page, "top", sup6), kind: "top" as Kind, text: sup6 }] : []),
       ],
     });
-    // 7 やり直し 適正（14秒）：合う薬に替える瞬間（等倍 1.8秒）→ ステージ1の続き（4.2秒）→ 2050年（3秒）→ 守り切った（1.5秒）→ 1回目と2回目の並べ比べ（3.5秒）。
+    // 7 やり直し 適正（14秒）：合う薬に替える瞬間（等倍 1.8秒）→ ステージ1の続き（3.2秒）→ 2050年（2.5秒）→ 守り切った（1.5秒）→ 1回目と2回目の並べ比べ（5秒）。
+    // 第5版の評価（薬学生「並べ比べが読み終わる前に消える」）を受けて、並べ比べを 3.5 → 5秒にし、早送りを縮めた（作者の判断、2026-11-06）
     // 替える瞬間：録画（proper-seed570）の 18.8〜20.6秒。大腸菌に「効かない：ABPC CTRX CAZ CFDN」と出て、セフメタゾール（CMZ）の兵士を呼ぶ（2026-11-05 にコマを見て確かめた）。
     // 評価役4人の「何を変えたら勝てたのかが見えない」「並べ比べが1.5秒で消える」を受けて足した（docs/eval/story/）
     // 最後は結果画面ではなく、盤面に「守り切った！」の帯と紙吹雪が出る場面（2026-11-04 作者の判断「見せ方で対処」）。
@@ -571,8 +572,15 @@ async function main(): Promise<void> {
     // 「守り切った！」の帯は結果画面の約1.2秒前から約1秒出る（2026-11-06 に録画のコマを見て確かめた。前の 3.1秒前からの切り出しでは帯が映っていなかった）
     const won2 = pr2 - 1.45;
     const SWITCH = [18.8, 20.6] as const;
-    const k7a = (pr1 - SWITCH[1]) / 4.2;
-    const k7b = (won2 - p2) / 3;
+    const FF7A = 3.2; // ステージ1の続き（秒）
+    const FF7B = 2.5; // 2050年（秒）
+    const WON7 = 1.5; // 守り切った（秒）
+    const CMP7 = 5; // 並べ比べ（秒）
+    const k7a = (pr1 - SWITCH[1]) / FF7A;
+    const k7b = (won2 - p2) / FF7B;
+    const t7b = 1.8 + FF7A; // 2050年の早送りが始まる秒
+    const t7w = t7b + FF7B; // 守り切った（等倍）が始まる秒
+    const t7c = t7w + WON7; // 並べ比べが始まる秒
     const sup7 = script.get(7)?.supplements[0];
     const COMPARE = [
       { head: "1回目：切り札を連打", rows: ["ステージ1で切り札（カルバペネム系）を 100%", "2050年：膀胱が破られた", "手札のどの薬も効かない細菌 12%"], bad: true },
@@ -582,10 +590,10 @@ async function main(): Promise<void> {
       n: 7,
       dur: 14,
       screen: `適正のステージ1、大腸菌の正体が分かってセフメタゾールに替える瞬間（等倍）→ ステージ1の続き（早送り ×${Math.round(k7a)}）→ 2050年（早送り ×${Math.round(k7b)}）→ 盤面の「守り切った！」（等倍）→ 1回目と2回目の並べ比べ`,
-      parts: [clip(PROPER, SWITCH[0], SWITCH[1]), clip(PROPER, SWITCH[1], pr1, k7a), clip(PROPER, p2, won2, k7b), clip(PROPER, won2, won2 + 1.5), still(await render(page, "compare", JSON.stringify(COMPARE)), 3.5)],
-      overlays: [await ov("speed", "等倍：合う薬に替える", 0, 1.8), await speedBadge(k7a, 1.8, 6), await speedBadge(k7b, 6, 9), ...(sup7 ? [await ov("top", sup7, 1.8, 6)] : [])],
+      parts: [clip(PROPER, SWITCH[0], SWITCH[1]), clip(PROPER, SWITCH[1], pr1, k7a), clip(PROPER, p2, won2, k7b), clip(PROPER, won2, won2 + WON7), still(await render(page, "compare", JSON.stringify(COMPARE)), CMP7)],
+      overlays: [await ov("speed", "等倍：合う薬に替える", 0, 1.8), await speedBadge(k7a, 1.8, t7b), await speedBadge(k7b, t7b, t7w), ...(sup7 ? [await ov("top", sup7, 1.8, t7b)] : [])],
     });
-    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.join("／")}`).join(" ｜ "), start: 10.5, end: 14 });
+    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.join("／")}`).join(" ｜ "), start: t7c, end: t7c + CMP7 });
     // 8 教える側（24秒）：教員モードの録画（record-demo.ts の teacher。本物の Claude を動かした回）。
     // 入力（全体、3.5秒）→ Claude の作業を拡大（13秒。自分で見つけて直す場面はゆっくり）→ できたステージと承認・QR（3.5秒）→ 学生が遊ぶ（1.5秒）
     // 作業の記録の時刻（録画の秒）：1回目のシミュレーションの合格が約40秒、「乱用の2050年の勝率 27% は上限 30% に近い」と書いて
@@ -596,28 +604,35 @@ async function main(): Promise<void> {
     const tGo = at(TEACHER, "ステージを作る");
     const tEnd = at(TEACHER, "設計の終わり：done");
     const tUrl = at(TEACHER, "学生用の URL");
-    const tPlay = at(TEACHER, "できたステージを遊ぶ");
     const w0 = 3.5; // 作業の場面が始まる秒（シーンの中）
     const kIn = (tGo + 1 - (tReg - 1)) / w0;
     // 作業の記録の欄を約1.33倍にして左に寄せ、右の約400px を工程の図と直した数字の欄にする
     // （約1.8倍で画面いっぱいにすると、右の図が Claude の書いた肝心の一文の右端を隠した。2026-11-05）
     const WORK = "crop=1080:608:730:93,scale=1440:810:flags=lanczos,pad=1920:1080:40:135:color=0x0d0915";
-    // 作業の区切り（録画の秒、速さ）。合わせて13秒にする
-    const wA = [tGo + 1, 44, 8] as const; // データを読む → 案 → 1回目の試し
-    const wB = [44, 56, 2.4] as const; // 1回目の結果と「27% は上限に近い → 波を増やす」（ゆっくり）
-    const wC = [56, 78, 9] as const; // 2回目の試し（17%）
-    const dA = (wA[1] - wA[0]) / wA[2];
-    const dB = (wB[1] - wB[0]) / wB[2];
-    const dC = (wC[1] - wC[0]) / wC[2];
-    const WORKLEN = 13;
-    const kD = (tEnd - 78) / (WORKLEN - dA - dB - dC); // 提出
-    const kRes = (tUrl + 5 - tEnd) / 3.5;
+    // 作業の区切り（録画の秒の from・to と速さ）。合わせて WORKLEN 秒にする。
+    // 第5版の評価（審査員・元臨床医「Claude の判断を等速で見たい」）を受けて、「27% は上限 30% に近いため、波を増やす」と書く場面
+    // （録画の約48秒から。2026-11-06 にコマで確かめた）を等倍で 4.5秒見せる（作者の判断）。その分、最後の「できたステージで遊ぶ」（1.5秒）を省き、QR の場面を 3.5 → 3秒に
+    const SEGS: [number, number, number][] = [
+      [tGo + 1, 44, 10], // データを読む → 案 → 1回目の試し
+      [44, 47.5, 2.4], // 1回目の結果（合格）
+      [47.5, 52, 1], // 「27% は上限 30% に近いため、波を増やす」（等倍）
+      [52, 56, 2.4], // 直す
+      [56, 78, 9], // 2回目の試し（17%）
+    ];
+    const WORKLEN = 15;
+    const QRLEN = 3;
+    const used = SEGS.reduce((a, [f, t, k]) => a + (t - f) / k, 0);
+    const kD = (tEnd - 78) / (WORKLEN - used); // 提出
+    const all8: [number, number, number][] = [...SEGS, [78, tEnd, kD]];
+    const kRes = (tUrl + 5 - tEnd) / QRLEN;
     const at8 = (rec: number) => {
       // 録画の秒 → シーンの中の秒
-      if (rec <= wA[1]) return w0 + (rec - wA[0]) / wA[2];
-      if (rec <= wB[1]) return w0 + dA + (rec - wB[0]) / wB[2];
-      if (rec <= wC[1]) return w0 + dA + dB + (rec - wC[0]) / wC[2];
-      return w0 + dA + dB + dC + (rec - 78) / kD;
+      let t = w0;
+      for (const [f, to, k] of all8) {
+        if (rec <= to) return t + (rec - f) / k;
+        t += (to - f) / k;
+      }
+      return w0 + WORKLEN;
     };
     const loopAt: [string, number, number][] = [
       ["1", at8(tGo + 1), at8(20)],
@@ -629,31 +644,27 @@ async function main(): Promise<void> {
     ];
     const factHead = "切り札を使い続けても、2050年を守れてしまう割合";
     const factNote = "目安は 30% 以下（低いほど、乱用では勝てない）。合格していたが、上限に近いので、AI が自分で敵を増やして確かめ直した";
+    const badge8 = ([f, t, k]: [number, number, number]) =>
+      k === 1 ? ov("speedLow", "等倍：Claude の判断", at8(f), at8(t)) : k < 4 ? ov("speedLow", `ゆっくり ×${k}`, at8(f), at8(t)) : speedBadge(k, at8(f), at8(t), "speedLow");
     await scene({
       n: 8,
       dur: 21.5,
-      screen: `教員モード：地域と教えたいことを入力（全体）→ AI（Claude）の作業の記録を拡大（早送り ×${wA[2]} → 自分で直す場面 ×${wB[2]} → ×${wC[2]} → ×${Math.round(kD)}）＋ 右に工程の図・右下に直した数字 → できたステージと承認・QR を拡大 → できたステージで遊ぶ`,
+      screen: `教員モード：地域と教えたいことを入力（全体）→ AI（Claude）の作業の記録を拡大（早送り ×${SEGS[0]![2]} → ×${SEGS[1]![2]} → 自分で判断する場面は等倍 ${SEGS[2]![1] - SEGS[2]![0]}秒 → ×${SEGS[3]![2]} → ×${SEGS[4]![2]} → ×${Math.round(kD)}）＋ 右に工程の図・右下に直した数字 → できたステージと承認・QR を拡大`,
       parts: [
         clip(TEACHER, tReg - 1, tGo + 1, kIn),
-        clip(TEACHER, wA[0], wA[1], wA[2], WORK),
-        clip(TEACHER, wB[0], wB[1], wB[2], WORK),
-        clip(TEACHER, wC[0], wC[1], wC[2], WORK),
-        clip(TEACHER, 78, tEnd, kD, WORK),
+        ...all8.map(([f, t, k]) => clip(TEACHER, f, t, k, WORK)),
         clip(TEACHER, tEnd, tUrl + 5, kRes, "crop=w=1280:h=720:x=630:y='min(360,90*t)'"),
-        clip(TEACHER, tPlay + 3, tPlay + 4.5),
       ],
       overlays: [
         ...(sup8[0] ? [await ov("top", sup8[0], 0, w0)] : []),
-        await speedBadge(wA[2], w0, w0 + dA, "speedLow"),
-        await ov("speedLow", `ゆっくり ×${wB[2]}`, w0 + dA, w0 + dA + dB),
-        await speedBadge(wC[2], w0 + dA + dB, w0 + dA + dB + dC, "speedLow"),
-        await speedBadge(kD, w0 + dA + dB + dC, w0 + WORKLEN, "speedLow"),
+        ...(await seq(all8.map((seg) => () => badge8(seg)))),
         ...(await seq(loopAt.map(([k, a, b]) => () => ov("loop", k, a, b)))),
         { ...(await ov("fact", factHead, at8(48), at8(72), ["27% → ？", factNote])), text: `${factHead} 27%（上限 30% に近い）→ 敵を増やす` },
         { ...(await ov("fact", factHead, at8(72), w0 + WORKLEN, ["27% → 17%", factNote])), text: `${factHead} 27% → 17%` },
+        // 等倍の場面に、Claude の判断を一行で（第5版の評価の直し）
+        ...(sup8[1] ? [await ov("top", sup8[1], at8(SEGS[2]![0]), at8(SEGS[2]![1]))] : []),
         // 第4版の直し：「数値は国の公開データのまま」は声から字幕に移した。できたステージの場面で出す
-        ...(sup8[1] ? [await ov("top", sup8[1], w0 + WORKLEN, w0 + WORKLEN + 2.5)] : []),
-        ...(sup8[2] ? [await ov("top", sup8[2], w0 + WORKLEN + 2.5, 21.5)] : []),
+        ...(sup8[2] ? [await ov("top", sup8[2], w0 + WORKLEN, w0 + WORKLEN + QRLEN)] : []),
       ],
     });
     // 9 道のり（11秒）：scripts/make-scene7.ts の絵（Claude Code と作ったもの／作者が確かめた値 → スキルの評価）。
