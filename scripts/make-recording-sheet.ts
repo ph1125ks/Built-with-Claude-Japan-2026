@@ -7,7 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 
-const PACE = 5.3; // 読む速さの目安（1秒あたりの字数。2026-11-05 に作者の録音9本で測った値。DEMO.md の「語り手」）
+const PACE = 5.8; // 読む速さの目安（1秒あたりの字数。2026-11-05 に作者の録音9本で測った 5.3字の1割増し。第6版で作者が「少し早口で読む」と決めた。DEMO.md の「語り手」）
 const OUT = join("recordings", "recording-sheet");
 mkdirSync(OUT, { recursive: true });
 
@@ -154,7 +154,7 @@ input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   <section class="how">
     <h2>録り方</h2>
     <ol>
-      <li><b>台本 第5版</b>（2026-11-06。問題から入り、作者は身元の開示として名乗る）。第4版からシーン1〜3と10の文が変わった（シーン4〜9は同じ）。シーン0（負ける場面）とシーン11（エンドカード）は声がないので、録るのはシーン1〜10の10本。前に録った第2版の録音（<code>recordings/voice/_v2/</code>）は使えない。読む速さは、その録音で測った1秒に約${PACE}字で計算している</li>
+      <li><b>台本 第6版</b>（2026-11-06。作者の8点の指摘で、シーン2〜8と10の文を直した）。シーン0（負ける場面）とシーン11（エンドカード）は声がないので、録るのはシーン1〜10の10本。前に録った第2版の録音（<code>recordings/voice/_v2/</code>）は使えない。読む速さは、第2版の録音で測った1秒に約5.3字の<b>1割増し（約${PACE}字）</b>で計算している（作者が少し早口で読む）。余りが小さいシーンは、とくに間をあけすぎない</li>
       <li>シーン3（名乗り）と10（締め）は作者自身の言葉。気持ちを込めて、少しゆっくりでよい（締めのシーン10は、余りの範囲でゆっくり読む）</li>
       <li>シーンごとに1つのファイルに録る。ファイル名は <code>scene1.m4a</code> のようにシーンの番号で（wav・m4a・aiff・mp3 のどれでもよい）</li>
       <li>録ったファイルは、リポジトリの <code>recordings/voice/</code> に置く</li>
