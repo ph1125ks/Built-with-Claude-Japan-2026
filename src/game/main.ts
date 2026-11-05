@@ -38,6 +38,8 @@ async function loadBoardFont(): Promise<void> {
       "0123456789/%（）：・−+ABCDEFGHIJKLMNOPQRSTUVWXYZ",
       // DOM の見出しやボタン（最初の画面で端末のフォントに一瞬切り替わらないように）
       "センタクアツ仮あなたの選択が、未来の敵をつくるはじめる遊び方出典と注意耐性の進み方薬ごと系統ごとステージ結果開始一時停止再開アンチバイオグラム医療費使える額日ごとに近中ほど遠菌名が分かるグラム染色像だけ",
+      // タイトルの名前の由来と、遊び方の絵の3枚の見出し（2026-11-05）
+      "選択圧（せんたくあつ）からての人へ細菌を抗菌薬で倒す効く違う使うほど効かない残る次前／膀胱手札",
     ].join("");
     await Promise.race([document.fonts.load('16px "DotGothic16"', words), new Promise((r) => setTimeout(r, 2500))]);
   } catch {

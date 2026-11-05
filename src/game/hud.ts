@@ -1,7 +1,7 @@
 // 遊んでいる最中の DOM：上の帯（膀胱の耐久・医療費・波）、情報の見え方の帯、レーンの選択、手札のカード、知らせ。
 import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
-import { LAYOUT, laneTopY, zoneBounds } from "./board.ts";
-import { cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, waitSeconds, yen } from "./format.ts";
+import { H, LAYOUT, laneTopY, zoneBounds } from "./board.ts";
+import { AWARE_WORDS, cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
 import { iconImg, soldierImg } from "./pixel/index.ts";
 import type { IconName } from "./pixel/icons.ts";
@@ -11,7 +11,7 @@ const speedLabel = (n: number) => `${iconImg("fast", 1)}<span>×${n}</span>`;
 type TickerKind = "warn" | "res" | "hint" | "pause";
 const TICKER_ICON: Record<TickerKind, IconName> = { warn: "warn", res: "up", hint: "info", pause: "pause" };
 /** 遊び方の案内（最初に召喚するまで出しておく） */
-const START_HINT = "① 下のカードを選ぶ（カードの絵の左下の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして召喚。スペースで一時停止";
+const START_HINT = "① 下のカードを選ぶ（カードの絵の左下の数字キーでも可。数字は2つのステージで同じ薬に同じ）→ ② レーンをクリックして呼び出す。スペースで一時停止";
 const PAUSE_HINT = "一時停止中（スペースで再開）。止めたまま札を読み、カードを選んでレーンを予約できます";
 
 export interface HudOptions {
@@ -90,16 +90,23 @@ export class Hud {
           (x) => `<span class="${sp[x.key] ? "on" : "off"}" title="ゲーム内の目安：${x.label}に${sp[x.key] ? "効く見込みあり" : "効く見込みなし（自然耐性・効かない扱い）"}">${x.label}</span>`,
         ).join("");
         const gauge = s.model.id === "B" ? `<div class="gauge"><div class="gbar"><i></i></div><span class="glabel"></span></div>` : "";
-        return `<button class="card" data-drug="${d.id}" style="--cls:${cls.color};--i:${i}" title="${escapeHtml(d.name)}">
+        // 2026-11-05 作者の判断「すべての人に伝わるように」：一般名を大きく（略号だけで判断させない）、切り札（カルバペネム系）の札、
+        // Access＝まず使う薬・Watch＝使いすぎ注意の一言（docs/PLAIN-LANGUAGE.md 3章）。触れたときの説明（title）にも同じことを書く
+        const gname = genericName(d);
+        const trump = d.class === TRUMP_CLASS;
+        const word = AWARE_WORDS[d.aware] ?? "";
+        const tip = `${gname}（${d.abbr}）・${cls.name}${trump ? "。切り札：ほとんどの細菌に効く薬" : ""}。${word}（WHO の AWaRe 分類で ${d.aware}）`;
+        return `<button class="card${trump ? " trump" : ""}${gauge ? " has-gauge" : ""}" data-drug="${d.id}" style="--cls:${cls.color};--i:${i}" title="${escapeHtml(tip)}">
           <span class="card-shine"></span>${opts.newDrugs?.includes(d.id) ? `<span class="new-tag">追加</span>` : ""}
           <div class="card-head">
             <div class="portrait">${soldierImg(data, d, "card")}<span class="key">${keys.get(d.id)}</span></div>
             <div class="card-head-text">
               <div class="abbr${d.abbr.length > 5 ? " long" : ""}">${escapeHtml(d.abbr)}</div>
-              <div class="tags"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="route ${d.route}">${routeLabel(d)}</span></div>
+              <div class="tags"><span class="route ${d.route}">${routeLabel(d)}</span>${trump ? `<span class="trump-tag">切り札</span>` : ""}</div>
             </div>
           </div>
-          <div class="gname">${escapeHtml(genericName(d))}</div>
+          <div class="gname${gname.length > 9 ? " long" : ""}">${escapeHtml(gname).replace(/・/g, "・<wbr>")}</div>
+          <div class="aware-row"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="aware-word ${d.aware.toLowerCase()}">${escapeHtml(word)}</span></div>
           <div class="cls">${escapeHtml(cls.name)}</div>
           <div class="meta"><span class="cost" title="1回の医療費">${iconImg("coin", 1)}<b>${yen(costPerDose(data, d.id))}</b></span><span class="wait" title="待ち時間（投与間隔）">${iconImg("hourglass", 1)}待ち<b>${waitSeconds(data, d).toFixed(0)}秒</b></span></div>
           <div class="interval">${escapeHtml(intervalShort(d))}${d.bioavailability != null ? `・吸収率 <b>${Math.round(d.bioavailability * 100)}%</b>` : ""}</div>
@@ -112,21 +119,21 @@ export class Hud {
 
     this.root.innerHTML = `
       <div class="hud">
-        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><div class="wave-pips">${s.stage.waves.map(() => "<i></i>").join("")}</div><small>${escapeHtml(modelShort(s.model.id))}・耐性化の速さはゲーム用に誇張</small></div>
+        <div class="hud-stage"><div><b>${escapeHtml(opts.stageLabel)}</b><span class="wave"></span></div><div class="wave-pips">${s.stage.waves.map(() => "<i></i>").join("")}</div><small>${escapeHtml(modelShort(s.model.id))}・効かなくなる速さはゲーム用に大げさ</small></div>
         <div class="hud-bladder">${iconImg("bladder", 2)}<div class="hb-col"><span>膀胱の耐久</span><div class="bar"><i></i></div></div><b class="num"></b></div>
         <div class="hud-budget">${iconImg("coin", 2)}<div class="hb-col"><span>医療費 ${s.stage.budgetPerDay ? "使える額" : "残り"}</span><small>${s.stage.budgetPerDay ? `1日ごとに +${yen(s.stage.budgetPerDay)}` : `/ ${yen(s.stage.budget)}`}</small></div><b class="budget"></b></div>
         <div class="hud-ctrl"><button class="abg-open" title="アンチバイオグラム（A キー）。開いている間は一時停止">${iconImg("chart", 1)}<span>アンチバイオグラム</span></button><button class="pause" title="一時停止（スペース）">${pauseLabel(false)}</button><button class="speed" title="速さ">${speedLabel(opts.session.speed)}</button></div>
       </div>
       <div class="zones" style="left:${LAYOUT.x0}px;width:${LAYOUT.x1 - LAYOUT.x0}px">
-        <span class="z-near" style="width:${laneW * near}px">${iconImg("diskTest", 1)}<span><b>◀ 近い：効かない薬が分かる</b><small>（薬剤感受性試験）</small></span></span>
-        <span class="z-mid" style="width:${laneW * (far - near)}px">${iconImg("dish", 1)}<span><b>中ほど：菌名が分かる</b><small>（培養・同定）</small></span></span>
-        <span class="z-far" style="width:${laneW * (1 - far)}px">${iconImg("microscope", 1)}<span><b>遠い：グラム染色像だけ</b><small><i class="gn">ピンク＝陰性</i>・<i class="gp">紫＝陽性</i></small></span></span>
+        <span class="z-near" style="width:${laneW * near}px">${iconImg("diskTest", 1)}<span><b>◀ 近い：効かない薬が分かる</b><small>（効く薬を調べる検査）</small></span></span>
+        <span class="z-mid" style="width:${laneW * (far - near)}px">${iconImg("dish", 1)}<span><b>中ほど：名前が分かる</b><small>（培養検査）</small></span></span>
+        <span class="z-far" style="width:${laneW * (1 - far)}px" title="顕微鏡で見た色と形（グラム染色）">${iconImg("microscope", 1)}<span><b>遠い：顕微鏡の色と形だけ</b><small><i class="gn">ピンク＝陰性</i>・<i class="gp">紫＝陽性</i></small></span></span>
       </div>
       <div class="lanes">${Array.from(
         { length: lanesCount },
         (_, i) => `<div class="lane" data-lane="${i}" style="top:${laneTopY(i)}px;height:${LAYOUT.laneH}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px"><span class="lane-msg"></span></div>`,
       ).join("")}</div>
-      <div class="ticker" style="top:${LAYOUT.msgTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;height:${LAYOUT.msgH}px"></div>
+      <div class="ticker" style="bottom:${H - LAYOUT.cardsTop}px;left:${LAYOUT.x0}px;width:${1280 - LAYOUT.x0}px;min-height:${LAYOUT.msgH}px"></div>
       <div class="hand${(opts.shortDrugs ?? []).length && s.stage.hand.length >= MAX_CARDS ? " tight" : ""}" style="top:${LAYOUT.cardsTop}px">${cardHtml}${shortCard(data, opts.shortDrugs ?? [], s.stage.hand.length)}</div>
       <div class="abg-panel" hidden><div class="abg-head">${iconImg("chart", 2)}<b>アンチバイオグラム（このステージの開始時）</b><button class="abg-close">閉じる（A）</button></div>${opts.antibiogram}</div>
     `;
@@ -180,18 +187,25 @@ export class Hud {
       this.session.speed = next;
       this.els.speed.innerHTML = speedLabel(next);
     });
+    // キーは e.code でも見る。試遊で「数字キーでカードを選べない」と指摘された（2026-11-05。手元の英字入力では再現しなかった）。
+    // 日本語入力がオンのときは e.key が "Process" や全角の「１」になり、前の判定（e.key が半角の 1〜9）では選べなかった
+    // 数字キーとスペース・A キーを、e.code（キーの位置）でも受ける
     this.keyHandler = (e) => {
-      if (e.key === " ") {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const digit = /^(?:Digit|Numpad)([1-9])$/.exec(e.code)?.[1] ?? (/^[1-9１-９]$/.test(e.key) ? String("123456789１２３４５６７８９".indexOf(e.key) % 9 + 1) : undefined);
+      if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         this.togglePause();
-      } else if (e.key === "a" || e.key === "A") this.toggleAntibiogram();
+      } else if (e.code === "KeyA" || e.key === "a" || e.key === "A") this.toggleAntibiogram();
       else if (e.key === "Escape") {
         if (this.abgOpen) this.toggleAntibiogram();
         else this.select(null);
-      }
-      else if (/^[1-9]$/.test(e.key)) {
-        const drug = this.drugByKey.get(Number(e.key));
-        if (drug) this.select(drug);
+      } else if (digit) {
+        const drug = this.drugByKey.get(Number(digit));
+        if (drug) {
+          e.preventDefault();
+          this.select(drug);
+        }
       }
     };
     window.addEventListener("keydown", this.keyHandler);
@@ -291,7 +305,7 @@ export class Hud {
       const data = this.session.state.data;
       const list = this.session.pending.map((p) => `${data.drugById.get(p.drug)?.abbr ?? p.drug} → レーン${p.lane + 1}`).join("、");
       this.root.classList.add("reserving");
-      this.message(`一時停止中・予約：${list}。再開すると召喚します`, "hint", 0);
+      this.message(`一時停止中・予約：${list}。再開すると呼び出します`, "hint", 0);
     }
   }
 
@@ -393,7 +407,7 @@ export class Hud {
       }
       const r = canSummon(s, this.selected, lane);
       const abbr = data.drugById.get(this.selected)?.abbr ?? "";
-      let text = this.session.paused ? `ここに ${abbr} を予約（クリック）` : `ここに ${abbr} を召喚（クリック）`;
+      let text = this.session.paused ? `ここに ${abbr} を予約（クリック）` : `ここに ${abbr} を呼び出す（クリック）`;
       if (r === "cooldown") {
         const left = ((s.readyAt.get(`${this.selected}:${lane}`) ?? 0) - s.tick) / tps;
         text = `${abbr}：待ち ${left.toFixed(1)}秒（投与間隔）`;
@@ -411,7 +425,7 @@ export class Hud {
     if (!previewed) this.opts.onPreview?.(null, 0);
   }
 
-  /** 耐性率が上がった薬のカードに、しばらく「↑耐性」の札を出す */
+  /** 耐性率が上がった薬のカードに、しばらく「↑ 効かない細菌」の札を出す（style.css の res-up） */
   private badgeTimers = new Map<string, number>();
   private badge(drug: string): void {
     const el = this.els.cards.get(drug)?.el;
@@ -426,16 +440,17 @@ export class Hud {
     for (const e of events) {
       if (e.type === "rejected" && e.reason !== "ended") this.message(`${data.drugById.get(e.drug)?.abbr}：${rejectLabel(e.reason)}`, "warn");
       else if (e.type === "resistanceChanged") {
-        // 知らせの帯は1行なので短くする（※の詳しい説明は用語の説明「耐性の連動」）
+        // 2行にする：1行目に何が起きたか（選択圧の仕組みを平易な言葉で）、2行目に効かない割合の変化。
+        // 2026-11-05 作者の判断（docs/PLAIN-LANGUAGE.md 3章）。前は1行で、ステージ2では右端が切れていた（試遊の指摘）
         const head =
           e.cause === "wave"
-            ? `波${(e.wave ?? 0) + 1}が片付いた（選択圧で耐性率が上がった）`
-            : `耐性ゲージ（${data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass}）が1段上がった`;
+            ? `波${(e.wave ?? 0) + 1}が片付いた：薬が効く細菌は減り、効かない細菌が残った（選択圧）`
+            : `耐性ゲージ（${escapeHtml(data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass ?? "")}）が1段上がった：この系統の薬が、まとめて効きにくくなった`;
         const note = this.anyLinked(e.changes) ? (e.cause === "wave" ? "　※まだ使っていない薬（耐性の連動）" : "　※まだ使っていない薬（同じ系統・耐性の連動）") : "";
         const lines = this.topChanges(e.changes);
         if (lines.length) {
           // 耐性の知らせは、ほかの知らせより長く出す（試遊の指摘：8秒で薄くなり読み逃す）
-          this.message(`${head}：${lines.join("、")}${note}`, "res", 12000);
+          this.message(`<span class="tk-line">${head}</span><span class="tk-line">${lines.join("、")}${note}</span>`, "res", 12000);
           for (const c of this.pickChanges(e.changes)) this.badge(c.drug);
         }
       } else if (e.type === "end" && !this.ended) {
@@ -466,7 +481,7 @@ export class Hud {
     const used = s.stats.activeTicks;
     return this.pickChanges(changes).map(
       (c) =>
-        `${escapeHtml(s.data.bacteriumById.get(c.species)?.name ?? c.species)}の ${escapeHtml(s.data.drugById.get(c.drug)?.abbr ?? c.drug)}${(used[c.drug] ?? 0) > 0 ? "" : "※"} 耐性 ${pct(c.from)} → <b>${pct(c.to)}</b>`,
+        `${escapeHtml(s.data.bacteriumById.get(c.species)?.name ?? c.species)}に ${escapeHtml(s.data.drugById.get(c.drug)?.abbr ?? c.drug)}${(used[c.drug] ?? 0) > 0 ? "" : "※"} が効かない割合 ${pct(c.from)} → <b>${pct(c.to)}</b>`,
     );
   }
 

@@ -1,0 +1,2195 @@
+/* 「はじめての人へ」（intro.html）。色はゲーム（src/game/style.css の :root）にそろえる。
+   ドット絵のフォント（DotGothic16）は見出し・札・ボタンに、長い文は読みやすいゴシックに（ゲームと同じ分け方）。
+   高齢の人も読むので、字は大きめ。スマホ幅（375px）でも横にはみ出さない。 */
+:root {
+  --pixel: "DotGothic16", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  --body: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+  --void: #0b0812;
+  --bg0: #100b19;
+  --bg1: #160f22;
+  --bg2: #1d1530;
+  --bg3: #271d3d;
+  --bg4: #33274f;
+  --rim: #3f2f5e;
+  --rim-hi: #5d4a85;
+  --edge: #06030a;
+  --ink: #f4ecf7;
+  --ink-2: #d9cce4;
+  --muted: #b7a6c6;
+  --accent: #ff4f8b;
+  --accent-dark: #c2185b;
+  --gold: #ffcf3f;
+  --teal: #3be0c6;
+  --good: #5ef0a0;
+  --bad: #ff6352;
+  --warn: #ffb347;
+  --violet: #c4a3ff;
+  --zone-far: #8f7dff;
+  --zone-mid: #3be0c6;
+  --zone-near: #ffcf3f;
+  --lane-top: #1a1430;
+  --lane-bottom: #120d22;
+  --px: 3px;
+  --frame: 0 calc(-1 * var(--px)) 0 0 var(--edge), 0 var(--px) 0 0 var(--edge), calc(-1 * var(--px)) 0 0 0 var(--edge), var(--px) 0 0 0 var(--edge);
+  font-family: var(--body);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--void);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-size: 20px;
+  line-height: 1.85;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(255, 79, 139, 0.1), transparent 60%),
+    radial-gradient(900px 500px at 0% 20%, rgba(143, 125, 255, 0.1), transparent 60%),
+    var(--bg0);
+}
+
+img.px {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: none;
+  user-select: none;
+}
+
+a {
+  color: var(--teal);
+}
+
+/* ---------- ドット絵の動き（2コマを交互に） ---------- */
+.anim2 {
+  display: inline-grid;
+  vertical-align: middle;
+}
+
+.anim2 > img {
+  grid-area: 1 / 1;
+}
+
+.anim2 > .f0 {
+  animation: frame-a 0.72s steps(1, end) infinite;
+}
+
+.anim2 > .f1 {
+  animation: frame-b 0.72s steps(1, end) infinite;
+}
+
+@keyframes frame-a {
+  0% {
+    visibility: visible;
+  }
+  50% {
+    visibility: hidden;
+  }
+}
+
+@keyframes frame-b {
+  0% {
+    visibility: hidden;
+  }
+  50% {
+    visibility: visible;
+  }
+}
+
+.poses {
+  display: inline-grid;
+}
+
+.poses > * {
+  grid-area: 1 / 1;
+}
+
+/* 隠す姿は display で消す（中の2コマの動きが visibility を上書きするため） */
+.poses > .pose-attack,
+.attacking .poses > .pose-idle {
+  display: none;
+}
+
+.attacking .poses > .pose-attack {
+  display: inline-grid;
+}
+
+/* ---------- 盤面（ゲームのレーンと同じ床） ---------- */
+.board {
+  position: relative;
+  background: var(--floor) repeat, linear-gradient(var(--lane-top), var(--lane-bottom));
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim);
+}
+
+.tag {
+  display: inline-block;
+  font-family: var(--pixel);
+  font-size: 17px;
+  line-height: 1.3;
+  padding: 3px 9px 4px;
+  color: var(--ink);
+  background: rgba(11, 8, 18, 0.82);
+  box-shadow: inset 0 0 0 2px var(--rim-hi);
+  white-space: nowrap;
+}
+
+/* ---------- ボタン ---------- */
+.i-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--pixel);
+  font-size: 20px;
+  line-height: 1.2;
+  padding: 11px 20px 13px;
+  color: var(--ink);
+  background: var(--bg3);
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--frame), inset 0 -4px 0 rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  transition: transform 0.05s, filter 0.1s;
+}
+
+.i-btn:hover {
+  background: var(--bg4);
+}
+
+.i-btn:active {
+  transform: translateY(2px);
+}
+
+.i-btn.primary {
+  background: var(--accent);
+  color: #1a0410;
+}
+
+.i-btn.primary:hover {
+  filter: brightness(1.1);
+}
+
+.i-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.i-btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 5px;
+}
+
+.i-btn.big {
+  font-size: 23px;
+  padding: 16px 26px 18px;
+}
+
+/* ---------- ページ ---------- */
+#intro {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 36px 28px 72px;
+}
+
+.i-head {
+  position: relative;
+  padding: 8px 0 18px;
+}
+
+.i-logo {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-family: var(--pixel);
+}
+
+.i-logo-name {
+  font-size: 26px;
+  color: var(--accent);
+  text-shadow: 0 3px 0 var(--accent-dark);
+  letter-spacing: 0.06em;
+}
+
+.i-logo-sub {
+  font-size: 17px;
+  color: var(--muted);
+}
+
+.i-head h1 {
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 48px;
+  line-height: 1.25;
+  margin: 10px 0 12px;
+  text-shadow: 0 4px 0 var(--edge);
+}
+
+.i-lead {
+  margin: 0;
+  max-width: 760px;
+  font-size: 21px;
+  color: var(--ink-2);
+}
+
+.i-head-art {
+  position: absolute;
+  right: 0;
+  top: 18px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.i-toc {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.i-toc a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px 10px;
+  font-family: var(--pixel);
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--bg2);
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim);
+}
+
+.i-toc a:hover {
+  background: var(--bg3);
+}
+
+.i-toc a span {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #241503;
+  background: var(--gold);
+}
+
+/* 1段 */
+.i-step {
+  margin: 44px 0 0;
+  padding: 26px 30px 28px;
+  background: linear-gradient(180deg, var(--bg2), var(--bg1) 220px);
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim), 0 10px 0 rgba(0, 0, 0, 0.3);
+  scroll-margin-top: 16px;
+}
+
+.i-step-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.i-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  font-family: var(--pixel);
+  font-size: 30px;
+  color: #241503;
+  background: var(--gold);
+  box-shadow: var(--frame), inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.i-step h2 {
+  margin: 0;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.3;
+}
+
+.i-text {
+  margin: 18px 0 22px;
+  font-size: 21px;
+  line-height: 1.95;
+  max-width: 860px;
+}
+
+.i-text mark {
+  color: var(--ink);
+  background: linear-gradient(transparent 60%, rgba(255, 207, 63, 0.32) 0);
+  font-weight: 700;
+}
+
+.i-game {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 10px 14px 11px;
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--ink-2);
+  background: rgba(59, 224, 198, 0.06);
+  box-shadow: inset 4px 0 0 var(--teal);
+}
+
+.i-game img {
+  flex: none;
+  margin-top: 6px;
+}
+
+.fig {
+  margin: 0;
+}
+
+.fig figcaption,
+.fig .note {
+  margin: 10px 0 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ---------- 1. 細菌 ---------- */
+.f1-lane {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  overflow: hidden;
+}
+
+.f1-bladder {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+
+.f1-bladder .cap {
+  font-family: var(--pixel);
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+  max-width: 9em;
+}
+
+.f1-march {
+  position: relative;
+  flex: 1;
+  height: 200px;
+}
+
+.f1-march .tag {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.walker {
+  position: absolute;
+  left: 100%;
+  animation: walk 10s linear infinite;
+  animation-delay: calc(var(--i) * -2s);
+}
+
+.walker:nth-of-type(1) {
+  top: 16%;
+}
+.walker:nth-of-type(2) {
+  top: 56%;
+}
+.walker:nth-of-type(3) {
+  top: 30%;
+}
+.walker:nth-of-type(4) {
+  top: 72%;
+}
+.walker:nth-of-type(5) {
+  top: 40%;
+}
+
+@keyframes walk {
+  0% {
+    left: 100%;
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: -8%;
+    opacity: 0;
+  }
+}
+
+.f1-virus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 14px 20px;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.f1-virus b {
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 20px;
+  margin-right: 12px;
+  color: #8fe3c8;
+}
+
+/* ---------- 2. 抗菌薬 ---------- */
+.f2-row {
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto 150px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  margin-bottom: 12px;
+}
+
+.f2-who,
+.f2-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.f2-path {
+  position: relative;
+  height: 44px;
+}
+
+.f2-shot {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: shot 3s linear infinite;
+}
+
+@keyframes shot {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  28% {
+    left: calc(100% - 20px);
+    opacity: 1;
+  }
+  30%,
+  100% {
+    left: calc(100% - 20px);
+    opacity: 0;
+  }
+}
+
+.f2-row.hit .f2-target .anim2 {
+  animation: target-hit 3s linear infinite;
+}
+
+@keyframes target-hit {
+  0%,
+  28% {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  31% {
+    filter: brightness(2.8);
+    transform: scale(1.1);
+  }
+  48% {
+    opacity: 0;
+    filter: grayscale(1);
+    transform: scale(0.5) rotate(60deg);
+  }
+  72% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  82%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.f2-row.miss .f2-target img {
+  animation: target-miss 3s linear infinite;
+}
+
+@keyframes target-miss {
+  0%,
+  29% {
+    transform: none;
+  }
+  32% {
+    transform: translateX(6px);
+  }
+  36% {
+    transform: translateX(-4px);
+  }
+  40%,
+  100% {
+    transform: none;
+  }
+}
+
+.f2-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pixel);
+  font-size: 22px;
+  animation: result 3s linear infinite;
+}
+
+.f2-result b {
+  font-weight: 400;
+}
+
+.f2-result.good {
+  color: var(--good);
+}
+
+.f2-result.bad {
+  color: var(--bad);
+}
+
+@keyframes result {
+  0%,
+  28% {
+    opacity: 0.25;
+  }
+  34%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- 3. 効く相手が違う（表） ---------- */
+.eff-wrap {
+  overflow-x: auto;
+}
+
+.eff {
+  width: 100%;
+  max-width: 820px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 6px;
+  margin: 0 -6px;
+}
+
+.eff thead th {
+  padding: 8px 6px 10px;
+  vertical-align: bottom;
+  text-align: center;
+  font-weight: 400;
+  background: color-mix(in srgb, var(--cls) 16%, var(--bg1));
+  box-shadow: inset 0 4px 0 var(--cls);
+}
+
+.eff thead th:first-child {
+  width: 28%;
+  background: none;
+  box-shadow: none;
+}
+
+.eff-head {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.eff thead b {
+  display: block;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.eff thead small {
+  display: block;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.eff thead em {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 10px 2px;
+  font-family: var(--pixel);
+  font-style: normal;
+  font-size: 16px;
+  color: #241503;
+  background: var(--gold);
+}
+
+.eff tbody th {
+  padding: 6px 10px 6px 4px;
+  text-align: left;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.eff tbody th > span {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.eff-bug {
+  width: 84px;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.eff td {
+  height: 58px;
+  text-align: center;
+  font-family: var(--pixel);
+  font-size: 19px;
+}
+
+.eff td.high {
+  color: #052414;
+  background: var(--good);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18), inset 0 3px 0 rgba(255, 255, 255, 0.35);
+}
+
+.eff td.low {
+  color: var(--muted);
+  background: repeating-linear-gradient(135deg, #2a2140 0 6px, #231a37 6px 12px);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.fig3 .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 14px 0 0;
+  font-family: var(--pixel);
+  font-size: 18px;
+}
+
+.fig3 .legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fig3 .legend i {
+  display: inline-block;
+  width: 26px;
+  height: 20px;
+}
+
+.fig3 .legend i.high {
+  background: var(--good);
+}
+
+.fig3 .legend i.low {
+  background: repeating-linear-gradient(135deg, #2a2140 0 4px, #231a37 4px 8px);
+  box-shadow: inset 0 0 0 2px var(--rim-hi);
+}
+
+.note-short,
+.fig3 .legend .note-short {
+  display: none;
+}
+
+/* ---------- 4. 切り札が選ばれやすい理由 ---------- */
+.fig4 {
+  --bw: 96px;
+}
+
+.f4-heads {
+  display: grid;
+  grid-template-columns: 3fr 3fr 4fr;
+  margin-left: var(--bw);
+  gap: 6px;
+}
+
+.f4-h {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 8px 10px;
+  font-size: 16px;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--z) 12%, var(--bg1));
+  box-shadow: inset 0 -4px 0 var(--z);
+}
+
+.f4-h img {
+  flex: none;
+}
+
+.f4-h b {
+  display: block;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--z);
+}
+
+.f4-h small {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.f4-h.near,
+.f4-band.near {
+  --z: var(--zone-near);
+}
+.f4-h.mid,
+.f4-band.mid {
+  --z: var(--zone-mid);
+}
+.f4-h.far,
+.f4-band.far {
+  --z: var(--zone-far);
+}
+
+.f4-lane {
+  height: 170px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.f4-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--z) 9%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--z) 45%, transparent);
+}
+
+.f4-band.near {
+  left: var(--bw);
+  width: calc((100% - var(--bw)) * 0.3);
+}
+.f4-band.mid {
+  left: calc(var(--bw) + (100% - var(--bw)) * 0.3);
+  width: calc((100% - var(--bw)) * 0.3);
+}
+.f4-band.far {
+  left: calc(var(--bw) + (100% - var(--bw)) * 0.6);
+  right: 0;
+}
+
+.f4-bladder {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.f4-trump {
+  position: absolute;
+  left: calc(var(--bw) + 6px);
+  top: 50%;
+  transform: translateY(-46%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: trump-glow 1.6s ease-in-out infinite;
+}
+
+.f4-trump em,
+.cmp-who em {
+  font-family: var(--pixel);
+  font-style: normal;
+  font-size: 15px;
+  padding: 0 8px 1px;
+  color: #241503;
+  background: var(--gold);
+  order: -1;
+  margin-bottom: 2px;
+}
+
+@keyframes trump-glow {
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 207, 63, 0.75));
+  }
+}
+
+.f4-mover {
+  position: absolute;
+  top: 58%;
+  left: calc(100% - 70px);
+  transform: translate(-50%, -50%);
+  animation: mover 7s linear infinite;
+}
+
+.f4-look {
+  display: block;
+}
+
+.f4-look.full {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.f4-look.bare {
+  animation: look-bare 7s steps(1, end) infinite;
+}
+.f4-look.full {
+  animation: look-full 7s steps(1, end) infinite;
+}
+
+.f4-tag {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--pixel);
+  font-size: 18px;
+  line-height: 1.3;
+  padding: 3px 10px 4px;
+  white-space: nowrap;
+  background: rgba(11, 8, 18, 0.9);
+  opacity: 0;
+}
+
+.f4-tag.t-far {
+  box-shadow: inset 0 0 0 2px var(--zone-far);
+  color: var(--zone-far);
+  animation: tag-far 7s steps(1, end) infinite;
+}
+.f4-tag.t-mid {
+  box-shadow: inset 0 0 0 2px var(--zone-mid);
+  color: var(--zone-mid);
+  animation: tag-mid 7s steps(1, end) infinite;
+}
+.f4-tag.t-near {
+  box-shadow: inset 0 0 0 2px var(--zone-near);
+  color: var(--zone-near);
+  animation: tag-near 7s steps(1, end) infinite;
+}
+
+/* 遠い区間（まだ分からない）を長めに見せる */
+@keyframes mover {
+  0% {
+    left: calc(100% - 50px);
+  }
+  38% {
+    left: calc(var(--bw) + (100% - var(--bw)) * 0.6);
+  }
+  68% {
+    left: calc(var(--bw) + (100% - var(--bw)) * 0.3);
+  }
+  88%,
+  100% {
+    left: calc(var(--bw) + (100% - var(--bw)) * 0.17);
+  }
+}
+
+@keyframes look-bare {
+  0% {
+    visibility: visible;
+  }
+  38% {
+    visibility: hidden;
+  }
+}
+
+@keyframes look-full {
+  0% {
+    visibility: hidden;
+  }
+  38% {
+    visibility: visible;
+  }
+}
+
+@keyframes tag-far {
+  0% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0;
+  }
+}
+
+@keyframes tag-mid {
+  0% {
+    opacity: 0;
+  }
+  38% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0;
+  }
+}
+
+@keyframes tag-near {
+  0% {
+    opacity: 0;
+  }
+  68% {
+    opacity: 1;
+  }
+}
+
+.f4-days {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0 var(--bw);
+  padding: 8px 14px;
+  font-family: var(--pixel);
+  font-size: 19px;
+  line-height: 1.35;
+  background: rgba(11, 8, 18, 0.5);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.f4-days b {
+  font-weight: 400;
+}
+
+.f4-days .arrow {
+  color: var(--gold);
+}
+
+/* ---------- 5. 選択圧（動く絵） ---------- */
+.sv-board {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--floor) repeat, linear-gradient(var(--lane-top), var(--lane-bottom));
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim);
+  overflow: hidden;
+}
+
+.sv-soldier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.sv-tag {
+  font-family: var(--pixel);
+  font-size: 17px;
+  padding: 2px 9px 3px;
+  background: rgba(11, 8, 18, 0.82);
+  box-shadow: inset 0 0 0 2px var(--rim-hi);
+}
+
+.sv-field {
+  position: relative;
+  height: 180px;
+}
+
+.wide .sv-field {
+  height: 170px;
+}
+.mid .sv-field {
+  height: 300px;
+}
+.narrow .sv-field {
+  height: 300px;
+}
+
+.sv-bug {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition:
+    left 0.65s cubic-bezier(0.3, 1.3, 0.5, 1),
+    top 0.65s cubic-bezier(0.3, 1.3, 0.5, 1),
+    transform 0.45s cubic-bezier(0.3, 1.5, 0.5, 1),
+    opacity 0.35s;
+}
+
+.sv-bug .bug {
+  display: inline-grid;
+}
+
+.sv-bug.res .bug img {
+  filter: drop-shadow(0 0 2px var(--bad)) drop-shadow(0 0 2px var(--bad));
+}
+
+.sv-shield {
+  position: absolute;
+  right: -12px;
+  top: -14px;
+}
+
+.sv-bug.newborn {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+}
+
+.drugged .sv-bug:not(.res) {
+  animation: sv-fall 0.8s var(--d) forwards;
+}
+
+@keyframes sv-fall {
+  0% {
+    transform: translate(-50%, -50%);
+  }
+  12% {
+    filter: brightness(2.8);
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  45% {
+    filter: brightness(1);
+  }
+  100% {
+    transform: translate(-50%, -25%) rotate(90deg) scale(0.8);
+    filter: grayscale(1) brightness(0.5);
+    opacity: 0.38;
+  }
+}
+
+.drugged .sv-bug.gone {
+  animation: sv-gone 0.32s forwards;
+}
+
+@keyframes sv-gone {
+  from {
+    transform: translate(-50%, -25%) rotate(90deg) scale(0.8);
+    filter: grayscale(1) brightness(0.5);
+    opacity: 0.38;
+  }
+  to {
+    transform: translate(-50%, 0%) rotate(90deg) scale(0.5);
+    filter: grayscale(1) brightness(0.5);
+    opacity: 0;
+  }
+}
+
+.drugged .sv-bug.res .sv-shield,
+.again .sv-bug.res .sv-shield {
+  animation: sv-block 0.55s var(--d) both;
+}
+
+@keyframes sv-block {
+  0% {
+    transform: none;
+  }
+  35% {
+    transform: scale(1.7);
+    filter: brightness(1.8) drop-shadow(0 0 6px #fff);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.again .sv-bug.res .bug {
+  animation: sv-shake 0.4s var(--d) both;
+}
+
+@keyframes sv-shake {
+  30% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+}
+
+.sv-wave {
+  position: absolute;
+  top: -16px;
+  bottom: -16px;
+  left: -80px;
+  width: 80px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 236, 150, 0.15) 30%, rgba(255, 240, 170, 0.6) 70%, rgba(255, 255, 255, 0.85) 92%, transparent);
+}
+
+.drugged .sv-wave,
+.again .sv-wave {
+  animation: sv-sweep var(--sweep, 1s) linear 0.08s both;
+}
+
+@keyframes sv-sweep {
+  0% {
+    left: -80px;
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.sv-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+
+.sv-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 7px;
+  font-family: var(--pixel);
+  font-size: 18px;
+  line-height: 1.3;
+  background: var(--bg1);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.sv-count b {
+  font-weight: 400;
+  font-size: 28px;
+  min-width: 1.4em;
+  text-align: right;
+}
+
+.sv-count.s b {
+  color: var(--good);
+}
+
+.sv-count.r {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bad) 60%, var(--rim));
+}
+
+.sv-count.r b {
+  color: var(--bad);
+}
+
+.sv-caption {
+  min-height: 1.5em;
+  margin: 14px 0 0;
+  font-family: var(--pixel);
+  font-size: 24px;
+  line-height: 1.45;
+  color: var(--gold);
+}
+
+.sv-caption.show {
+  animation: rise 0.4s ease-out both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.sv-change {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sv-change[hidden] {
+  display: none;
+}
+
+.sv-change.show {
+  animation: rise 0.45s ease-out both;
+}
+
+.sv-change > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  font-family: var(--pixel);
+  font-size: 19px;
+  line-height: 1.4;
+  background: var(--bg1);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.sv-change > div:last-child {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bad) 60%, var(--rim));
+}
+
+.sv-change .sv-bug.still {
+  position: relative;
+  transform: none;
+  flex: none;
+}
+
+.sv-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.sv-controls .i-btn[hidden] {
+  display: none;
+}
+
+.sv-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.sv-count .mini img,
+.sv-count img {
+  flex: none;
+}
+
+/* ---------- 6. 2050年の試算 ---------- */
+.fig6 .unit {
+  margin: 0 0 8px;
+  font-family: var(--pixel);
+  font-size: 17px;
+  color: var(--muted);
+}
+
+.bars {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg1);
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim);
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "label label" "track value";
+  align-items: center;
+  gap: 4px 14px;
+}
+
+.bar .bl {
+  grid-area: label;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.bar .bt {
+  grid-area: track;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.bar .bt i {
+  display: block;
+  height: 100%;
+  width: calc(var(--w) * 100%);
+  min-width: 6px;
+  background: var(--c);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.25), inset 0 4px 0 rgba(255, 255, 255, 0.25);
+}
+
+.bar b {
+  grid-area: value;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--c);
+  min-width: 5.2em;
+  text-align: right;
+}
+
+.bar.bad {
+  --c: var(--bad);
+}
+.bar.dim {
+  --c: #a493b6;
+}
+.bar.warn {
+  --c: var(--warn);
+}
+
+.fig6 .src {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 7. 並べ比べ ---------- */
+.cmp-title {
+  margin: 0 0 8px;
+  font-family: var(--pixel);
+  font-size: 18px;
+  color: var(--teal);
+}
+
+.cmp-head,
+.cmp-row {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 10px;
+}
+
+.cmp-head span {
+  font-family: var(--pixel);
+  font-size: 17px;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.cmp-row {
+  margin-top: 10px;
+}
+
+.cmp-who,
+.cmp-res {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg1);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.cmp-who {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cmp-soldiers {
+  display: flex;
+  gap: 2px;
+}
+
+.cmp-who b {
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.cmp-res {
+  font-size: 18px;
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+
+.cmp-res img {
+  flex: none;
+}
+
+.cmp-res > span:not(.cmp-bug) {
+  flex: 1 1 7em;
+  min-width: 0;
+}
+
+.cmp-res.win {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--good) 55%, var(--rim));
+}
+
+.cmp-res.lose {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bad) 65%, var(--rim));
+  color: #ffd0c8;
+}
+
+.cmp-stage {
+  display: none;
+  width: 100%;
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.cmp-bug {
+  position: relative;
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.cmp-bug .cmp-shield {
+  position: absolute;
+  right: -8px;
+  top: -10px;
+}
+
+.cmp-bug .bug img {
+  filter: drop-shadow(0 0 2px var(--bad));
+}
+
+/* ---------- 8. 知ることの意味 ---------- */
+.fig8 .board {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  max-width: 220px;
+}
+
+.f8-q {
+  font-family: var(--pixel);
+  font-size: 44px;
+  color: var(--gold);
+  align-self: flex-start;
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* ---------- 終わり ---------- */
+.i-end {
+  margin-top: 52px;
+  padding: 28px 30px;
+  background: var(--bg2);
+  box-shadow: var(--frame), inset 0 0 0 2px var(--rim-hi);
+}
+
+.i-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.i-replay-note {
+  margin: 14px 0 0;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+.i-caution {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 22px;
+  padding: 14px 18px;
+  background: rgba(255, 179, 71, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(255, 179, 71, 0.5);
+}
+
+.i-caution img {
+  flex: none;
+  margin-top: 4px;
+}
+
+.i-caution p {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.75;
+}
+
+.i-data {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.i-data img {
+  flex: none;
+  margin-top: 5px;
+}
+
+/* ---------- 狭い画面 ---------- */
+@media (max-width: 860px) {
+  .i-head-art {
+    display: none;
+  }
+  .i-toc {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    font-size: 18px;
+  }
+  #intro {
+    padding: 22px 16px 56px;
+  }
+  .i-head h1 {
+    font-size: 36px;
+  }
+  .i-lead {
+    font-size: 19px;
+  }
+  .i-toc {
+    gap: 10px;
+  }
+  .i-toc a {
+    font-size: 16px;
+    padding: 8px 8px 9px;
+    gap: 8px;
+  }
+  .i-step {
+    margin-top: 32px;
+    padding: 18px 14px 20px;
+  }
+  .i-num {
+    width: 44px;
+    height: 44px;
+    font-size: 26px;
+  }
+  .i-step h2 {
+    font-size: 27px;
+  }
+  .i-text {
+    font-size: 19px;
+    line-height: 1.9;
+  }
+  .i-game {
+    font-size: 17px;
+  }
+  /* 絵を2/3の大きさに（3倍の絵 → 2倍の見え方）。字は小さくしない */
+  .fig1 .anim2,
+  .fig1 .bladder,
+  .fig2 .anim2,
+  .fig2 .virus,
+  .fig4 .anim2,
+  .fig4 .bladder,
+  .fig4 .f4-h img,
+  .fig7 .cmp-soldiers,
+  .eff-head,
+  .eff-bug .anim2 {
+    zoom: 0.667;
+  }
+  .f1-lane {
+    padding: 12px;
+    gap: 10px;
+  }
+  .f1-march {
+    height: 150px;
+  }
+  .f1-bladder .cap {
+    font-size: 14px;
+    max-width: 6.5em;
+  }
+  .f1-virus {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 17px;
+  }
+  .f2-row {
+    grid-template-columns: auto minmax(20px, 1fr) auto;
+    gap: 8px;
+    padding: 12px;
+  }
+  .f2-result {
+    grid-column: 1 / -1;
+    justify-content: center;
+    font-size: 19px;
+  }
+  .eff {
+    border-spacing: 4px;
+    margin: 0 -4px;
+  }
+  .eff thead th {
+    padding: 6px 2px 8px;
+  }
+  .eff thead th:first-child {
+    width: 30%;
+  }
+  .eff-name {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    height: 8.4em;
+    writing-mode: vertical-rl;
+  }
+  .eff thead b {
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .eff thead small {
+    font-size: 11.5px;
+    line-height: 1.25;
+  }
+  .eff thead em {
+    font-size: 13px;
+    padding: 0 6px;
+  }
+  .eff tbody th {
+    font-size: 15px;
+    padding: 4px 2px;
+  }
+  .eff tbody th > span {
+    display: flex;
+  }
+  .eff-bug {
+    width: auto;
+    margin: 0 0 2px;
+  }
+  .eff td {
+    height: 46px;
+    font-size: 16px;
+  }
+  .fig4 {
+    --bw: 54px;
+  }
+  .f4-heads {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+  .f4-h {
+    font-size: 15px;
+    padding: 6px 8px 7px;
+  }
+  .f4-h b {
+    display: inline;
+    margin-right: 6px;
+    font-size: 16px;
+  }
+  .f4-h small {
+    display: inline;
+  }
+  .f4-lane {
+    height: 140px;
+  }
+  .f4-bladder {
+    left: 6px;
+  }
+  .f4-trump em {
+    font-size: 13px;
+  }
+  .f4-tag {
+    font-size: 15px;
+    padding: 2px 6px 3px;
+  }
+  .f4-days {
+    margin-left: 0;
+    font-size: 16px;
+  }
+  .sv-board {
+    padding: 10px;
+    gap: 6px;
+  }
+  .sv-tag {
+    font-size: 15px;
+  }
+  .sv-count {
+    font-size: 15px;
+    padding: 5px 10px;
+  }
+  .sv-count b {
+    font-size: 24px;
+  }
+  .sv-caption {
+    font-size: 20px;
+  }
+  .sv-change {
+    grid-template-columns: 1fr;
+  }
+  .sv-change > div {
+    font-size: 17px;
+  }
+  .bars {
+    padding: 14px 12px;
+  }
+  .bar .bl {
+    font-size: 16px;
+  }
+  .bar b {
+    font-size: 20px;
+    min-width: 4.6em;
+  }
+  .cmp-head {
+    display: none;
+  }
+  .cmp-row {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 14px;
+  }
+  .cmp-who {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .cmp-who b {
+    font-size: 17px;
+  }
+  .cmp-res {
+    font-size: 16px;
+    padding: 10px;
+    align-items: flex-start;
+  }
+  .cmp-res > img {
+    zoom: 0.667;
+  }
+  .cmp-res > span:not(.cmp-bug) {
+    flex-basis: 4em;
+  }
+  .cmp-stage {
+    display: block;
+    font-size: 13px;
+  }
+  .i-end {
+    padding: 20px 14px;
+  }
+  .i-btn.big {
+    font-size: 20px;
+    width: 100%;
+    justify-content: center;
+  }
+  .i-caution p {
+    font-size: 17px;
+  }
+}
+
+/* ==================== 動画用の見せ方（?present=1。1920×1080） ==================== */
+html.presenting,
+html.presenting body {
+  height: 100%;
+  overflow: hidden;
+  cursor: none;
+}
+
+html.presenting body {
+  background: #050308;
+}
+
+html.presenting #intro {
+  max-width: none;
+  padding: 0;
+}
+
+#present {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 50% 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(1400px 700px at 85% -10%, rgba(255, 79, 139, 0.12), transparent 60%),
+    radial-gradient(1000px 600px at 0% 30%, rgba(143, 125, 255, 0.12), transparent 60%),
+    var(--bg0);
+}
+
+.p-area {
+  position: relative;
+}
+
+.p-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 54px 96px 26px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+
+.p-scene.on {
+  opacity: 1;
+  transform: none;
+}
+
+/* 出ていない段の動きは止めておき、出た瞬間に始めから動かす */
+.p-scene:not(.on) * {
+  animation-play-state: paused !important;
+}
+
+.p-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.p-num {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-family: var(--pixel);
+  font-size: 38px;
+  color: #241503;
+  background: var(--gold);
+  box-shadow: var(--frame), inset 0 -5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.p-title {
+  font-family: var(--pixel);
+  font-size: 38px;
+  color: var(--gold);
+}
+
+.p-big {
+  margin: 22px 0 0;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 68px;
+  line-height: 1.28;
+  text-shadow: 0 5px 0 var(--edge);
+}
+
+.p-fig {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.p-fig > * {
+  width: 100%;
+}
+
+.p-sub {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 46px;
+  line-height: 1.35;
+  color: var(--gold);
+  text-align: center;
+}
+
+.p-dots {
+  position: absolute;
+  right: 96px;
+  top: 74px;
+  display: flex;
+  gap: 12px;
+}
+
+.p-dots i {
+  width: 20px;
+  height: 20px;
+  background: var(--bg3);
+  box-shadow: inset 0 0 0 3px var(--rim-hi);
+}
+
+.p-dots i.on {
+  background: var(--gold);
+  box-shadow: none;
+}
+
+/* 動画の図の大きさ */
+.presenting .tag,
+.presenting .sv-tag {
+  font-size: 30px;
+  padding: 4px 14px 6px;
+}
+
+.presenting .f1-lane {
+  padding: 26px 40px;
+  gap: 40px;
+}
+
+.presenting .f1-bladder .cap {
+  font-size: 28px;
+  max-width: 8em;
+}
+
+.presenting .f1-march {
+  height: 360px;
+}
+
+.presenting .walker {
+  animation-duration: 8s;
+  animation-delay: calc(var(--i) * -1.6s);
+}
+
+.presenting .f1-virus {
+  margin-top: 20px;
+  padding: 18px 40px;
+  font-size: 32px;
+  gap: 26px;
+}
+
+.presenting .f1-virus b {
+  font-size: 34px;
+  margin-right: 20px;
+}
+
+.presenting .fig2 {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.presenting .f2-row {
+  grid-template-columns: auto minmax(120px, 1fr) auto 280px;
+  gap: 30px;
+  padding: 18px 40px;
+  margin-bottom: 18px;
+}
+
+.presenting .f2-path {
+  height: 70px;
+}
+
+.presenting .f2-result {
+  font-size: 42px;
+  gap: 14px;
+}
+
+.presenting .fig2 figcaption {
+  font-size: 26px;
+  text-align: center;
+}
+
+.presenting .fig3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.presenting .eff {
+  max-width: 1360px;
+  border-spacing: 10px;
+}
+
+.presenting .eff thead th {
+  position: relative;
+  padding: 8px 10px 10px;
+}
+
+/* 切り札の札は、見出しの右上に重ねる（高さを詰める） */
+.presenting .eff thead em {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  margin: 0;
+}
+
+.presenting .eff thead b {
+  font-size: 34px;
+}
+
+.presenting .eff thead small {
+  font-size: 22px;
+}
+
+.presenting .eff thead th:first-child {
+  width: 26%;
+}
+
+.presenting .eff thead em {
+  font-size: 28px;
+  padding: 2px 14px 4px;
+}
+
+.presenting .eff tbody th {
+  font-size: 36px;
+  padding: 0 16px 0 4px;
+}
+
+.presenting .eff-bug {
+  width: 130px;
+}
+
+.presenting .eff td {
+  height: 62px;
+  font-size: 32px;
+}
+
+.presenting .fig3 .legend {
+  font-size: 30px;
+  gap: 10px 46px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.presenting .fig3 .legend i {
+  width: 40px;
+  height: 30px;
+}
+
+.presenting .note-long {
+  display: none;
+}
+
+.presenting .fig3 .legend .note-short {
+  display: inline;
+  font-family: var(--body);
+  font-size: 24px;
+  color: var(--muted);
+}
+
+.presenting .fig4 {
+  --bw: 150px;
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.presenting .f4-heads {
+  gap: 10px;
+}
+
+.presenting .f4-h {
+  font-size: 28px;
+  gap: 14px;
+  padding: 12px 14px 14px;
+}
+
+.presenting .f4-h b {
+  font-size: 32px;
+}
+
+.presenting .f4-h small {
+  font-size: 24px;
+}
+
+.presenting .f4-lane {
+  height: 300px;
+  margin-top: 12px;
+}
+
+.presenting .f4-bladder {
+  left: 18px;
+}
+
+.presenting .f4-trump em {
+  font-size: 26px;
+  padding: 0 14px 2px;
+}
+
+.presenting .f4-tag {
+  font-size: 32px;
+  padding: 5px 16px 7px;
+}
+
+/* 動画では1回だけ動かして、最後で止める */
+.presenting .f4-mover,
+.presenting .f4-look.bare,
+.presenting .f4-look.full,
+.presenting .f4-tag {
+  animation-duration: 6s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+.presenting .f4-days {
+  font-size: 34px;
+  gap: 16px;
+  padding: 12px 22px;
+  margin-top: 16px;
+}
+
+.sieve-slot.present {
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.present .sv-board {
+  padding: 14px 34px;
+  gap: 30px;
+}
+
+.present .sv-field {
+  height: 280px;
+}
+
+.present .sv-shield {
+  right: -18px;
+  top: -20px;
+}
+
+.present .sv-shield img {
+  width: 42px;
+  height: 42px;
+}
+
+.present .sv-tally {
+  justify-content: center;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.present .sv-count {
+  font-size: 30px;
+  padding: 8px 22px 10px;
+  gap: 16px;
+}
+
+.present .sv-count b {
+  font-size: 46px;
+}
+
+.present .sv-count img {
+  width: 42px;
+  height: 42px;
+}
+
+.present .sv-caption {
+  font-size: 46px;
+  text-align: center;
+  margin-top: 14px;
+}
+
+.present .sv-change {
+  max-width: 1500px;
+  margin: 14px auto 0;
+  gap: 20px;
+}
+
+.present .sv-change > div {
+  font-size: 32px;
+  padding: 8px 22px;
+  gap: 22px;
+}
+
+.present .sv-mark {
+  display: none;
+}
+
+/* 図が下の 170px に入らないよう、3. と 5. は見出しを少し小さく */
+.p-scene.s3 .p-big,
+.p-scene.s5 .p-big {
+  font-size: 60px;
+  margin-top: 16px;
+}
+
+.p-scene.s5 .p-fig {
+  align-items: flex-start;
+  padding-top: 18px;
+}

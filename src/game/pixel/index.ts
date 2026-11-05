@@ -5,7 +5,7 @@ import type { BacteriumDef, DrugDef, GameData } from "../../engine/index.ts";
 import { lookOf } from "../soldiers.ts";
 import { bugSprite, cardSprite, ditherKeep, soldierSprite, type PixelDrug, type PixelStyle, type Sprite } from "./engine.js";
 import c32 from "./styles/c32.js";
-import { icon, type IconName } from "./icons.ts";
+import { bladderSprite, icon, type IconName } from "./icons.ts";
 
 export type { PixelStyle, Sprite } from "./engine.js";
 
@@ -102,13 +102,18 @@ export function iconImg(name: IconName, z = 2, cls = "ico"): string {
  * DOM に出す兵士の絵（img 要素の HTML）。kind：card＝手札のカード（上半身）、chip＝ブリーフィングの札、lane＝遊び方の見本（盤面と同じ大きさ）。
  * level を渡すと、その濃さ（点描）で描く（遊び方の濃さの見本）。絵は前もって整数倍に拡大した PNG にする（ブラウザの拡大でぼけないように）
  */
-export function soldierImg(data: GameData, d: DrugDef, kind: "card" | "chip" | "lane", level = LEVELS): string {
-  const z = kind === "lane" ? STYLE.laneScale : kind === "card" ? STYLE.cardScale : 1;
+export function soldierImg(data: GameData, d: DrugDef, kind: "card" | "chip" | "lane", level = LEVELS, zoom?: number): string {
+  const z = zoom ?? (kind === "lane" ? STYLE.laneScale : kind === "card" ? STYLE.cardScale : 1);
   const make = () => (kind === "lane" ? soldierFrame(data, d, "idle0", level) : cardSprite(STYLE, pixelDrug(data, d), "idle0"));
-  return img(`${STYLE.id}|${d.id}|${kind}|${level}`, make, z);
+  return img(`${STYLE.id}|${d.id}|${kind}|${level}|${z}`, make, z);
 }
 
-/** DOM に出す細菌の絵（タイトル画面など）。盤面と同じ大きさ */
-export function bugImg(def: BacteriumDef, frame = 0, bare = false): string {
-  return img(`${STYLE.id}|bug|${def.id}|${frame}|${bare}`, () => bugFrame(def, frame, bare), bugScale());
+/** DOM に出す細菌の絵（タイトル画面・遊び方の絵）。z を省くと盤面と同じ大きさ */
+export function bugImg(def: BacteriumDef, frame = 0, bare = false, z = bugScale()): string {
+  return img(`${STYLE.id}|bug|${def.id}|${frame}|${bare}|${z}`, () => bugFrame(def, frame, bare), z);
+}
+
+/** DOM に出す膀胱の絵（遊び方の絵）。w×h ドット、右の壁にレーンの入口を1つ（真ん中） */
+export function bladderImg(w: number, h: number, z: number): string {
+  return img(`bladder|${w}|${h}|${z}`, () => bladderSprite(w, h, 1, [0.5]), z);
 }

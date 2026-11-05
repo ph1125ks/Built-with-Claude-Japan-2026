@@ -1,7 +1,7 @@
 // デモ動画のプレイ画面を録画する（docs/DEMO.md のシーン0〜5）。画面なしの Chrome を DevTools Protocol で動かし、
 // 画面の流れを ffmpeg で MP4（1920×1080、30fps）にする。画面が切り替わった時刻は、同じ名前の .json に残す（編集の目印）。
 //   開発サーバーを動かしてから：npx tsx scripts/record-demo.ts --take abuse --base http://localhost:5173
-//   --take：title（タイトルと遊び方）／abuse（乱用：ステージ1で楽勝 → 2050年で負ける）／proper（適正：両方守り切る）／all
+//   --take：title（タイトルと遊び方）／intro（はじめての人への見せ方）／abuse（乱用：ステージ1で楽勝 → 2050年で負ける）／proper（適正：両方守り切る）／all
 //           teacher（シーン6：教員モードで本物の Claude がステージを作る。npm run teacher と .env の API キーが要り、費用がかかるので all には入れない）
 //   --seed：乱数の種（既定 570。scripts/demo-seeds.ts で選んだ。データを変えたら探し直す）
 // 必要なもの：Google Chrome と ffmpeg（どちらも手元に入っているもの）。録画は Git に入れない（recordings/ は .gitignore）
@@ -72,13 +72,13 @@ interface Marker {
 }
 
 /** 1本の録画（take）。手順の中で「いつ何をしたか」を記録する */
-async function record(name: string, url: string, script: (s: Step) => Promise<void>): Promise<void> {
+async function record(name: string, url: string, script: (s: Step) => Promise<void>, ready = "typeof window.sentakuatsu === 'object'"): Promise<void> {
   mkdirSync(values.out!, { recursive: true });
   const file = join(values.out!, `${name}.mp4`);
   const { page, close } = await openChrome();
   await page.send("Page.navigate", { url });
   for (let i = 0; i < 100; i++) {
-    if (await page.eval<boolean>("typeof window.sentakuatsu === 'object'")) break;
+    if (await page.eval<boolean>(ready)) break;
     await sleep(200);
   }
   await sleep(800);
@@ -92,6 +92,10 @@ async function record(name: string, url: string, script: (s: Step) => Promise<vo
   const step: Step = {
     page,
     mark,
+    markAt: (label, epochMs) => {
+      markers.push({ t: Math.round((epochMs - t0) / 100) / 10, label });
+      console.log(`  ${((epochMs - t0) / 1000).toFixed(1)}秒 ${label}`);
+    },
     press: async (action, label) => {
       await page.eval(`window.sentakuatsu.press(${JSON.stringify(action)})`);
       mark(label ?? action);
@@ -128,6 +132,8 @@ async function record(name: string, url: string, script: (s: Step) => Promise<vo
 interface Step {
   page: Page;
   mark: (label: string) => void;
+  /** ページの中の時刻（Date.now の値）で目印を付ける */
+  markAt: (label: string, epochMs: number) => void;
   press: (action: string, label?: string) => Promise<void>;
   hold: (ms: number) => Promise<void>;
   until: (phase: string, timeoutMs?: number) => Promise<void>;
@@ -170,7 +176,14 @@ const takes: Record<string, () => Promise<void>> = {
       // タイトルの後ろで適正ボットが遊ぶデモを、シーン1（20秒）とシーン8（11秒）で別の場面から使えるよう長めに映す
       await s.hold(40000);
       await s.press("howto", "タイトル → 遊び方");
-      await s.hold(4000);
+      // 遊び方は絵の3枚（1画面に1つ）。「次へ」でめくり、最後に「くわしく」を開いて兵士の姿の見本を映す（2026-11-05）
+      await s.hold(6000);
+      await s.press("howto-next", "遊び方 2枚目");
+      await s.hold(7000);
+      await s.press("howto-next", "遊び方 3枚目");
+      await s.hold(7000);
+      await s.press("howto-more", "遊び方：くわしくを開く");
+      await s.hold(1500);
       await s.scrollTo(".soldier-legend");
       await s.hold(8000);
     }),
@@ -222,6 +235,23 @@ const takes: Record<string, () => Promise<void>> = {
       await s.press("play", "できたステージを遊ぶ");
       await s.hold(25000);
     }),
+  // シーン2（しくみ）：「はじめての人へ」の動画用の見せ方（intro.html?present=1。src/intro/present-plan.ts の時刻表で自動で進む）
+  intro: () =>
+    record(
+      "intro",
+      `${base}/intro.html?present=1`,
+      async (s) => {
+        for (let i = 0; i < 100 && !(await s.page.eval<boolean>("typeof window.__presentT0 === 'number'")); i++) await s.hold(100);
+        s.markAt("見せ方の始まり", await s.page.eval<number>("window.__presentT0"));
+        const steps = await s.page.eval<{ step: number; label: string; at: number }[]>("window.__presentTimeline ?? []");
+        const p0 = await s.page.eval<number>("window.__presentT0");
+        for (const st of steps) s.markAt(`段${st.step}：${st.label}`, p0 + st.at * 1000);
+        for (let i = 0; i < 600 && !(await s.page.eval<boolean>("window.__presentDone === true")); i++) await s.hold(100);
+        s.mark("見せ方の終わり");
+        await s.hold(1500);
+      },
+      "document.readyState === 'complete'",
+    ),
   abuse: () => record(`abuse-seed${values.seed}`, url("demo-abuse"), (s) => playthrough(s, false)),
   proper: () => record(`proper-seed${values.seed}`, url("demo-proper"), (s) => playthrough(s, true)),
 };

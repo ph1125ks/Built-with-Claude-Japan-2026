@@ -55,7 +55,7 @@ td:first-child{color:#fff;font-weight:700;white-space:nowrap}
 td:last-child{font-weight:700;color:#5ef0a0}
 code{font-size:.85em;color:#b8fff3}
 </style>
-<p class="kicker">開発の中心は Claude Code ③ データの照合</p>
+<p class="kicker">開発の中心は Claude Code ③ サブエージェント（確認係の AI）のデータ照合</p>
 <h1>サブエージェント <code style="font-size:42px;color:#b8fff3">data-auditor</code> が、公開データの元の表と照合<small>読み取り専用。データや文章を変えたら、そのたびに点検させた</small></h1>
 <div class="panel"><div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i>　Claude Code ／ サブエージェントの報告（2026-11-05）</div>
 <table><thead><tr>${(head ?? []).map((c) => `<th>${cell(c)}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${cell(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
@@ -155,7 +155,7 @@ td{padding:12px 18px;border-top:1px solid #2a2040;font-size:24px}
 .hb b{font-size:26px}
 .note{font-size:20px;color:#a493b6;margin-top:14px}
 </style>
-<p class="kicker">開発の中心は Claude Code ② スキルの評価</p>
+<p class="kicker">開発の中心は Claude Code ② スキル（知識のメモ）の評価</p>
 <h1>設計の知識をスキルで渡すと、Claude の試行錯誤が減った<small>本番と同じ入力で、教員モードをスキルあり・なしで各${runs("skill").length}回。変えたのはスキルの有無だけ</small></h1>
 <div class="panel"><table>
 <thead><tr><th></th>${conds.map((c) => `<th><span style="background:${C[c]}"></span>${name[c]}</th>`).join("")}</tr></thead>
@@ -247,7 +247,7 @@ function hookHtml(text: string): string {
 .out{color:#ffd6c8}
 .note{font-size:22px;color:#a493b6;margin-top:22px;font-family:"Hiragino Sans",sans-serif;line-height:1.6}
 </style>
-<p class="kicker">開発の中心は Claude Code ④ 鍵や個人情報の流出防止</p>
+<p class="kicker">開発の中心は Claude Code ④ フック（見張り）が秘密の流出を止める</p>
 <h1>コミット前のフックが、API キーらしき文字列を見つけて止める<small>公開リポジトリなので、Claude のコマンドの前に必ず点検する（.claude/hooks/check-secrets.sh）</small></h1>
 <div class="panel"><div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i>　Claude Code のコマンド（実演用の見本のキー。本物ではない）</div>
 <div class="term">${body}</div>

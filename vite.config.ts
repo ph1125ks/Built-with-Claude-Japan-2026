@@ -7,11 +7,13 @@ export default defineConfig({
   build: {
     // Phaser 本体だけで約 1.2MB あるので、警告の目安を上げる
     chunkSizeWarningLimit: 1600,
-    // 公開するのは、ゲーム（index.html）と、教員モードの作業の記録の再生（replay.html）だけ。教員モードの画面（teacher.html）は入れない
+    // 公開するのは、ゲーム（index.html）と、教員モードの作業の記録の再生（replay.html）と、はじめての人へのページ（intro.html）だけ。
+    // 教員モードの画面（teacher.html）は入れない
     rolldownOptions: {
       input: {
         main: fileURLToPath(new URL("index.html", import.meta.url)),
         replay: fileURLToPath(new URL("replay.html", import.meta.url)),
+        intro: fileURLToPath(new URL("intro.html", import.meta.url)),
       },
     },
   },

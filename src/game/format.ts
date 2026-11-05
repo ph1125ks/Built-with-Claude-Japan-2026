@@ -66,6 +66,19 @@ export function cardKeys(hand: string[], allDrugs: string[]): Map<string, number
   return new Map(hand.map((d, i) => [d, useAll ? order.indexOf(d) + 1 : i + 1]));
 }
 
+/** 切り札の系統（カードの「切り札」の札と、結果画面の原因の一文。2026-11-05 作者の判断：MEPM・IPM/CS） */
+export const TRUMP_CLASS = "carbapenem";
+
+/**
+ * WHO の AWaRe 分類の、カードに添える一言（2026-11-05 作者の判断。docs/PLAIN-LANGUAGE.md 2章：Access＝まず使う薬、Watch＝使いすぎ注意）。
+ * Reserve はいまのカードにないが、用語の説明（ほかの薬が効かないときのために取っておく薬）に合わせる
+ */
+export const AWARE_WORDS: Record<string, string> = {
+  Access: "まず使う薬",
+  Watch: "使いすぎ注意",
+  Reserve: "取っておく薬",
+};
+
 export const SPECTRUM_LABELS: { key: keyof Spectrum; label: string }[] = [
   { key: "entero", label: "大腸菌など" },
   { key: "pseudomonas", label: "緑膿菌" },

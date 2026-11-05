@@ -7,7 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 
-const PACE = 5; // 読む速さの目安（1秒あたりの字数。DEMO.md の「語り手」）
+const PACE = 5.3; // 読む速さの目安（1秒あたりの字数。2026-11-05 に作者の録音9本で測った値。DEMO.md の「語り手」）
 const OUT = join("recordings", "recording-sheet");
 mkdirSync(OUT, { recursive: true });
 
@@ -150,6 +150,7 @@ input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   <section class="how">
     <h2>録り方</h2>
     <ol>
+      <li><b>台本 第3.1版</b>（2026-11-05）。シーンの番号と文が第2版から変わったので、前に録った第2版の録音（<code>recordings/voice/_v2/</code> に移した）は使えない。読む速さは、その録音で測った1秒に約${PACE}字で計算している</li>
       <li>シーンごとに1つのファイルに録る。ファイル名は <code>scene1.m4a</code> のようにシーンの番号で（wav・m4a・aiff・mp3 のどれでもよい）</li>
       <li>録ったファイルは、リポジトリの <code>recordings/voice/</code> に置く</li>
       <li>読む速さの目安は1秒に${PACE}字。「読み終える上限」より前に読み終える。録り始めと終わりの無音は自動で切るので、気にしなくてよい</li>

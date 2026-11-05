@@ -27,7 +27,7 @@ import {
 } from "../engine/index.ts";
 import type { BoardScene } from "./board.ts";
 import { Hud } from "./hud.ts";
-import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, dropsNote, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
+import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, dropsNote, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, showHowtoSlide, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
@@ -124,6 +124,8 @@ export class App {
   private attempt = 0;
   /** 遊び方を一度見たか（初めての人は「はじめる」のあとに必ず一度出す） */
   private sawHowto = false;
+  /** 遊び方の絵の何枚目か（0 から。「次へ」「前へ」で切り替える） */
+  private howtoSlide = 0;
   /** 速さ（×1・×2・×4）はステージをまたいで引き継ぐ */
   private speed = 1;
   /** タイトル画面の後ろで、ボットが遊んでいる盤面（見せるだけ。結果はどこにも残さない） */
@@ -154,6 +156,12 @@ export class App {
     ui.screen.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
       if (btn) this.act(btn.dataset.action!);
+    });
+    // 遊び方の絵は、左右の矢印キーでもめくれる
+    window.addEventListener("keydown", (e) => {
+      if (this.phase !== "howto" || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === "ArrowRight") this.act("howto-next");
+      else if (e.key === "ArrowLeft") this.act("howto-prev");
     });
     board.events.on("update", () => this.hud?.frame());
     board.events.on("wave", () => this.hud?.waveFlash());
@@ -230,6 +238,19 @@ export class App {
       case "howto":
         this.go("howto");
         break;
+      case "howto-next":
+      case "howto-prev":
+        if (this.phase === "howto") this.howtoSlide = showHowtoSlide(this.ui.screen, this.howtoSlide + (action === "howto-next" ? 1 : -1));
+        break;
+      case "howto-more": {
+        // 「くわしく」を開いて、そこまで送る（録画の操作用。画面では summary を押す）
+        const more = this.ui.screen.querySelector<HTMLDetailsElement>(".howto-more");
+        if (more) {
+          more.open = true;
+          more.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        break;
+      }
       case "title":
         this.go("title");
         break;
@@ -321,7 +342,8 @@ export class App {
         break;
       case "howto":
         this.sawHowto = true;
-        this.showScreen(howtoScreen(data));
+        this.howtoSlide = 0;
+        this.showScreen(howtoScreen(data, scenario));
         this.startAttract();
         break;
       case "sources":
@@ -359,7 +381,7 @@ export class App {
         this.startStage("future");
         break;
       case "result2":
-        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart, this.short.future));
+        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart, this.short.future, this.present ?? undefined));
         break;
       case "final":
         this.stopPlay();

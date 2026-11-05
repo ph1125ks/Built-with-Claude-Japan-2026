@@ -57,6 +57,10 @@ const GRAM_GLOW = { negative: 0xff6fa5, positive: 0xc4a3ff } as const;
 const BUG_Z = 3;
 /** 札の文字（小さい字はドット絵のフォントだとにじむので、読みやすいゴシックの太字に。試遊の指摘） */
 const TAG_FONT = { fontFamily: BODY_FONT, fontStyle: "bold" } as const;
+/** 菌の名前と「効かない」の札の字の大きさ（2026-11-05 試遊の指摘：72歳の目では 12〜13px が読めない） */
+const TAG_SIZE = 15;
+/** 札をレーンの縁（粘膜の線）から離す余白 */
+const TAG_MARGIN = 11;
 
 interface BugView {
   uid: number;
@@ -67,9 +71,14 @@ interface BugView {
   glow: Phaser.GameObjects.Image;
   hp: Phaser.GameObjects.Graphics;
   name: Phaser.GameObjects.Text;
-  /** 近い位置での札：獲得耐性（赤）と、自然耐性・効かない扱い（紫）。菌の右に出す */
+  /** 近い位置での札：効かない（獲得耐性。赤）と、もともと効かない（自然耐性）・効かない扱い（紫）。菌の右に出す */
   tagA: Phaser.GameObjects.Text;
   tagB: Phaser.GameObjects.Text;
+  /** 札のまとまりの上端（菌の中心から）と高さ。レーンの縁に重ならないよう、毎フレームずらす */
+  tagTop: number;
+  tagH: number;
+  /** 札を菌の左に出しているか（右に出すと盤面の右端で切れるとき） */
+  tagLeft: boolean;
   /** 札を出したいか（重なるときは declutter が隠す） */
   want: { name: boolean; a: boolean; b: boolean };
   /** 菌の絵の幅と高さ */
@@ -486,6 +495,7 @@ export class BoardScene extends Phaser.Scene {
       const x = this.px(prev + (b.x - prev) * (s.paused ? 1 : s.alpha)) + v.knock;
       const y = bugY(b.lane) + v.jitter + Math.sin(t / 260 + v.phase) * 2.5;
       v.c.setPosition(x, y);
+      this.placeTags(v, b.lane, x, y);
       // 膀胱に近い菌の札を上に重ねる
       v.c.setDepth(10 + (1 - b.x / s.state.data.rules.board.laneLength));
       v.last = { x, y };
@@ -502,6 +512,32 @@ export class BoardScene extends Phaser.Scene {
         this.bugs.delete(uid);
       }
     }
+  }
+
+  /**
+   * 札をレーンの中に収める（粘膜の線に重ならないように上下にずらす）。菌の名前は、膀胱の壁より右に出す
+   * （試遊の指摘：膀胱やレーンの線と重なって読めない）
+   */
+  private placeTags(v: BugView, lane: number, x: number, y: number): void {
+    if (v.want.name) {
+      const left = LAYOUT.x0 + 6 + v.name.width / 2;
+      v.name.setX(Math.max(0, left - x));
+    }
+    if (!v.want.a && !v.want.b) return;
+    // 右に出すと盤面の右端（レーンの番号）で切れるときは、菌の左に出す
+    const tagW = Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
+    const left = x + v.w / 2 + 8 + tagW > W - 28;
+    if (left !== v.tagLeft) {
+      v.tagLeft = left;
+      for (const t of [v.tagA, v.tagB]) t.setOrigin(left ? 1 : 0, 0.5).setX(left ? -v.w / 2 - 8 : v.w / 2 + 8);
+    }
+    const top = y + v.tagTop;
+    const minTop = laneTopY(lane) + TAG_MARGIN;
+    const maxBottom = laneTopY(lane) + LAYOUT.laneH - TAG_MARGIN;
+    const dy = top < minTop ? minTop - top : top + v.tagH > maxBottom ? maxBottom - top - v.tagH : 0;
+    const hA = v.want.a ? v.tagA.height : 0;
+    v.tagA.setY(v.tagTop + dy + hA / 2);
+    v.tagB.setY(v.tagTop + dy + (v.want.a ? hA + 3 : 0) + v.tagB.height / 2);
   }
 
   /**
@@ -523,12 +559,13 @@ export class BoardScene extends Phaser.Scene {
       for (const v of list) {
         const half = v.w / 2;
         const nameHalf = v.want.name ? v.name.width / 2 : 0;
-        const show = v.last.x - Math.max(half, nameHalf) > right + 4;
+        const leftTagW = v.tagLeft ? Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0) : 0;
+        const show = v.last.x - Math.max(half, nameHalf, leftTagW > 0 ? half + 8 + leftTagW : 0) > right + 4;
         v.name.setVisible(show && v.want.name);
         v.tagA.setVisible(show && v.want.a);
         v.tagB.setVisible(show && v.want.b);
         if (!show) continue;
-        const tagW = Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
+        const tagW = v.tagLeft ? 0 : Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
         right = v.last.x + Math.max(half, nameHalf, tagW > 0 ? half + 8 + tagW : 0);
       }
     }
@@ -546,10 +583,10 @@ export class BoardScene extends Phaser.Scene {
     const glow = this.add.image(0, 0, "glow").setDisplaySize(w * 2, h * 3.2).setTint(GRAM_GLOW[def.gram]).setAlpha(0.4);
     if (this.webgl) glow.setBlendMode(Phaser.BlendModes.ADD);
     const hp = this.add.graphics();
-    const name = this.text(0, -h / 2 - 8, "", 13, "#ffffff", { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.9)", padding: { x: 5, y: 2 } }).setOrigin(0.5, 1);
-    const tagStyle = { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.92)", padding: { x: 5, y: 2 } };
-    const tagA = this.text(w / 2 + 8, 0, "", 12, COLORS.bad, tagStyle).setOrigin(0, 0.5);
-    const tagB = this.text(w / 2 + 8, 0, "", 12, COLORS.intrinsic, tagStyle).setOrigin(0, 0.5);
+    const name = this.text(0, -h / 2 - 8, "", TAG_SIZE, "#ffffff", { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.9)", padding: { x: 6, y: 2 } }).setOrigin(0.5, 1);
+    const tagStyle = { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.92)", padding: { x: 6, y: 2 }, lineSpacing: 2 };
+    const tagA = this.text(w / 2 + 8, 0, "", TAG_SIZE, COLORS.bad, tagStyle).setOrigin(0, 0.5);
+    const tagB = this.text(w / 2 + 8, 0, "", TAG_SIZE, COLORS.intrinsic, tagStyle).setOrigin(0, 0.5);
     name.setVisible(false);
     tagA.setVisible(false);
     tagB.setVisible(false);
@@ -569,6 +606,9 @@ export class BoardScene extends Phaser.Scene {
       tagA,
       tagB,
       want: { name: false, a: false, b: false },
+      tagTop: 0,
+      tagH: 0,
+      tagLeft: false,
       w,
       h,
       species: def.id,
@@ -619,21 +659,22 @@ export class BoardScene extends Phaser.Scene {
         a = "手札すべて効く";
       } else {
         v.tagA.setColor(COLORS.bad).setBackgroundColor("rgba(16,10,26,0.9)");
-        if (acquired.length) a = `耐性：${list(acquired)}`;
-        // 自然耐性と「効かない扱い」は紫の行にまとめる（「効かない扱い」は遊び方と結果の表で説明する）
+        // 2026-11-05 作者の判断（docs/PLAIN-LANGUAGE.md）：「耐性：」→「効かない：」、「自然耐性：」→「もともと効かない：」
+        if (acquired.length) a = `効かない：${list(acquired)}`;
+        // もともと効かない（自然耐性）と「効かない扱い」は紫の札に1行ずつ（「効かない扱い」は遊び方と結果の表で説明する）
         const parts: string[] = [];
-        if (intrinsic.length) parts.push(`自然耐性：${list(intrinsic)}`);
+        if (intrinsic.length) parts.push(`もともと効かない：${list(intrinsic)}`);
         if (fixed.length) parts.push(`効かない扱い：${list(fixed)}`);
-        bText = parts.join("／");
+        bText = parts.join("\n");
       }
       v.tagA.setText(a).setVisible(a !== "");
       v.tagB.setText(bText).setVisible(bText !== "");
       v.want.a = a !== "";
       v.want.b = bText !== "";
-      // 2行のときは上下に並べる
-      const two = a !== "" && bText !== "";
-      v.tagA.setY(two ? -11 : 0);
-      v.tagB.setY(two ? 11 : 0);
+      // 上下に並べる（菌の中心にそろえ、レーンの縁に重なるときは placeTags がずらす）
+      v.tagH = (v.want.a ? v.tagA.height : 0) + (v.want.a && v.want.b ? 3 : 0) + (v.want.b ? v.tagB.height : 0);
+      v.tagTop = -v.tagH / 2;
+      this.placeTags(v, b.lane, v.last.x, v.last.y);
     }
     // 分かったときの合図：輪が広がる
     const ring = this.add.circle(v.last.x, v.last.y, 10).setStrokeStyle(2, b.level === "susceptibility" ? hexNum(COLORS.gold) : COLORS.zoneMid, 0.9);
@@ -1032,7 +1073,7 @@ export class BoardScene extends Phaser.Scene {
           const abbr = data.drugById.get(e.drug)?.abbr ?? e.drug;
           const sp = s.state.bacteria.find((b) => b.uid === e.uid)?.species;
           const fixed = sp !== undefined && susceptibility(data, s.state.region, sp, e.drug).basis === "fixed";
-          const label = e.intrinsic ? `自然耐性（${abbr}）` : fixed ? `効かない扱い（${abbr}）` : `耐性（${abbr}）`;
+          const label = e.intrinsic ? `もともと効かない（${abbr}）` : fixed ? `効かない扱い（${abbr}）` : `効かない（${abbr}）`;
           // 菌名の札より上に出す（試遊の指摘：札と重なって両方読めない）
           this.float(v.last.x, v.last.y - v.h / 2 - 42, label, e.intrinsic || fixed ? COLORS.intrinsic : COLORS.bad);
           break;
@@ -1069,7 +1110,7 @@ export class BoardScene extends Phaser.Scene {
           this.tweens.add({ targets: this.bladderFlash, alpha: 0, duration: 480, ease: "Quad.Out" });
           this.bladder.setTintFill(0xffffff);
           this.time.delayedCall(70, () => this.bladder.clearTint());
-          this.float(LAYOUT.x0 / 2, LAYOUT.laneTop + 28, `−${e.damage}`, "#ffffff", 32, "#9a0f24");
+          this.float(LAYOUT.x0 / 2, LAYOUT.laneTop + 28, `−${e.damage}`, "#ffffff", 32, "#9a0f24", 10);
           break;
         }
         case "summon": {
@@ -1125,12 +1166,12 @@ export class BoardScene extends Phaser.Scene {
     this.bugs.delete(uid);
   }
 
-  float(x: number, y: number, s: string, color: string, size = 15, stroke: string = COLORS.outline): void {
-    // 盤面の端で切れないように、内側に寄せる
+  float(x: number, y: number, s: string, color: string, size = 15, stroke: string = COLORS.outline, minLeft: number = LAYOUT.x0 + 6): void {
+    // 盤面の端で切れないように、内側に寄せる。膀胱の絵にも重ねない（膀胱の耐久が減ったときの数字だけ、膀胱の上に出す）
     const big = size >= 24;
     const t = this.text(0, y, s, size, color, { ...(big ? {} : TAG_FONT), stroke, strokeThickness: big ? 7 : 5 }).setOrigin(0.5);
     const half = t.width / 2 + 6;
-    t.setX(Math.min(W - 30 - half, Math.max(10 + half, x)));
+    t.setX(Math.min(W - 30 - half, Math.max(minLeft + half, x)));
     t.setDepth(60);
     t.setScale(0.6);
     this.tweens.add({ targets: t, scale: 1, duration: 180, ease: "Back.Out" });
