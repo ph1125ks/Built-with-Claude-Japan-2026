@@ -165,8 +165,9 @@ strong {
   font-family: var(--body);
 }
 
-.hud-stage small {
-  font-size: 11.5px;
+/* 開発用の表示（?debug のときだけ。耐性モデルの名前） */
+.hud-stage small.dev {
+  font-size: 11px;
   color: var(--muted);
   font-family: var(--body);
 }
@@ -237,7 +238,7 @@ strong {
 
 .hud-bladder span,
 .hud-budget span {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-family: var(--body);
   font-weight: 700;
   color: var(--ink-2);
@@ -406,6 +407,17 @@ body.danger #app::after {
   transform: translateY(2px);
 }
 
+/* 「？」：遊び方の要点のパネル（hud.ts の helpPanel） */
+.hud-ctrl .help-open {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+  font-family: var(--pixel);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--teal);
+}
+
 #play.paused .hud-ctrl .pause {
   background: #8a6410;
   animation: pause-glow 1.2s ease-in-out infinite;
@@ -417,14 +429,14 @@ body.danger #app::after {
   }
 }
 
-/* 情報の見え方の帯 */
+/* 情報の見え方の帯：区間ごとに短い語だけ（2026-11-06「文字が多すぎる」。説明は触れたときの吹き出しと「？」へ） */
 .zones {
   position: absolute;
   top: 53px;
   height: 24px;
   display: flex;
-  font-size: 11.5px;
-  line-height: 11.5px;
+  font-size: 12.5px;
+  line-height: 1;
   color: var(--ink-2);
   pointer-events: none;
   font-family: var(--body);
@@ -434,24 +446,12 @@ body.danger #app::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   border-bottom: 2px solid;
   overflow: hidden;
-}
-
-.zones > span > span {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-/* 狭い区間（中ほど・遠い）は2行にする */
-.zones .z-mid > span,
-.zones .z-far > span {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  pointer-events: auto;
+  cursor: help;
 }
 
 .zones b {
@@ -460,31 +460,41 @@ body.danger #app::after {
 
 .zones .z-near {
   border-color: rgba(255, 207, 63, 0.55);
+  color: #ffe9a8;
 }
 
 .zones .z-mid {
   border-color: rgba(59, 224, 198, 0.55);
+  color: #b8fff3;
 }
 
 .zones .z-far {
   border-color: rgba(143, 125, 255, 0.6);
+  color: #d9ccff;
 }
 
-.zones small {
-  color: var(--ink-2);
-  font-size: 11px;
+/* 「？」のパネルの中で使う、区間の色と陰性・陽性の色 */
+.help-panel .hz.near {
+  color: var(--gold);
 }
 
-.zones i {
+.help-panel .hz.mid {
+  color: var(--teal);
+}
+
+.help-panel .hz.far {
+  color: var(--zone-far);
+}
+
+.help-panel i.gn {
   font-style: normal;
   font-weight: 700;
-}
-
-.zones .gn {
   color: #ff8ab8;
 }
 
-.zones .gp {
+.help-panel i.gp {
+  font-style: normal;
+  font-weight: 700;
   color: #c4a3ff;
 }
 
@@ -610,12 +620,66 @@ body.danger #app::after {
     filter 0.12s;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* 系統名と投与間隔の行を外したぶん（2026-11-06）、行間を広げて字を少し大きくした */
+  gap: 6px;
 }
 
 .card > * {
   flex-shrink: 0;
   position: relative;
+}
+
+/* 手札の補助（「？」でオン）：膀胱にいちばん近い、正体の分かった細菌に効くカードを緑の縁で。カードの右上に「効く」の札 */
+.card .fit-tag {
+  display: none;
+  position: absolute;
+  right: 6px;
+  top: -9px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  padding: 0 6px;
+  color: #06231f;
+  background: var(--good);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+
+.card.fits .fit-tag {
+  display: block;
+}
+
+.card.fits {
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--good),
+    0 var(--px) 0 0 var(--good),
+    calc(-1 * var(--px)) 0 0 0 var(--good),
+    var(--px) 0 0 0 var(--good),
+    inset 0 4px 0 0 var(--cls),
+    inset 0 0 0 2px rgba(94, 240, 160, 0.6),
+    0 0 18px rgba(94, 240, 160, 0.35),
+    0 10px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 補助の相手（細菌の名前）を、手札の左上（膀胱の下。知らせの帯の左の 140px）に小さく */
+.hand.assisting::after {
+  content: attr(data-assist);
+  position: absolute;
+  left: 8px;
+  top: -20px;
+  max-width: 136px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 0 8px;
+  color: var(--good);
+  background: rgba(10, 40, 26, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(94, 240, 160, 0.5);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* ステージの始まり：カードを1枚ずつ配る */
@@ -786,7 +850,7 @@ body.danger #app::after {
 
 /* 一般名を大きく（略号だけで判断させない。2026-11-05 作者の判断）。2行まで（「タゾバクタム・ピペラシリン」が切れないように） */
 .card .gname {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.2;
   /* 「タゾバクタム・ピペラシリン」は「・」の後で折り返す（言葉の途中で切らない） */
@@ -800,7 +864,7 @@ body.danger #app::after {
 }
 
 .card .gname.long {
-  font-size: 12.5px;
+  font-size: 13px;
   letter-spacing: -0.02em;
 }
 
@@ -814,17 +878,17 @@ body.danger #app::after {
 }
 
 .card .aware-row .aware {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
-  line-height: 14px;
+  line-height: 15px;
   padding: 0 3px;
   border: 1px solid;
 }
 
 .card .aware-word {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
-  line-height: 14px;
+  line-height: 15px;
 }
 
 .aware-word.access {
@@ -896,42 +960,28 @@ body.danger #app::after {
   background: rgba(59, 224, 198, 0.08);
 }
 
-.card .cls {
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: -2px;
-}
-
+/* 医療費と待ち時間（系統名・投与間隔・吸収率の行は 2026-11-06 に外し、触れたときの吹き出しへ） */
 .card .meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
-  line-height: 16px;
+  line-height: 18px;
   color: var(--muted);
-  margin-top: 1px;
 }
 
 .card .meta span {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   white-space: nowrap;
-}
-
-.card .meta img {
-  margin-right: 1px;
 }
 
 .card .meta b {
   font-family: var(--pixel);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 400;
   color: var(--ink);
-  margin-left: 2px;
 }
 
 .card .meta .cost b {
@@ -944,21 +994,16 @@ body.danger #app::after {
   animation: low-blink 0.8s steps(2) infinite;
 }
 
-.card .interval {
-  font-size: 11px;
-  color: var(--ink-2);
-}
-
 .card .spec {
   display: flex;
   gap: 3px;
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .card .spec span {
   padding: 0 3px;
   white-space: nowrap;
-  line-height: 14px;
+  line-height: 15px;
 }
 
 /* 効く見込みあり：青緑（ピンクは細菌の色に残す） */
@@ -976,11 +1021,11 @@ body.danger #app::after {
 
 /* 耐性の進み方 B：ゲージの行が増えるぶん詰める */
 .card.has-gauge {
-  gap: 1px;
+  gap: 4px;
 }
 
 .card.has-gauge .gname.long {
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .card .gauge {
@@ -1004,6 +1049,7 @@ body.danger #app::after {
   background: var(--accent);
 }
 
+/* レーンごとの待ち時間（「レーン」の文字は外し、1・2・3 の枠だけ） */
 .card .dots {
   margin-top: auto;
   display: flex;
@@ -1011,15 +1057,10 @@ body.danger #app::after {
   gap: 4px;
 }
 
-.card .dots span {
-  font-size: 10px;
-  color: var(--muted);
-}
-
 .card .dots i {
   position: relative;
   flex: 1;
-  height: 11px;
+  height: 12px;
   background: #0a0612;
   box-shadow: 0 0 0 1px var(--edge);
   overflow: hidden;
@@ -1028,8 +1069,8 @@ body.danger #app::after {
 .card .dots em {
   position: absolute;
   inset: 0;
-  font-size: 9px;
-  line-height: 11px;
+  font-size: 10px;
+  line-height: 12px;
   font-style: normal;
   text-align: center;
   color: #fff;
@@ -1094,7 +1135,12 @@ body.danger #app::after {
   height: 40px;
 }
 
-/* 細いカードでも「24時間毎・吸収率 98%」を1行に収める */
+/* 細いカードでも「セフトリアキソン」「レボフロキサシン」（8字）を1行に収める */
+.hand.tight .card .gname {
+  font-size: 15px;
+}
+
+/* 細いカードでも「大腸菌など・緑膿菌・腸球菌」を1行に収める */
 .hand.tight .card .spec {
   gap: 2px;
   letter-spacing: -0.03em;
@@ -1104,15 +1150,9 @@ body.danger #app::after {
   padding: 0 1.5px;
 }
 
-.hand.tight .card .interval {
+.hand.tight .card .meta {
   font-size: 10px;
   letter-spacing: -0.02em;
-  white-space: nowrap;
-}
-
-.hand.tight .card .meta {
-  font-size: 9.5px;
-  letter-spacing: -0.03em;
 }
 
 .hand.tight .card.short-card.compact {
@@ -1514,6 +1554,83 @@ body.danger #app::after {
 
 .notice li {
   color: var(--ink-2);
+}
+
+/* 短い注意書き（タイトル・まとめ。全文は「出典と注意」） */
+p.notice.compact {
+  padding: 8px 14px;
+  list-style: none;
+  font-size: 13px;
+}
+
+/* 畳んだ注（2050年の説明・結果の表の注など）。見出しを押すと開く */
+.more-note {
+  max-width: 860px;
+  margin: 8px auto 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: left;
+  color: var(--ink-2);
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 3px 0 0 var(--rim-hi);
+  padding: 6px 14px;
+}
+
+.more-note > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.more-note > summary:hover {
+  color: #fff;
+}
+
+.more-note[open] > summary {
+  margin-bottom: 4px;
+}
+
+/* 数字の説明がある印（吹き出し＝title で読める） */
+i.q {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 14px;
+  width: 14px;
+  text-align: center;
+  color: var(--teal);
+  box-shadow: inset 0 0 0 1px rgba(59, 224, 198, 0.6);
+  margin-left: 5px;
+  vertical-align: 1px;
+  cursor: help;
+}
+
+/* 結果の表の注の色の凡例 */
+.k-up {
+  color: #ff8a9e;
+  font-weight: 700;
+}
+
+.k-down {
+  color: var(--good);
+  font-weight: 700;
+}
+
+/* 短い箇条書き（遊び方の「くわしく」） */
+ul.tight {
+  padding-left: 18px;
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
+ul.tight li {
+  margin: 3px 0;
+}
+
+ul.tight li.small {
+  font-size: 12.5px;
+  color: var(--muted);
 }
 
 /* タイトル：耐性の進み方（A/B）の選択 */
@@ -2350,12 +2467,14 @@ body.danger #app::after {
   color: var(--faint);
 }
 
-.a-reveal .a-tagng {
+/* 近づくと分かる「効く：」の札（盤面と同じ緑。2026-11-06 に「効かない：」から替えた） */
+.a-reveal .a-tagok {
   grid-column: 2;
   grid-row: 2;
   font-size: 14px;
-  color: var(--bad);
-  background: rgba(16, 10, 26, 0.9);
+  font-weight: 700;
+  color: var(--good);
+  background: rgba(10, 40, 26, 0.92);
   padding: 1px 6px;
   white-space: nowrap;
 }
@@ -3181,12 +3300,18 @@ body.danger #app::after {
 }
 
 /* ---------- 出典 ---------- */
+/* 各節は畳めるので縦に並べる（前は2列。2026-11-06） */
 .src-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: 13px;
   line-height: 1.65;
+}
+
+.src-cols dl,
+.src-cols ul {
+  max-width: 980px;
 }
 
 .src-cols dt {
@@ -3207,6 +3332,42 @@ body.danger #app::after {
 .src-cols a,
 .screen a {
   color: var(--teal);
+}
+
+/* 出典の各節は畳める（見出しを押すと開く。2026-11-06「文字が多すぎる」） */
+.src-sec {
+  min-width: 0;
+}
+
+.src-sec > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.src-sec > summary::-webkit-details-marker {
+  display: none;
+}
+
+.src-sec > summary::before {
+  content: "▶";
+  font-size: 11px;
+  color: var(--teal);
+  transition: transform 0.12s;
+}
+
+.src-sec[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.src-sec > summary h3 {
+  margin: 8px 0;
+}
+
+.src-sec > summary:hover h3 {
+  color: #fff;
 }
 
 .glossary {
@@ -3325,9 +3486,106 @@ body.danger #app::after {
   background: var(--bg4);
 }
 
+/* ---------- 「？」のパネル（遊び方の要点。hud.ts の helpPanel） ---------- */
+.help-panel {
+  width: 980px;
+  top: 64px;
+}
+
+.help-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 26px;
+  margin-top: 6px;
+}
+
+.help-cols section {
+  min-width: 0;
+}
+
+.help-cols h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 4px;
+  font-size: 15px;
+  font-weight: 400;
+  font-family: var(--pixel);
+  color: var(--accent-2);
+}
+
+.help-cols ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.help-cols li {
+  margin: 2px 0;
+}
+
+.help-cols li b {
+  color: var(--ink);
+}
+
+.help-cols b.ok {
+  color: var(--good);
+}
+
+.help-cols b.access {
+  color: var(--access);
+}
+
+.help-cols b.watch {
+  color: var(--watch);
+}
+
+.help-cols b.trump-word {
+  color: var(--bad);
+}
+
+.help-cols img.ico {
+  vertical-align: -2px;
+}
+
+/* 手札の補助のスイッチ */
+.assist-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  background: rgba(94, 240, 160, 0.07);
+  box-shadow: inset 0 0 0 2px rgba(94, 240, 160, 0.4);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.assist-switch input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--good);
+  cursor: pointer;
+}
+
+.assist-switch b {
+  display: block;
+  font-size: 13.5px;
+  color: var(--good);
+}
+
+.assist-switch small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
 /* ---------- 未来ステージまでの年ごとの推移 ---------- */
 .timeline-note {
-  margin-bottom: 6px;
+  margin-top: 6px;
 }
 
 .timeline thead small {
@@ -3426,15 +3684,11 @@ body.danger #app::after {
 }
 
 .note2050 {
-  max-width: 860px;
-  margin: 8px auto 0;
-  font-size: 12.5px;
-  line-height: 1.65;
-  text-align: left;
-  color: var(--ink-2);
-  background: rgba(0, 0, 0, 0.28);
   box-shadow: inset 3px 0 0 var(--bad);
-  padding: 9px 16px;
+}
+
+.note2050 > summary b {
+  color: var(--ink);
 }
 
 .timeline td.stage1 {

@@ -24,14 +24,21 @@ export function notice(data: GameData): string {
   </ul>`;
 }
 
+/** タイトル・まとめに出す短い注意書き（2行）。全文は「出典と注意」（2026-11-06「文字が多すぎる」） */
+function noticeShort(): string {
+  return `<p class="notice compact">教育用のシミュレーションです。実際の診療の判断には使えません。<br>薬が効く割合は国の公開データ（JANIS）をもとにし、効かなくなる速さは大げさにしています。</p>`;
+}
+
 export function titleScreen(data: GameData, scenario: ScenarioDef, model: ResistanceModelId, showDev = false): string {
   // 背景の盤面では、ボットが遊んでいる（app.ts の attract）。左に寄せて、右に盤面が見えるようにする。
-  // 2026-11-05 作者の判断「すべての人に伝わるように」：名前の由来、抗菌薬とは何か、選択圧の一文、「はじめての人へ」のページ（intro.html）を足した（docs/PLAIN-LANGUAGE.md 3章）
+  // 2026-11-05 作者の判断「すべての人に伝わるように」：名前の由来、抗菌薬とは何か、選択圧の一文、「はじめての人へ」のページ（intro.html）を足した（docs/PLAIN-LANGUAGE.md 3章）。
+  // 2026-11-06「文字が多すぎる」：説明は2行に、注意書きは短い2行に（全文は「出典と注意」）
+  void data;
   return `
   <div class="screen title-screen">
     <div class="title-logo"><h1>センタクアツ<small>（仮）</small></h1><p class="title-origin">選択圧（せんたくあつ）から</p></div>
     <p class="tagline">あなたの選択が、未来の敵をつくる</p>
-    <p class="lead">細菌から膀胱を守る、抗菌薬のタワーディフェンス。抗菌薬（いわゆる抗生物質）は細菌を倒す薬。細菌ごとに効く薬が違い、使うほど「薬が効かない細菌」が残って増えます（選択圧）。<br>選んだ抗菌薬しだいで薬が効かない細菌が増え、「${escapeHtml(scenario.future.title)}」で、自分が残した細菌と戦います。</p>
+    <p class="lead">細菌から膀胱を守る、抗菌薬（いわゆる抗生物質）のタワーディフェンス。<br>使うほど「薬が効かない細菌」が残って増え（選択圧）、「${escapeHtml(scenario.future.title)}」で自分が残した細菌と戦います。</p>
     <div class="title-main">
       <div class="buttons">
         <button class="primary" data-action="start">はじめる</button>
@@ -41,21 +48,21 @@ export function titleScreen(data: GameData, scenario: ScenarioDef, model: Resist
       </div>
       <div class="title-side-col">
         ${modelPicker(model)}
-        ${notice(data)}
+        ${noticeShort()}
       </div>
     </div>
     <p class="meta">使うデータ：${escapeHtml(scenario.region)}（JANIS 2025年報）${showDev ? `／ステージ：${escapeHtml(scenario.title)}／${escapeHtml(modelLabel(model))}` : ""}</p>
   </div>`;
 }
 
-/** 耐性の進み方（耐性モデル A/B）を選ぶ。2026-11-03 作者の希望（どちらも捨てがたいので、遊ぶ人が選べるように） */
+/** 耐性の進み方（耐性モデル A/B）を選ぶ。2026-11-03 作者の希望（どちらも捨てがたいので、遊ぶ人が選べるように）。説明は一言にし、詳しくは吹き出し（title） */
 function modelPicker(model: ResistanceModelId): string {
-  const opt = (id: "A" | "B", title: string, text: string) =>
-    `<button class="model-opt${model === id ? " on" : ""}" data-action="model-${id}" aria-pressed="${model === id}"><b>${id}：${title}</b><small>${text}</small></button>`;
+  const opt = (id: "A" | "B", title: string, text: string, tip: string) =>
+    `<button class="model-opt${model === id ? " on" : ""}" data-action="model-${id}" aria-pressed="${model === id}" title="${tip}"><b>${id}：${title}</b><small>${text}</small></button>`;
   return `<div class="model-pick" role="group" aria-label="耐性の進み方">
-    <span class="model-pick-label">耐性の進み方<small>迷ったら A のままで大丈夫です</small></span>
-    ${opt("A", "薬ごと", "使った薬ごとに、その薬が効かない細菌が残って増える")}
-    ${opt("B", "系統ごと", "同じ系統の薬を使うほど、その系統の薬がまとめて効かなくなる")}
+    <span class="model-pick-label">耐性の進み方<small>迷ったら A のまま</small></span>
+    ${opt("A", "薬ごと", "使った薬が効かなくなる", "使った薬ごとに、その薬が効かない細菌が残って増える（選択圧の再現）")}
+    ${opt("B", "系統ごと", "同じ系統がまとめて効かなくなる", "同じ系統の薬を使うほど系統のゲージがたまり、その系統の薬がまとめて効かなくなる")}
   </div>`;
 }
 
@@ -79,19 +86,20 @@ function soldierLegend(data: GameData): string {
       return `<figure><div class="px-stage">${soldierImg(data, d, "lane")}</div><figcaption><b>${escapeHtml(d.abbr)}</b><span>${escapeHtml(cls)}</span><small>${escapeHtml(look)}</small></figcaption></figure>`;
     })
     .join("");
+  // 2026-11-06「文字が多すぎる」：見本の絵を主役にし、文は短い箇条書きに（事実は前のまま。細かい補足は「出典と注意」の用語の説明「兵士の姿」）
   return `
       <section class="soldier-legend">
         <h3>4. 兵士の姿は、抗菌薬の系統</h3>
         <div class="legend-row">${figs}</div>
         ${densityLegend(data)}
-        <ul>
-          <li>剣を持つのは β-ラクタム系です（機械兵のカルバペネム系も剣を持っています）。盾は、菌が作る「β-ラクタム系の薬を壊す酵素（β-ラクタマーゼ）」の多くを抑える薬を配合した印です。</li>
-          <li>セフェム系は、世代が上がるほど鎧が豪華になります（おおまかに、効くグラム陰性菌の種類が増えます）。ただし得意・不得意があります。第3世代はグラム陽性菌への効き目が第1世代より弱く、セファマイシン系の CMZ（第2世代の段）は ESBL に分解されないので、第3・第4世代が効かない菌に効くことがあります。</li>
-          <li>胸や盾の紋章は、緑膿菌にも効く見込みがある薬（カードの「緑膿菌」と同じ、ゲーム内の目安）。足元のカプセルは内服薬です。</li>
-          <li>兵士の濃さは、いま体内にある薬の量です（薬の良し悪しや、菌に効くかどうかとは別です）。量が6割を切ると点が抜けて薄くなり、0 になると消えます。内服薬は吸収率の割合の量で出ます。減る速さは吸収率で変わらないので、吸収率の低い薬ほど、はじめの量が少ないぶん攻撃が弱く、早く尽きます（呼び出したとき、体に届かなかった薬の粒が灰色になって落ちます）。吸収率が6割以上の内服薬は、注射と同じ濃さで出ます。</li>
-          <li>同じ系統・同じ世代の薬は同じ姿です（見分けは名札の略号で）。絵に使っている系統の色（服・鉢巻き・マントなど）は、菌の色（ピンク＝陰性、紫＝陽性）とは関係ありません。</li>
+        <ul class="tight">
+          <li><b>剣</b>＝β-ラクタム系（機械兵のカルバペネム系も剣）。<b>盾</b>＝β-ラクタマーゼ阻害薬を配合した薬（菌が作る、薬を壊す酵素の多くを抑える）。</li>
+          <li><b>鎧</b>＝セフェム系の世代。世代が上がるほど豪華で、おおまかに効くグラム陰性菌の種類が増えます（得意・不得意あり：第3世代はグラム陽性菌に第1世代より弱い。CMZ は ESBL に分解されず、第3・第4世代が効かない菌に効くことがある）。</li>
+          <li><b>紋章</b>＝緑膿菌にも効く見込み（カードの「緑膿菌」と同じ目安）。<b>足元のカプセル</b>＝内服薬。</li>
+          <li><b>濃さ</b>＝いま体内にある薬の量（薬の良し悪しではない）。6割を切ると点が抜けて薄くなり、0 で消えます。内服薬は吸収率のぶんの量で出るので、吸収率の低い薬は薄く、早く尽きます（届かなかった粒は灰色になって落ちる）。</li>
+          <li>同じ系統・同じ世代は同じ姿（見分けは名札の略号）。服や鉢巻きの系統の色は、菌の色（ピンク＝陰性、紫＝陽性）とは関係ありません。</li>
         </ul>
-        <p class="caution"><b>姿が立派でも、強い薬・良い薬という意味ではありません。</b>鎧はセフェム系の世代の印で、ほかの系統の広さは表していません（鎧のない弓の LVFX や、機械兵のカルバペネム系は、効く範囲がとても広い薬です）。どの薬も使えば耐性菌が選ばれて残りますが、効く範囲の広い薬は、ねらった菌だけでなくほかの多くの菌にも選択圧をかけるので、使いすぎると耐性菌が増えやすくなります。</p>
+        <p class="caution"><b>姿が立派でも、強い薬・良い薬という意味ではありません。</b>鎧はセフェム系の世代の印で、ほかの系統の広さは表していません（鎧のない弓の LVFX や機械兵のカルバペネム系は、効く範囲がとても広い薬）。効く範囲の広い薬ほど多くの菌に選択圧をかけるので、使いすぎると耐性菌が増えやすくなります。</p>
       </section>`;
 }
 
@@ -173,7 +181,7 @@ function howtoSlides(data: GameData, region: string, year: number): string[] {
             <figure class="a-kind narrow">${sol("CEZ")}<figcaption><b>${gname("CEZ")}</b><small>ねらいをしぼった薬の例</small>${specTags(data, region, "CEZ")}<span class="a-note">効く細菌が限られる</span></figcaption></figure>
           </div>
           <div class="a-reveal">
-            <figure class="near"><span class="a-tagname">${name("ecoli")}</span>${bg("ecoli", 0, false, 3)}<span class="a-tagng">効かない：ABPC</span><figcaption><b>近い</b>効かない薬が分かる</figcaption></figure>
+            <figure class="near"><span class="a-tagname">${name("ecoli")}</span>${bg("ecoli", 0, false, 3)}<span class="a-tagok">効く：CMZ MEPM</span><figcaption><b>近い</b>効く薬が分かる</figcaption></figure>
             <figure class="mid"><span class="a-tagname">${name("ecoli")}</span>${bg("ecoli", 1, false, 3)}<figcaption><b>中ほど</b>細菌の名前が分かる</figcaption></figure>
             <figure class="far"><span class="a-tagname blank">？</span>${bg("ecoli", 0, true, 3)}<figcaption><b>遠い</b>顕微鏡で見た色と形だけ</figcaption></figure>
             <span class="a-come">◀ 近づくほど分かる</span>
@@ -202,7 +210,7 @@ function howtoSlides(data: GameData, region: string, year: number): string[] {
     slide(
       1,
       "細菌ごとに、効く薬が違う",
-      `<p>ほとんどの細菌に効く「切り札」（機械兵の姿。カルバペネム系）と、ねらいをしぼった薬があります。</p><p>はじめは細菌の正体が分かりません。遠くでは顕微鏡で見た色と形だけ、近づくと名前、さらに近づくと効かない薬が分かります（実際の検査の結果が、時間差で届くのと同じです）。</p>`,
+      `<p>ほとんどの細菌に効く「切り札」（機械兵の姿。カルバペネム系）と、ねらいをしぼった薬があります。</p><p>はじめは細菌の正体が分かりません。遠くでは顕微鏡で見た色と形だけ、近づくと名前、さらに近づくと効く薬が分かります（実際の検査の結果が、時間差で届くのと同じです）。</p>`,
       art2,
     ),
     slide(
@@ -253,7 +261,7 @@ export function showHowtoSlide(root: HTMLElement, i: number): number {
   return n;
 }
 
-/** 遊び方の「くわしく」：前からの詳しい説明（3つの欄と兵士の姿の見本） */
+/** 遊び方の「くわしく」：前からの詳しい説明（3つの欄と兵士の姿の見本）。2026-11-06「文字が多すぎる」：箇条書きを短くし、事実は前のまま */
 function howtoDetails(data: GameData): string {
   return `
     <div class="panels">
@@ -267,29 +275,34 @@ function howtoDetails(data: GameData): string {
           <path d="M190 45 L150 45" stroke="#ff8ab3" stroke-width="2" marker-end="url(#ar)"/>
           <defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M10 0 L0 5 L10 10z" fill="#ff8ab3"/></marker></defs>
         </svg>
-        <p>細菌は右（尿道側）から3本のレーンを進んできます。膀胱に着くと耐久が減り、0 になると負けです。すべての波をしのげば勝ちです。</p>
+        <ul class="tight">
+          <li>細菌は右（尿道側）から3本のレーンを進んできます</li>
+          <li>膀胱に着くと耐久が減り、0 になると負け。すべての波をしのげば勝ち</li>
+          <li>遊ぶたびに、手札の何枚かが<b>供給制限</b>（薬が手に入りにくくなること）で使えなくなります</li>
+        </ul>
       </section>
       <section>
         <h3>2. 近づくほど分かる</h3>
         <div class="levels">
           <div><b>遠い</b><span>顕微鏡で見た色と形（グラム染色）だけ</span><em><i style="background:${GN}"></i>陰性（ピンク〜赤）<i style="background:${GP}"></i>陽性（紫）</em></div>
           <div><b>中ほど</b><span>細菌の名前（培養検査）</span></div>
-          <div><b>近い</b><span>手札のうち効かない薬（効く薬を調べる検査＝薬剤感受性試験）</span></div>
+          <div><b>近い</b><span>手札のうち効く薬（効く薬を調べる検査＝薬剤感受性試験）</span></div>
         </div>
-        <p>このゲームでは、まず効く見込みの高い薬（多くは広い範囲に効く薬）で始め、細菌の名前や効く薬が分かったら、切り札を使わずに、その細菌に合う薬へ切り替えるか（デエスカレーション）、広い薬を使い続けるかを判断します。</p>
-        <p>名前が分かる前は、<b>アンチバイオグラム</b>（その地域で、細菌ごとに薬が効いた割合の表。右上のボタンか A キー）を見て、効く見込みの高い薬を選べます。</p>
+        <ul class="tight">
+          <li>まず効く見込みの高い薬（多くは広い範囲に効く薬）で始め、正体が分かったら、切り札を使わずに合う薬へ切り替えるか（デエスカレーション）、広い薬を続けるかを判断します</li>
+          <li>名前が分かる前は、<b>アンチバイオグラム</b>（細菌ごとに薬が効いた割合の表。右上のボタンか A キー）が手がかり</li>
+          <li>効かない細菌には弾がはじかれ、「効かない」「もともと効かない（自然耐性）」「効かない扱い（ゲームの決めごと：腸球菌に MEPM・IPM/CS）」が出ます</li>
+        </ul>
       </section>
       <section>
         <h3>3. 抗菌薬を呼び出す</h3>
-        <p>下のカードを選び（数字キーでも選べます）、レーンをクリックすると呼び出せます。医療費が減ります（医療費は時間とともに増えます。高い薬ばかり使うと足りなくなります）。遊ぶたびに、手札の何枚かが供給制限（薬が手に入りにくくなること）で使えなくなります。</p>
-        <ul>
-          <li><b>カードの見かた</b>：大きな字は薬の名前（一般名）、その上が略号。${iconImg("coin", 1)}硬貨＝1回の医療費、${iconImg("hourglass", 1)}砂時計＝待ち時間、絵の左下の数字＝数字キー。<b>切り札</b>の札はカルバペネム系です。</li>
-          <li><b>待ち時間＝投与間隔</b>：ゲームの1日は24秒（1時間＝1秒）。「6時間毎」の薬は6秒、「1日1回」の薬は24秒待ちます。</li>
-          <li><b>内服薬</b>は、飲んだ薬のうち体に届く割合（<b>吸収率</b>。バイオアベイラビリティ）の量で出ます。吸収率の低い薬は、はじめから兵士が薄く出ます。</li>
-          <li>効かない細菌には弾がはじかれます。盤面の札：<b>効かない</b>（耐性）＝その1匹に、その薬が効かない。<b>もともと効かない</b>（自然耐性）＝その種類の細菌には、もともと効かない。<b>効かない扱い</b>＝このゲームで効かないことにしている組み合わせ（腸球菌に MEPM・IPM/CS）。</li>
-          <li>薬を使うと、その薬にさらされた細菌の中で、効かない細菌が選ばれて残り（<b>選択圧</b>）、<b>薬が効かない割合（耐性率）が上がります</b>。このゲームでは、同じ系統ばかり使うと、その系統の耐性が早く進みます。耐性の進み方は、タイトル画面で A（薬ごと）と B（系統ごと）から選べます。</li>
+        <ul class="tight">
+          <li>カードを選び（数字キーでも）、レーンをクリック。医療費が減ります（時間とともに増える。高い薬ばかりだと足りなくなる）</li>
+          <li><b>カードの見かた</b>：大きな字＝一般名、上＝略号。${iconImg("coin", 1)}＝1回の医療費、${iconImg("hourglass", 1)}＝待ち時間＝投与間隔（ゲームの1日は24秒。「6時間毎」なら6秒）。絵の左下の数字＝数字キー。<b>切り札</b>＝カルバペネム系</li>
+          <li><b>内服薬</b>は、体に届く割合（<b>吸収率</b>）のぶんの量で出るので、吸収率の低い薬は兵士が薄く出ます</li>
+          <li>薬を使うと、さらされた細菌の中で効かない細菌が残り（<b>選択圧</b>）、<b>耐性率が上がります</b>。同じ系統ばかり使うと、その系統の耐性が早く進みます（進み方はタイトル画面で A／B）</li>
+          <li class="small"><b>Access</b>（まず使う薬）・<b>Watch</b>（使いすぎ注意）は WHO の AWaRe 分類。「大腸菌など（大腸菌・肺炎桿菌・プロテウス）・緑膿菌・腸球菌」は、この地域のデータで効く見込みがあるかのゲーム内の目安で、実際の薬の選び方の根拠にはなりません</li>
         </ul>
-        <p class="small">カードの <b>Access（まず使う薬）</b>・<b>Watch（使いすぎ注意）</b> は WHO の AWaRe 分類（Access は一般的な感染症の第一・第二選択薬の多くを含む群、Watch は耐性化が心配されるため使う場面を限るべき薬）。「大腸菌など（大腸菌・肺炎桿菌・プロテウス）・緑膿菌・腸球菌」は、この地域のデータで効く見込みがあるかのゲーム内の目安で、実際の薬の選び方の根拠にはなりません。</p>
       </section>
     </div>
     ${soldierLegend(data)}`;
@@ -349,7 +362,7 @@ export function briefingScreen(data: GameData, scenario: ScenarioDef, phase: "pr
     ${phase === "future" ? `<p class="kicker">${scenario.future.yearsLater}年後</p>` : ""}
     <h2>${head}</h2>
     <p class="brief">${stage.briefing ? escapeHtml(stage.briefing) : defaultBrief}</p>
-    ${phase === "future" ? `<p class="exaggerated">ゲームの中の、薬が効かなくなる速さ（耐性化）は大げさにしています。現実が${futureYear(data, scenario.future.yearsLater)}年にこのとおりになる、という予測ではありません。</p>` : ""}
+    ${phase === "future" ? `<p class="exaggerated">薬が効かなくなる速さはゲーム用に大げさにしています。${futureYear(data, scenario.future.yearsLater)}年の予測ではありません。</p>` : ""}
     ${extra}
     <div class="facts">
       <div><span>手札</span><div class="chips">${handChips(data, stage, short)}</div></div>
@@ -432,7 +445,8 @@ export function dropsNote(data: GameData, drops: ReturnType<typeof biggestDrops>
   const list = drops
     .map((r) => `${escapeHtml(data.bacteriumById.get(r.species)!.name)}の ${escapeHtml(data.drugById.get(r.drug)!.abbr)} ${pct(r.from)} → <b>${pct(r.to)}</b>`)
     .join("、");
-  return `<p class="table-note drops">下がったもの：${list}。ステージ1で一度も使わなかった薬は、国の報告書（2014〜2023年）で耐性率が下がっていた組に限り、その下がり方が2050年まで続いたとみなして下げています。報告書の値は薬が使われ続けた中での変化で、使わなければ下がると示したものではありません（ゲームとしての決めごと）。</p>`;
+  // 理由は畳んでおく（2026-11-06「文字が多すぎる」）
+  return `<p class="table-note drops">下がったもの：${list}。</p><details class="more-note"><summary>なぜ下がるのか</summary>ステージ1で一度も使わなかった薬は、国の報告書（2014〜2023年）で耐性率が下がっていた組に限り、その下がり方が2050年まで続いたとみなして下げています。報告書の値は薬が使われ続けた中での変化で、使わなければ下がると示したものではありません（ゲームとしての決めごと）。</details>`;
 }
 
 /** 未来ステージまでの節目の年（10年ごとの区切りと最後の年。例：25年後なら 5・15・25 年後 ＝ 2030・2040・2050年） */
@@ -475,14 +489,16 @@ export function risesTimeline(
       return `<tr><th>${escapeHtml(data.bacteriumById.get(r.species)!.name)}の <b>${escapeHtml(data.drugById.get(r.drug)!.abbr)}</b></th><td>${pct(r.from)}</td>${mid}${cells.join("")}</tr>`;
     })
     .join("");
-  return `<p class="table-note timeline-note"><b>ゲーム内の値で、予測ではありません。</b>ステージ1の中の変化はゲーム用に誇張しています。そのあとは、ステージ1の変化を同じ割合で延ばし、1年あたりの上がり方が、国の報告書で観測されたうちこのゲームの菌と薬でいちばん速いもの（どの組にも同じ上限）を超えないようにしています。このため多くの組では、実測より速く上がります。</p>
-    <table class="timeline"><thead><tr><th>耐性率</th>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  // 作り方の説明は畳んでおく（2026-11-06「文字が多すぎる」）
+  return `<table class="timeline"><thead><tr><th>耐性率</th>${head}</tr></thead><tbody>${body}</tbody></table>
+    <details class="more-note timeline-note"><summary>この表の作り方（ゲーム内の値で、予測ではありません）</summary>ステージ1の中の変化はゲーム用に誇張しています。そのあとは、ステージ1の変化を同じ割合で延ばし、1年あたりの上がり方が、国の報告書で観測されたうちこのゲームの菌と薬でいちばん速いもの（どの組にも同じ上限）を超えないようにしています。このため多くの組では、実測より速く上がります。</details>`;
 }
 
 /** 「2050年問題」の注記（研究の推計の数字と、ゲームの値はそこから出したものではないこと） */
 export function year2050Note(data: GameData, yearsLater: number): string {
   if (futureYear(data, yearsLater) !== 2050) return "";
-  return `<p class="note2050"><b>「2050年問題」</b>：2014年の英国の AMR Review は、対策をとらなければ2050年に薬剤耐性（AMR）による死亡が年1,000万人に達するという大まかな試算を示しました（HIV・結核・マラリアの薬剤耐性を含む）。2024年の世界疾病負荷研究（GBD、Lancet）は、2050年に細菌の薬剤耐性が直接の原因の死亡を191万人、耐性菌の感染に関連した死亡を822万人と予測しています（2つの推計は対象が違うため、そのまま比べることはできません）。このステージの耐性率は、これらの推計から出したものではありません。</p>`;
+  // 畳んでおく（2026-11-06「文字が多すぎる」。開くと前と同じ全文）
+  return `<details class="more-note note2050"><summary><b>「2050年問題」</b>：対策をとらなければ、2050年に薬剤耐性による死亡が年1,000万人に達するという試算があります</summary>2014年の英国の AMR Review が示した大まかな試算で、HIV・結核・マラリアの薬剤耐性を含みます。2024年の世界疾病負荷研究（GBD、Lancet）は、2050年に細菌の薬剤耐性が直接の原因の死亡を191万人、耐性菌の感染に関連した死亡を822万人と予測しています（2つの推計は対象が違うため、そのまま比べることはできません）。このステージの耐性率は、これらの推計から出したものではありません。</details>`;
 }
 
 export function risesList(data: GameData, rises: ReturnType<typeof biggestRises>, usedDrugs = true): string {
@@ -533,7 +549,7 @@ function resistanceTable(data: GameData, region: string, from: ResistanceTable, 
     })
     .join("");
   return `<div class="rtable-wrap"><table class="rtable"><thead><tr><th>耐性率（${escapeHtml(spanLabel)}）</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
-    <p class="table-note">耐性率＝その菌のうち、薬が効かない個体の割合。赤は上がった組、緑は下がった組（ステージ1で使わなかった薬）。盤面の「耐性：」は1匹ごとの結果です。自然耐性＝その菌種にもともと効かない。効かない扱い＝このゲームで効かないことにしている組み合わせ。</p>`;
+    <p class="table-note">耐性率＝その菌のうち薬が効かない個体の割合。<span class="k-up">赤</span>＝上がった、<span class="k-down">緑</span>＝下がった（ステージ1で使わなかった薬）。自然耐性＝もともと効かない。効かない扱い＝このゲームで効かないことにした組み合わせ。</p>`;
 }
 
 function outcomeLine(r: StageResult): string {
@@ -565,13 +581,10 @@ function ascScale(data: GameData): string {
 
 function dascCard(data: GameData, r: StageResult): string {
   const missing = r.spectrum.ascMissing.map((d) => escapeHtml(data.drugById.get(d)?.abbr ?? d)).join("・");
-  const small =
-    r.spectrum.dascPerDot !== null
-      ? `使った薬の平均の抗菌スペクトラム（ASC。${ascScale(data)}）`
-      : r.spectrum.dot > 0
-        ? `ASC スコアを確かめていない薬（${missing}）を使ったので、まだ出せません`
-        : "抗菌薬を使っていません";
-  return `<div><span>${iconImg("microscope", 1)} スペクトラムの広さ（DASC/DOT）</span><b>${dascValue(data, r)}</b><small><em class="dir">${DIR.dasc}</em>${small}</small></div>`;
+  // 説明は吹き出し（title）に（2026-11-06「文字が多すぎる」）。出せないときだけ、その理由を小さく書く
+  const tip = `使った薬の平均の抗菌スペクトラム（ASC スコア × 使用日数 ÷ 使用日数）。ASC：${ascScale(data)}`;
+  const small = r.spectrum.dascPerDot !== null ? "" : r.spectrum.dot > 0 ? `ASC スコアを確かめていない薬（${missing}）を使ったので、まだ出せません` : "抗菌薬を使っていません";
+  return `<div title="${escapeHtml(tip)}"><span>${iconImg("microscope", 1)} スペクトラムの広さ（DASC/DOT）<i class="q">？</i></span><b>${dascValue(data, r)}</b><small><em class="dir">${DIR.dasc}</em>${small}</small></div>`;
 }
 
 /** 数字の向き（どちらが良いか）の一言。2026-11-05 作者の判断（docs/PLAIN-LANGUAGE.md 3章）。文は作者が確かめる */
@@ -647,22 +660,22 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
   <div class="screen result-screen">
     <h2>${iconImg(r.outcome === "won" ? "star" : "broken", 3)}${phase === "present" ? "ステージ1" : "ステージ2"}の結果：<span class="result-banner">${outcomeLine(r)}</span></h2>
     <p class="cause ${cause.kind}">${cause.text}</p>
-    <p class="foot strong top">薬が効かなくなる速さは、ゲーム用にかなり大げさにしています。現実の予測ではありません。</p>
+    <p class="foot strong top">効かなくなる速さはゲーム用に大げさにしています。現実の予測ではありません。</p>
     ${short.length ? `<p class="why short-why">供給制限で使えなかった薬：<b>${shortList(data, short)}</b></p>` : ""}
-    <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった、薬が効かない割合（耐性率。${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので、耐性率は変わっていません"}</p>
+    <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので変わっていません"}</p>
     ${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}
     <div class="stats">
       <div><span>${iconImg("bladder", 1)} 膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
-      <div><span>${iconImg("coin", 1)} 医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}（はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}）${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `/ ${yen(r.budgetStart)}`}</small></div>
+      <div title="${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}＝はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `予算 ${yen(r.budgetStart)}`}"><span>${iconImg("coin", 1)} 医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}${r.budgetShortSeconds >= 1 ? `・足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `／ ${yen(r.budgetStart)}`}</small></div>
       <div><span>${iconImg("broken", 1)} 手札のどの薬も効かない細菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた細菌のうち</small></div>
-      <div><span>${iconImg("chart", 1)} 系統の使い分け（AHI）</span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small><em class="dir">${DIR.ahi}</em>0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。AHI（antibiotic heterogeneity index）の式で、系統ごとの使用日数の割合から計算</small></div>
+      <div title="AHI（antibiotic heterogeneity index）：0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。系統ごとの使用日数の割合から計算"><span>${iconImg("chart", 1)} 系統の使い分け（AHI）<i class="q">？</i></span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small><em class="dir">${DIR.ahi}</em></small></div>
       ${dascCard(data, r)}
     </div>
     <div class="cols">
       <section>
-        <h3>系統別の使用割合<small>（使用日数。合計 ${r.spectrum.dot.toFixed(1)} 日。DOT にならった数え方）</small></h3>
+        <h3>系統別の使用割合<small>（使用日数 ${r.spectrum.dot.toFixed(1)} 日のうち）</small></h3>
         ${bars(data, r.usageByClass)}
-        <p class="aware-line">Access 薬（まず使う薬）の割合 <b>${pct(access)}</b>　<em class="dir">${DIR.access}</em><small>WHO の目標は、国全体の抗菌薬の使用量のうち Access 薬を ${pct(target)} 以上にすること（厚生労働省「抗微生物薬適正使用の手引き 第四版」医科・外来編 p.17）。1ステージの割合とは比べる対象が違います。日本は2023年に23.2%（同 歯科編 p.10）。</small></p>
+        <p class="aware-line" title="WHO の目標は、国全体の抗菌薬の使用量のうち Access 薬を ${pct(target)} 以上にすること（厚生労働省「抗微生物薬適正使用の手引き 第四版」医科・外来編 p.17）。1ステージの割合とは比べる対象が違います。日本は2023年に23.2%（同 歯科編 p.10）">Access 薬（まず使う薬）の割合 <b>${pct(access)}</b>　<em class="dir">${DIR.access}</em><i class="q">？</i></p>
       </section>
       <section>
         <h3>菌ごとの耐性率の変化</h3>
@@ -700,7 +713,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
   return `
   <div class="screen final-screen">
     <p class="big-tagline">あなたの選択が、未来の敵をつくる</p>
-    <p class="foot strong top center">薬が効かない割合（耐性率）の動きは、ゲーム用にかなり大げさにした値です。現実の予測ではありません。</p>
+    <p class="foot strong top center">耐性率の動きはゲーム用に大げさにした値です。現実の予測ではありません。</p>
     <table class="summary">
       <thead><tr><th></th><th>ステージ1「${escapeHtml(scenario.present.title)}」</th><th>ステージ2「${escapeHtml(scenario.future.title)}」</th></tr></thead>
       <tbody>
@@ -719,7 +732,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
     </table>
     ${dascMissingNote(data, [present, future])}
     ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p><p class="why-note">${USED_RISE_NOTE}</p></section>` : ""}
-    ${notice(data)}
+    ${noticeShort()}
     <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>
   </div>`;
 }
@@ -730,10 +743,10 @@ export function sourcesScreen(data: GameData): string {
   <div class="screen sources-screen">
     <h2>出典と注意</h2>
     ${notice(data)}
-    <p class="small">この画面は、教える人が出典を確かめるためのものです。専門用語は、いちばん下の「用語の説明」にまとめています。</p>
+    <p class="small">教える人が出典を確かめるための画面です。見出しを押すと開きます。専門用語は「用語の説明」に。</p>
     <div class="src-cols">
-      <section>
-        <h3>データの出典</h3>
+      <details class="src-sec" open>
+        <summary><h3>データの出典</h3></summary>
         <dl>
           <dt>感受性率・尿から分離される菌の割合</dt>
           <dd>厚生労働省 院内感染対策サーベイランス（JANIS）検査部門 公開情報 2025年1月〜12月 年報（全集計対象医療機関）【入院検体・CLSI 2012 版】表7・表3。政府統計の総合窓口（e-Stat）掲載のファイルを加工して作成（政府標準利用規約 第2.0版）。府県別は同じ年報の地域ブロック別ファイル。</dd>
@@ -750,9 +763,9 @@ export function sourcesScreen(data: GameData): string {
           <dt>自然耐性・値のない組み合わせの扱い</dt>
           <dd>EUCAST「Expected Resistant Phenotypes」v1.2、「Expert Rules v3.2 on Enterococcus spp.」、「Breakpoint tables」v16.1。</dd>
         </dl>
-      </section>
-      <section>
-        <h3>加工していること</h3>
+      </details>
+      <details class="src-sec">
+        <summary><h3>加工していること</h3></summary>
         <ul>
           <li>「効く」確率は、JANIS の感性（S）の割合だけを使います（中間・耐性・判定不能は効かない扱い）。判定基準は CLSI 2012 で、いまの臨床検査の基準とは違います。</li>
           <li>府県と比べられるよう、「すべての検査材料」の表を使っています（尿から出た株だけの集計ではありません）。</li>
@@ -763,19 +776,21 @@ export function sourcesScreen(data: GameData): string {
           <li>使用日数は、1回の召喚で投与間隔の長さを数え、レーンごとに足しています（DOT にならった数え方で、在院日数で補正していません）。DASC/DOT は推奨度・エビデンスレベルの低い指標（C-III）で、もとの ASC スコアは米国の状況で作られたものです（ガイダンス p.118〜121）。</li>
           <li>アンチバイオグラムは JANIS の地域の集計で、施設ごとの表ではありません。色の区切りはゲーム用の目安です。</li>
         </ul>
-        <h3>誇張していること</h3>
+      </details>
+      <details class="src-sec">
+        <summary><h3>誇張していること</h3></summary>
         <ul>
           <li>耐性化の速さ：現実に年単位で起きる変化を、数分のステージに縮めています（${escapeHtml(modelLabel(r.model))}）。</li>
           <li>ステージ2は、ステージ1と同じ使い方が2050年まで続いたとみなして、耐性率を先へ延ばしています。1年あたりの上がり方は、国の報告書で2014〜2023年に実際に観測された上がり方のうち、このゲームの菌と薬でいちばん速かったもの（肺炎桿菌の CAZ。オッズが約4.8年で2倍）を超えないようにしています。使い方によっては多くの組がこの上限の速さで延びるので、多くの組では実測より速く上がります。ステージ1で一度も使わなかった薬（連動などで上がったものを除く）は、実際に下がっていた組に限って、その下がり方で下げています。ゲームの耐性率は、2050年の予測ではありません。</li>
           <li>同じ系統ばかり使うと、その系統の耐性が早く進みます（系統を偏らせずに使う考え方。ASP ガイダンス2024 p.120 に評価指標の一つとして AHI（抗菌薬選択圧指数）の名前があり、有用性は今後の検討課題とされています。式と強さはゲームの決めごとです）。</li>
           <li>菌の体力・速さ・膀胱へのダメージ、薬の強さはゲーム用の値です。</li>
         </ul>
-      </section>
+      </details>
     </div>
-    <section class="glossary">
-      <h3>用語の説明</h3>
+    <details class="src-sec glossary">
+      <summary><h3>用語の説明</h3></summary>
       <dl>${GLOSSARY.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join("")}</dl>
-    </section>
+    </details>
     <p class="muted">薬の名前は略号と一般名だけを使っています（${escapeHtml(drugNames(data))}）。細菌と兵士（抗菌薬）の絵はすべてコードで描いています。見出し・数字・ボタンなどのドット絵の文字は DotGothic16（Fontworks。SIL Open Font License 1.1）、長い説明の文は端末に入っているフォントを使います。</p>
     <div class="buttons"><button class="primary" data-action="back">戻る</button></div>
   </div>`;

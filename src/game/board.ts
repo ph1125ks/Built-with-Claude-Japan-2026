@@ -4,7 +4,7 @@
 // 膀胱のドット絵、波の知らせの帯、流れの粒などの演出を足した（効き目の計算はエンジンのまま。演出は見た目だけ）。
 import Phaser from "phaser";
 import { loadGameData, susceptibility, type Bacterium, type GameEvent } from "../engine/index.ts";
-import { GRAM_COLORS } from "./bugs.ts";
+import { effectiveTag, GRAM_COLORS } from "./bugs.ts";
 import { FRAMES, LEVELS, STYLE, bugFrame, levelForAmount, soldierFrame, soldierPx, toCanvas, type Frame } from "./pixel/index.ts";
 import { bladderSprite, floorTile, icon, membraneStrip, shotSprite, type ShotKind } from "./pixel/icons.ts";
 import type { PlaySession } from "./session.ts";
@@ -71,16 +71,19 @@ interface BugView {
   glow: Phaser.GameObjects.Image;
   hp: Phaser.GameObjects.Graphics;
   name: Phaser.GameObjects.Text;
-  /** 近い位置での札：効かない（獲得耐性。赤）と、もともと効かない（自然耐性）・効かない扱い（紫）。菌の右に出す */
-  tagA: Phaser.GameObjects.Text;
-  tagB: Phaser.GameObjects.Text;
-  /** 札のまとまりの上端（菌の中心から）と高さ。レーンの縁に重ならないよう、毎フレームずらす */
+  /**
+   * 近い位置での札：手札のうち効く薬（緑）。菌の右に出す。
+   * 2026-11-06 作者の判断：前は効かない薬（朱）と、もともと効かない・効かない扱い（紫）の2枚だったが、
+   * 「効く薬が一目で分かる」1枚にした（効かない薬は、弾がはじかれたときの表示とアンチバイオグラムで分かる）
+   */
+  tag: Phaser.GameObjects.Text;
+  /** 札の上端（菌の中心から）と高さ。レーンの縁に重ならないよう、毎フレームずらす */
   tagTop: number;
   tagH: number;
   /** 札を菌の左に出しているか（右に出すと盤面の右端で切れるとき） */
   tagLeft: boolean;
   /** 札を出したいか（重なるときは declutter が隠す） */
-  want: { name: boolean; a: boolean; b: boolean };
+  want: { name: boolean; tag: boolean };
   /** 菌の絵の幅と高さ */
   w: number;
   h: number;
@@ -523,21 +526,18 @@ export class BoardScene extends Phaser.Scene {
       const left = LAYOUT.x0 + 6 + v.name.width / 2;
       v.name.setX(Math.max(0, left - x));
     }
-    if (!v.want.a && !v.want.b) return;
+    if (!v.want.tag) return;
     // 右に出すと盤面の右端（レーンの番号）で切れるときは、菌の左に出す
-    const tagW = Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
-    const left = x + v.w / 2 + 8 + tagW > W - 28;
+    const left = x + v.w / 2 + 8 + v.tag.width > W - 28;
     if (left !== v.tagLeft) {
       v.tagLeft = left;
-      for (const t of [v.tagA, v.tagB]) t.setOrigin(left ? 1 : 0, 0.5).setX(left ? -v.w / 2 - 8 : v.w / 2 + 8);
+      v.tag.setOrigin(left ? 1 : 0, 0.5).setX(left ? -v.w / 2 - 8 : v.w / 2 + 8);
     }
     const top = y + v.tagTop;
     const minTop = laneTopY(lane) + TAG_MARGIN;
     const maxBottom = laneTopY(lane) + LAYOUT.laneH - TAG_MARGIN;
     const dy = top < minTop ? minTop - top : top + v.tagH > maxBottom ? maxBottom - top - v.tagH : 0;
-    const hA = v.want.a ? v.tagA.height : 0;
-    v.tagA.setY(v.tagTop + dy + hA / 2);
-    v.tagB.setY(v.tagTop + dy + (v.want.a ? hA + 3 : 0) + v.tagB.height / 2);
+    v.tag.setY(v.tagTop + dy + v.tagH / 2);
   }
 
   /**
@@ -548,7 +548,7 @@ export class BoardScene extends Phaser.Scene {
     const byLane = new Map<number, BugView[]>();
     for (const b of s.state.bacteria) {
       const v = this.bugs.get(b.uid);
-      if (!v || v.dying || !(v.want.name || v.want.a || v.want.b)) continue;
+      if (!v || v.dying || !(v.want.name || v.want.tag)) continue;
       const list = byLane.get(b.lane);
       if (list) list.push(v);
       else byLane.set(b.lane, [v]);
@@ -559,13 +559,12 @@ export class BoardScene extends Phaser.Scene {
       for (const v of list) {
         const half = v.w / 2;
         const nameHalf = v.want.name ? v.name.width / 2 : 0;
-        const leftTagW = v.tagLeft ? Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0) : 0;
+        const leftTagW = v.tagLeft && v.want.tag ? v.tag.width : 0;
         const show = v.last.x - Math.max(half, nameHalf, leftTagW > 0 ? half + 8 + leftTagW : 0) > right + 4;
         v.name.setVisible(show && v.want.name);
-        v.tagA.setVisible(show && v.want.a);
-        v.tagB.setVisible(show && v.want.b);
+        v.tag.setVisible(show && v.want.tag);
         if (!show) continue;
-        const tagW = v.tagLeft ? 0 : Math.max(v.want.a ? v.tagA.width : 0, v.want.b ? v.tagB.width : 0);
+        const tagW = v.tagLeft || !v.want.tag ? 0 : v.tag.width;
         right = v.last.x + Math.max(half, nameHalf, tagW > 0 ? half + 8 + tagW : 0);
       }
     }
@@ -584,13 +583,10 @@ export class BoardScene extends Phaser.Scene {
     if (this.webgl) glow.setBlendMode(Phaser.BlendModes.ADD);
     const hp = this.add.graphics();
     const name = this.text(0, -h / 2 - 8, "", TAG_SIZE, "#ffffff", { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.9)", padding: { x: 6, y: 2 } }).setOrigin(0.5, 1);
-    const tagStyle = { ...TAG_FONT, backgroundColor: "rgba(16,10,26,0.92)", padding: { x: 6, y: 2 }, lineSpacing: 2 };
-    const tagA = this.text(w / 2 + 8, 0, "", TAG_SIZE, COLORS.bad, tagStyle).setOrigin(0, 0.5);
-    const tagB = this.text(w / 2 + 8, 0, "", TAG_SIZE, COLORS.intrinsic, tagStyle).setOrigin(0, 0.5);
+    const tag = this.text(w / 2 + 8, 0, "", TAG_SIZE, COLORS.good, { ...TAG_FONT, backgroundColor: "rgba(10,40,26,0.92)", padding: { x: 7, y: 3 } }).setOrigin(0, 0.5);
     name.setVisible(false);
-    tagA.setVisible(false);
-    tagB.setVisible(false);
-    c.add([shadow, glow, body, hp, name, tagA, tagB]);
+    tag.setVisible(false);
+    c.add([shadow, glow, body, hp, name, tag]);
     // 尿道側の入口から現れる
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 360 });
@@ -603,9 +599,8 @@ export class BoardScene extends Phaser.Scene {
       glow,
       hp,
       name,
-      tagA,
-      tagB,
-      want: { name: false, a: false, b: false },
+      tag,
+      want: { name: false, tag: false },
       tagTop: 0,
       tagH: 0,
       tagLeft: false,
@@ -640,39 +635,17 @@ export class BoardScene extends Phaser.Scene {
       v.want.name = true;
     }
     if (b.level === "susceptibility") {
-      const hand = s.state.stage.hand.map((h) => h.drug);
-      const ng = hand.filter((d) => b.resistant.has(d));
-      const abbr = (d: string) => data.drugById.get(d)?.abbr ?? d;
-      const kind = (d: string) => susceptibility(data, s.state.region, b.species, d).basis;
-      const acquired = ng.filter((d) => kind(d) !== "intrinsic" && kind(d) !== "fixed");
-      const intrinsic = ng.filter((d) => kind(d) === "intrinsic");
-      const fixed = ng.filter((d) => kind(d) === "fixed");
-      // 1行に4つまで。残りは「ほかN」
-      const list = (ds: string[]) => (ds.length > 4 ? `${ds.slice(0, 4).map(abbr).join(" ")} ほか${ds.length - 4}` : ds.map(abbr).join(" "));
-      let a = "";
-      let bText = "";
-      if (ng.length === hand.length) {
-        v.tagA.setColor("#ffffff").setBackgroundColor("#c81e3a");
-        a = "手札すべて効かない";
-      } else if (ng.length === 0) {
-        v.tagA.setColor(COLORS.good).setBackgroundColor("rgba(10,40,26,0.92)");
-        a = "手札すべて効く";
-      } else {
-        v.tagA.setColor(COLORS.bad).setBackgroundColor("rgba(16,10,26,0.9)");
-        // 2026-11-05 作者の判断（docs/PLAIN-LANGUAGE.md）：「耐性：」→「効かない：」、「自然耐性：」→「もともと効かない：」
-        if (acquired.length) a = `効かない：${list(acquired)}`;
-        // もともと効かない（自然耐性）と「効かない扱い」は紫の札に1行ずつ（「効かない扱い」は遊び方と結果の表で説明する）
-        const parts: string[] = [];
-        if (intrinsic.length) parts.push(`もともと効かない：${list(intrinsic)}`);
-        if (fixed.length) parts.push(`効かない扱い：${list(fixed)}`);
-        bText = parts.join("\n");
-      }
-      v.tagA.setText(a).setVisible(a !== "");
-      v.tagB.setText(bText).setVisible(bText !== "");
-      v.want.a = a !== "";
-      v.want.b = bText !== "";
-      // 上下に並べる（菌の中心にそろえ、レーンの縁に重なるときは placeTags がずらす）
-      v.tagH = (v.want.a ? v.tagA.height : 0) + (v.want.a && v.want.b ? 3 : 0) + (v.want.b ? v.tagB.height : 0);
+      const text = effectiveTag(
+        s.state.stage.hand.map((h) => h.drug),
+        b.resistant,
+        (d) => data.drugById.get(d)?.abbr ?? d,
+      );
+      if (text.kind === "none") v.tag.setColor("#ffffff").setBackgroundColor("#c81e3a");
+      else v.tag.setColor(COLORS.good).setBackgroundColor("rgba(10,40,26,0.92)");
+      v.tag.setText(text.text).setVisible(true);
+      v.want.tag = true;
+      // 菌の中心にそろえる（レーンの縁に重なるときは placeTags がずらす）
+      v.tagH = v.tag.height;
       v.tagTop = -v.tagH / 2;
       this.placeTags(v, b.lane, v.last.x, v.last.y);
     }
@@ -1083,8 +1056,7 @@ export class BoardScene extends Phaser.Scene {
           if (!v) break;
           v.dying = true;
           v.name.setVisible(false);
-          v.tagA.setVisible(false);
-          v.tagB.setVisible(false);
+          v.tag.setVisible(false);
           // はじける：グラム染色の色の粒と白い粒、広がる輪
           const gc = GRAM_COLORS[v.gram];
           this.burst.setParticleTint(gc.fill);
