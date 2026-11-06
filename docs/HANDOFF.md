@@ -19,7 +19,7 @@
 - **教員モード**：本物の Claude（`claude-opus-5-5`）が、地域のデータと教えたいことからステージを設計し、シミュレーションで確かめながら直す。1回 約0.5〜0.7ドル・約2分。作ったステージ「尿路（大阪府）第3世代セフェムが効かない大腸菌」は公開済み（`?stage=uti-osaka-3gc-r-ecoli`）
 - **スキルの評価**（16回目後半）：本番と同じ入力で、スキル `stage-design` あり・なしを各3回（`scripts/eval-skill.ts`、記録は `docs/eval/skill/`）。どちらも提出まで行けたが、スキルなしは3回とも規則の検査で止まり、1回目のシミュレーションで合格0回。スキルありは規則の誤り0回・1回目で合格2回、時間と費用は約3割少ない（139秒・0.63ドル 対 189秒・0.90ドル）。費用は合わせて 4.58ドル
 - **再生ページ**（16回目後半）：`replay.html`。教員モードの作業の記録を API キーなしで再生する。既定の記録 `public/replays/osaka.json` は、評価のスキルありの2回目（本番と同じく 27% → 17% に直した回）。本番の回の記録は残っていない（録画だけ）
-- **仮の動画**（`recordings/draft-video.mp4`、**2:58.5**、台本 第7版・字幕・**仮の読み上げの声**・**BGM**・作者の写真（名乗りの場面だけ、顔を丸く小さく）つき）。**絵コンテ表**（非公開の Artifact）：https://claude.ai/artifact/LPLCCi81S52sEqtFWFW3o7 。**録音用の原稿**（非公開の Artifact）：https://claude.ai/artifact/26UkjFnCdJQCoXKeLTNGK9 。どちらも第7版に出し直した。作者は直しを「シーン3」「0:52 の字幕」のように時刻かシーン番号で伝える。第6版の控えは `recordings/_prev-20261106-v6/`、第4版は `_prev-20261106-v4/`
+- **仮の動画**（`recordings/draft-video.mp4`、**2:58.5**、2026-11-06 19:51 にゲーム画面を直して録り直した版。台本 第7版・字幕・**仮の読み上げの声**・**BGM**・作者の写真（名乗りの場面だけ、顔を丸く小さく）つき）。**絵コンテ表**（非公開の Artifact）：https://claude.ai/artifact/LPLCCi81S52sEqtFWFW3o7 。**録音用の原稿**（非公開の Artifact）：https://claude.ai/artifact/26UkjFnCdJQCoXKeLTNGK9 。どちらも第7版に出し直した。作者は直しを「シーン3」「0:52 の字幕」のように時刻かシーン番号で伝える。第6版の控えは `recordings/_prev-20261106-v6/`、第4版は `_prev-20261106-v4/`
 
 ## 動画の現状（18回目はここから）
 
@@ -104,7 +104,7 @@
 | 吸収率の見せ方 | 兵士の濃さ（点描）＝いま体内にある薬の量。量が6割を切ると点が抜けて薄くなる（吸収率の低い CFDN 25% は最初から薄い。吸収率6割以上の内服は注射と同じ濃さで出る）。呼び出したとき薬の粒が20個流れ込み（内服はカプセル、注射は丸い粒）、体に届かなかった粒は灰色になって落ちる（CFDN はちょうど5粒が届く）。前の「絵の面積＝吸収率」はやめた（作者の判断） | `src/game/board.ts`（`SOLID_AT`・`stream`） |
 | 耐性モデル A の係数 | logitPerWave 0.15、stagesPerYear.A 0.1（2026-11-04 作者が案の比較から選んだ。前は 0.25・0.25）。上限は実測の最速のまま | `rules.json` の resistance |
 | 偏りの指標 | 結果画面の「系統の使い分け（AHI）」。作者の式 AHI ＝ 1 −｛n /［2 ×（n − 1）］｝× Σ｜ai − bi｜（n は手札の系統の数、bi は使用日数の割合） | `src/engine/results.ts` の `ahi` |
-| 録画と仮の動画 | 種 570・モデル A・既定ステージ。録画用の操作は `?auto=demo-abuse`（カルバペネム系を連打）・`demo-proper`（台本どおり）。録画は `recordings/`（Git に入れない）。①のあとも種 570 で台本どおり（乱用：ステージ1 膀胱84%で勝ち・2050年 全耐性12%で負け。適正：膀胱100%／88%） | `src/engine/demo.ts`、`scripts/record-demo.ts`・`make-draft-video.ts`・`demo-seeds.ts` |
+| 録画と仮の動画 | 種 570・モデル A・既定ステージ。録画用の操作は `?auto=demo-abuse`（カルバペネム系を連打）・`demo-proper`（台本どおり）。録画は `recordings/`（Git に入れない）。①のあとも種 570 で台本どおり（乱用：ステージ1 膀胱84%で勝ち・2050年 全耐性14%で負け。適正：膀胱100%／100%。2026-11-06 に IPM/CS を外し区間を 25/25/50 にして録り直した。前の録画は `recordings/_prev-20261106-v7b/`） | `src/engine/demo.ts`、`scripts/record-demo.ts`・`make-draft-video.ts`・`demo-seeds.ts` |
 | 画面の見た目 | 色は `src/game/theme.ts`（盤面）と `style.css` の `:root`（DOM）。 19回目：遊んでいる間の説明は「？」パネル（`hud.ts` の `helpPanel`。H キー）と吹き出し（title）に。盤面の細菌の札は緑の「効く：…」（`bugs.ts` の `effectiveTag`）。手札の補助は既定オフ（localStorage `sentakuatsu.assist`）。盤面ではピンクを細菌（グラム陰性）の色に残し、UI は青緑・金・白（試遊の指摘）。耐性・危険の赤は朱 `#ff6352`。ドット絵のフォントは 16px 以上だけ（小さい字はにじむのでゴシックの太字）。アイコン・膀胱・弾・粘膜の帯は `src/game/pixel/icons.ts`（コードで描いた絵） | `src/game/` |
 | ASC スコア | 全15剤。出典は Kakiuchi ら CID 2022 Table 1（CMZ だけ Maeda ら JIC 2025 Table 1）。結果画面とまとめ画面に DASC/DOT を出す | `drugs.json` |
 

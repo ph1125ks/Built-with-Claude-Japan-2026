@@ -2106,3 +2106,10 @@ DEMO.md を組み直した（受賞作の型の対応表も DEMO.md に）。シ
 - **作者の判断**：IPM/CS を 2050年の手札から外す（供給制限は 2 → 1）。区間は 25/25/50 に。盾の印への統一はそのまま
 - **直したもの**：`data/stages/uti-zenkoku.json`・`dev-uti.json`（2050年の手札と供給制限）、`data/rules.json`（`revealSpeciesBelow` 0.75・`revealSusceptibilityBelow` 0.5）、`tests/game.test.ts`（区間の境目）、`src/engine/demo.ts`・`src/game/format.ts` の注、`SPEC.md`・`docs/DEMO.md`・`docs/HANDOFF.md`。IPM/CS はカタログと出典（CRE の連動・効かない扱い・ASC）には残る。区間の帯と「？」パネルの数字は rules.json から出るので自動で合う
 - `tests/demo.test.ts`（種 570 の展開）はそのまま通る。録画（タイトル・乱用・適正）は録り直す（前の録画は `recordings/_prev-20261106-v7b/`）
+
+#### 録り直しと仮の動画の作り直し（同日の続き）
+
+- `npx tsx scripts/record-demo.ts --take title,abuse,proper`（約13分）。前の録画と仮の動画は `recordings/_prev-20261106-v7b/`。目印の時刻はほぼ前と同じ（乱用：ステージ1 10.1秒 → 結果1 192.7秒、2050年 212.9 → 288.2秒。適正：10.2 → 190.9秒、211.3 → 381.6秒）
+- **替える瞬間**（シーン7の等倍 1.8秒）：区間を 25/25/50 にして正体が分かるのが遅くなったので、適正の録画のコマを 0.2秒ごとに並べて探し直した。大腸菌に「効く：CMZ LVFX TAZ/PIPC MEPM」が出るのが 23.3秒、セフメタゾールの兵士を呼ぶのが 23.5秒 → `SWITCH` を 18.8〜20.6 から **23.0〜24.8秒** に
+- **並べ比べの数字**（録り直した結果画面の値）：乱用は 2050年に手札のどの薬も効かない細菌 12% → **14%**、適正はステージ1の切り札 3% → **1%**、2050年の膀胱 88 → **100／100**。`make-draft-video.ts` の `COMPARE` と `docs/DEMO.md`・`docs/HANDOFF.md` の数字を直した
+- 録画の手順（`record-demo.ts` の `playthrough`）から結果画面の `.rtable` へのスクロールを外した（新しい結果画面は1画面に収まり、表はポップアップの中）
