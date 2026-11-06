@@ -1,6 +1,6 @@
 // 遊ぶ前後の画面（DOM）：タイトル、遊び方、ブリーフィング、結果、まとめ、出典。
 // ボタンは data-action を持ち、app.ts がまとめて受ける。
-import { futureYear, susceptibility, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
+import { futureYear, susceptibility, type BacteriumDef, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
 import { escapeHtml, genericName, modelLabel, pct, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, yen } from "./format.ts";
 import { LEVELS, SOLID_AT, bladderImg, bugImg, iconImg, levelForAmount, soldierImg } from "./pixel/index.ts";
@@ -643,9 +643,106 @@ function risesLine(data: GameData, from: ResistanceTable, to: ResistanceTable, d
     .join("、");
 }
 
+/** 結果画面の「膀胱」：ドット絵（傷むほど赤い）と残りの耐久 */
+function bladderPanel(r: StageResult): string {
+  const frac = r.bladderMaxHp > 0 ? r.bladderHp / r.bladderMaxHp : 0;
+  const cls = frac < 0.3 ? "low" : frac < 0.6 ? "mid" : "";
+  return `<section class="r-panel r-bladder">
+      <h4>${iconImg("bladder", 1)}膀胱</h4>
+      <div class="r-bladder-art">${bladderImg(22, 58, 3, frac)}</div>
+      <b class="r-big ${r.outcome === "won" ? "" : "bad"}">${Math.ceil(r.bladderHp)}<small>／${r.bladderMaxHp}</small></b>
+      <div class="r-bar"><i class="${cls}" style="width:${(frac * 100).toFixed(0)}%"></i></div>
+    </section>`;
+}
+
+/** 結果画面の「呼び出した兵士」：呼んだ回数の多い薬から4つ、兵士の絵と回数の帯で */
+function drugsPanel(data: GameData, r: StageResult): string {
+  const rows = Object.entries(r.summons)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const total = rows.reduce((a, [, n]) => a + n, 0);
+  const trump = r.usageByClass[TRUMP_CLASS] ?? 0;
+  const list = rows
+    .slice(0, 4)
+    .map(([id, n]) => {
+      const d = data.drugById.get(id);
+      if (!d) return "";
+      const color = data.classById.get(d.class)?.color ?? "#64748b";
+      const isTrump = d.class === TRUMP_CLASS;
+      return `<li style="--cls:${color}"><span class="r-portrait">${soldierImg(data, d, "card")}</span><span class="r-drug-name"><b>${escapeHtml(d.abbr)}${isTrump ? `<span class="trump-tag">切り札</span>` : ""}</b><small>${escapeHtml(genericName(d))}</small></span><span class="r-drug-bar"><i style="width:${((n / total) * 100).toFixed(0)}%"></i></span><em>×${n}</em></li>`;
+    })
+    .join("");
+  const more = rows.length > 4 ? `<p class="r-more">ほか ${rows.length - 4} 種類</p>` : "";
+  return `<section class="r-panel r-drugs">
+      <h4>${iconImg("play", 1)}呼び出した兵士（抗菌薬）</h4>
+      ${rows.length ? `<ul class="r-drug-list">${list}</ul>${more}` : `<p class="muted r-empty">抗菌薬を使いませんでした</p>`}
+      <p class="r-trump ${trump >= 0.5 ? "bad" : trump > 0 ? "warn" : "good"}"><span class="trump-tag">切り札</span>（カルバペネム系）の割合 <b>${pct(trump)}</b></p>
+    </section>`;
+}
+
+/** 10匹の細菌の列。p の割合（四捨五入）を「薬が効かない細菌」（朱の枠）にする。幅をそろえるため、べん毛のない絵（bare）で描く */
+function bugRow(def: BacteriumDef | undefined, p: number, n = 10): string {
+  if (!def) return "";
+  const res = Math.round(Math.max(0, Math.min(1, p)) * n);
+  return `<span class="r-bugs">${Array.from({ length: n }, (_, i) => `<span class="${i < res ? "res" : ""}">${bugImg(def, i % 2, true, 2)}</span>`).join("")}</span>`;
+}
+
+/**
+ * 結果画面の「育った敵」：いちばん上がった組を、細菌10匹の列（はじめ → 終わり）で見せる。
+ * 非医療従事者にも「薬が効かない細菌が増えた」が一目で分かるように（2026-11-06 作者の指摘）
+ */
+function enemyPanel(data: GameData, start: ResistanceTable, end: ResistanceTable, drugs: string[], used: boolean, fromLabel: string, toLabel: string): string {
+  const rises = biggestRises(data, start, end, drugs, 3);
+  const top = rises[0];
+  if (!top) {
+    return `<section class="r-panel r-enemy">
+      <h4>${iconImg("germ", 1)}育った敵：薬が効かない細菌</h4>
+      <div class="r-pop"><div class="r-pop-row"><span class="r-pop-label">${fromLabel}</span>${bugRow(data.bacteria[0], 0)}</div><div class="r-pop-row"><span class="r-pop-label">${toLabel}</span>${bugRow(data.bacteria[0], 0)}</div></div>
+      <p class="r-pop-note">${used ? "大きく増えた組はありません" : "抗菌薬を使わなかったので、増えていません"}</p>
+    </section>`;
+  }
+  const def = data.bacteriumById.get(top.species);
+  const abbr = (d: string) => escapeHtml(data.drugById.get(d)?.abbr ?? d);
+  const name = (sp: string) => escapeHtml(data.bacteriumById.get(sp)?.name ?? sp);
+  const others = rises
+    .slice(1)
+    .map((x) => `<li>${name(x.species)}の ${abbr(x.drug)}<span>${pct(x.from)} → <b>${pct(x.to)}</b></span></li>`)
+    .join("");
+  return `<section class="r-panel r-enemy">
+      <h4>${iconImg("germ", 1)}育った敵：薬が効かない細菌</h4>
+      <p class="r-pop-title">${name(top.species)}のうち、<b>${abbr(top.drug)}</b> が効かない細菌</p>
+      <div class="r-pop">
+        <div class="r-pop-row"><span class="r-pop-label">${fromLabel}<b>${pct(top.from)}</b></span>${bugRow(def, top.from)}</div>
+        <div class="r-pop-row"><span class="r-pop-label">${toLabel}<b class="bad">${pct(top.to)}</b></span>${bugRow(def, top.to)}</div>
+      </div>
+      ${others ? `<ul class="r-rises">${others}</ul>` : ""}
+    </section>`;
+}
+
+/** 結果画面の下の小さな数字（医療費・手札のどの薬も効かない細菌・まず使う薬の割合） */
+function subStats(r: StageResult): string {
+  return `<div class="r-sub">
+      <div>${iconImg("coin", 1)}<span>医療費</span><b>${yen(r.costSpent)}</b></div>
+      <div class="${r.panResistantFraction >= 0.005 ? "bad" : ""}">${iconImg("broken", 1)}<span>手札のどの薬も効かない細菌</span><b>${pct(r.panResistantFraction)}</b></div>
+      <div>${iconImg("shield", 1)}<span>まず使う薬（Access）の割合</span><b>${pct(r.usageByAware.Access)}</b></div>
+    </div>`;
+}
+
+/** 「くわしい数字」のポップアップ（教える人・専門家向け）。app.ts の data-action="detail" で開け閉め */
+function detailPopup(title: string, body: string): string {
+  return `<div class="detail-popup" hidden>
+      <div class="popup-box">
+        <div class="popup-head">${iconImg("chart", 2)}<b>${title}</b><button data-action="detail">閉じる（Esc）</button></div>
+        ${body}
+      </div>
+    </div>`;
+}
+
 /**
  * 結果画面。ステージ2では、耐性率の表をステージ1の開始時から数える（from を渡す）。
- * ステージ1 → 2 のあいだ（既定は2050年まで）の変化も見えるようにするため
+ * ステージ1 → 2 のあいだ（既定は2050年まで）の変化も見えるようにするため。
+ * 2026-11-06 作者の指摘「非医療従事者にも面白い結果を主役に、専門家が喜ぶ数字はポップアップに」：
+ * 主役は膀胱のドット絵・呼び出した兵士・育った敵（細菌10匹の列）。AHI・DASC/DOT・系統別の割合・耐性率の表は「くわしい数字」へ
  */
 export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "present" | "future", r: StageResult, from?: ResistanceTable, short: readonly string[] = [], present?: StageResult): string {
   const stage = phase === "present" ? scenario.present : scenario.future;
@@ -653,19 +750,15 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
   const access = r.usageByAware.Access;
   const target = data.rules.stewardship.accessTarget;
   const start = from ?? r.resistanceStart;
-  const fromLabel = from ? "ステージ1の開始" : "開始";
+  const fromLabel = from ? "ステージ1の開始" : "はじめ";
+  const toLabel = from ? `${futureYear(data, scenario.future.yearsLater)}年の終わり` : "終わり";
   const used = Object.values(r.summons).reduce((a, b) => a + b, 0) > 0;
   const cause = causeLine(data, scenario, phase, r, present);
-  return `
-  <div class="screen result-screen">
-    <h2>${iconImg(r.outcome === "won" ? "star" : "broken", 3)}${phase === "present" ? "ステージ1" : "ステージ2"}の結果：<span class="result-banner">${outcomeLine(r)}</span></h2>
-    <p class="cause ${cause.kind}">${cause.text}</p>
-    <p class="foot strong top">効かなくなる速さはゲーム用に大げさにしています。現実の予測ではありません。</p>
+  const detail = `
     ${short.length ? `<p class="why short-why">供給制限で使えなかった薬：<b>${shortList(data, short)}</b></p>` : ""}
     <p class="why">いちばん使った系統：<b>${topClass(data, r)}</b>　／　大きく上がった耐性率（${fromLabel}から）：${used || from ? risesLine(data, start, r.resistanceEnd, drugs) : "抗菌薬を使わなかったので変わっていません"}</p>
     ${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}
     <div class="stats">
-      <div><span>${iconImg("bladder", 1)} 膀胱の残り</span><b>${Math.ceil(r.bladderHp)} / ${r.bladderMaxHp}</b></div>
       <div title="${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}＝はじめ ${yen(r.budgetStart)}＋時間で増えた ${yen(r.budgetIncome)}${r.budgetShortSeconds >= 1 ? `。足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `予算 ${yen(r.budgetStart)}`}"><span>${iconImg("coin", 1)} 医療費の合計</span><b>${yen(r.costSpent)}</b><small>${r.budgetIncome > 0 ? `使えた額 ${yen(r.budgetStart + r.budgetIncome)}${r.budgetShortSeconds >= 1 ? `・足りずに待った ${r.budgetShortSeconds.toFixed(0)}秒` : ""}` : `／ ${yen(r.budgetStart)}`}</small></div>
       <div><span>${iconImg("broken", 1)} 手札のどの薬も効かない細菌</span><b>${pct(r.panResistantFraction)}</b><small>出てきた細菌のうち</small></div>
       <div title="AHI（antibiotic heterogeneity index）：0〜1。1 は手札のすべての系統を同じ日数ずつ使ったとき、0 は1つの系統だけ。系統ごとの使用日数の割合から計算"><span>${iconImg("chart", 1)} 系統の使い分け（AHI）<i class="q">？</i></span><b>${r.ahi === null ? "—" : r.ahi.toFixed(2)}</b><small><em class="dir">${DIR.ahi}</em></small></div>
@@ -681,10 +774,23 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
         <h3>菌ごとの耐性率の変化</h3>
         ${resistanceTable(data, scenario.region, start, r.resistanceEnd, drugs, from ? "ステージ1の開始 → ステージ2の終わり" : "開始 → 終わり")}
       </section>
+    </div>`;
+  return `
+  <div class="screen result-screen">
+    <h2>${iconImg(r.outcome === "won" ? "star" : "broken", 3)}${phase === "present" ? "ステージ1" : "ステージ2"}の結果：<span class="result-banner">${outcomeLine(r)}</span></h2>
+    <p class="cause ${cause.kind}">${cause.text}</p>
+    <div class="r-main">
+      ${bladderPanel(r)}
+      ${drugsPanel(data, r)}
+      ${enemyPanel(data, start, r.resistanceEnd, drugs, used, fromLabel, toLabel)}
     </div>
+    ${subStats(r)}
+    <p class="foot strong r-foot">効かなくなる速さはゲーム用に大げさにしています。現実の予測ではありません。</p>
     <div class="buttons">
       ${resultButtons(scenario, phase, r)}
+      <button class="ghost" data-action="detail">${iconImg("chart", 1)}くわしい数字</button>
     </div>
+    ${detailPopup(`${phase === "present" ? "ステージ1" : "ステージ2"}のくわしい数字（教える人・専門家向け）`, detail)}
   </div>`;
 }
 
@@ -707,14 +813,38 @@ function resultButtons(scenario: ScenarioDef, phase: "present" | "future", r: St
  */
 const USED_RISE_NOTE = "適正に使っても、使った薬の耐性率は上がります（どの薬も、効かない菌を選んで残すため）。このゲームでは、系統を使い分けると、1つの薬の耐性の上がり方を抑えられます。";
 
+/** まとめ画面の、ステージ1・2050年それぞれの短い振り返り（膀胱の絵・結果・いちばん呼んだ兵士・切り札の割合） */
+function finalCard(data: GameData, title: string, r: StageResult, kicker?: string): string {
+  const frac = r.bladderMaxHp > 0 ? r.bladderHp / r.bladderMaxHp : 0;
+  const top = Object.entries(r.summons)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])[0];
+  const d = top ? data.drugById.get(top[0]) : undefined;
+  const trump = r.usageByClass[TRUMP_CLASS] ?? 0;
+  return `<section class="f-card ${r.outcome}">
+      <h3>${escapeHtml(title)}${kicker ? `<small>${escapeHtml(kicker)}</small>` : ""}</h3>
+      <div class="f-row">
+        <div class="f-bladder">${bladderImg(22, 58, 2, frac)}<b>${Math.ceil(r.bladderHp)}<small>／${r.bladderMaxHp}</small></b></div>
+        <div class="f-facts">
+          <p class="f-outcome">${outcomeLine(r)}</p>
+          <p class="f-fact">${d ? `<span class="r-portrait" style="--cls:${data.classById.get(d.class)?.color ?? "#64748b"}">${soldierImg(data, d, "card")}</span><span>いちばん呼んだ<br><b>${escapeHtml(genericName(d))}</b></span>` : `<span>抗菌薬を使いませんでした</span>`}</p>
+          <p class="f-fact ${trump >= 0.5 ? "bad" : trump > 0 ? "warn" : "good"}"><span class="trump-tag">切り札</span><span>の割合 <b>${pct(trump)}</b></span></p>
+          <p class="f-fact ${r.panResistantFraction >= 0.005 ? "bad" : ""}">${iconImg("broken", 1)}<span>手札のどの薬も効かない細菌 <b>${pct(r.panResistantFraction)}</b></span></p>
+        </div>
+      </div>
+    </section>`;
+}
+
+/**
+ * まとめ画面。2026-11-06 作者の指摘：主役は2つのステージの振り返り（膀胱の絵・結果・いちばん呼んだ兵士・切り札）と、
+ * 育った敵（細菌10匹の列）。数字の表は「くわしい数字」のポップアップへ
+ */
 export function finalScreen(data: GameData, scenario: ScenarioDef, present: StageResult, future: StageResult, short: { present: string[]; future: string[] } = { present: [], future: [] }): string {
   const row = (label: string, f: (r: StageResult) => string) => `<tr><th>${label}</th><td>${f(present)}</td><td>${f(future)}</td></tr>`;
   const drugs = [...new Set([...scenario.present.hand, ...scenario.future.hand].map((h) => h.drug))];
-  return `
-  <div class="screen final-screen">
-    <p class="big-tagline">あなたの選択が、未来の敵をつくる</p>
-    <p class="foot strong top center">耐性率の動きはゲーム用に大げさにした値です。現実の予測ではありません。</p>
-    <table class="summary">
+  const year = futureYear(data, scenario.future.yearsLater);
+  const used = Object.values(present.summons).reduce((a, b) => a + b, 0) > 0;
+  const table = `<table class="summary">
       <thead><tr><th></th><th>ステージ1「${escapeHtml(scenario.present.title)}」</th><th>ステージ2「${escapeHtml(scenario.future.title)}」</th></tr></thead>
       <tbody>
         ${row("結果", outcomeLine)}
@@ -730,10 +860,23 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
         <tr><th>大きく上がった耐性率<br><small>（ステージ1の開始 → ステージ2の終わり）</small></th><td colspan="2">${risesLine(data, present.resistanceStart, future.resistanceEnd, drugs)}</td></tr>
       </tbody>
     </table>
-    ${dascMissingNote(data, [present, future])}
-    ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p><p class="why-note">${USED_RISE_NOTE}</p></section>` : ""}
+    ${dascMissingNote(data, [present, future])}`;
+  return `
+  <div class="screen final-screen">
+    <p class="big-tagline">あなたの選択が、未来の敵をつくる</p>
+    <div class="f-cards">
+      ${finalCard(data, `ステージ1「${scenario.present.title}」`, present)}
+      <span class="f-arrow">▶</span>
+      ${finalCard(data, `ステージ2「${scenario.future.title}」`, future, `${scenario.future.yearsLater}年後`)}
+    </div>
+    <div class="r-main one">
+      ${enemyPanel(data, present.resistanceStart, future.resistanceEnd, drugs, used, "ステージ1の開始", `${year}年の終わり`)}
+    </div>
+    ${scenario.debrief ? `<section class="debrief"><h3>振り返り</h3><p>${escapeHtml(scenario.debrief)}</p></section>` : ""}
+    <p class="foot strong r-foot center">耐性率の動きはゲーム用に大げさにした値です。現実の予測ではありません。</p>
     ${noticeShort()}
-    <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>
+    <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button class="ghost" data-action="detail">${iconImg("chart", 1)}くわしい数字</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>
+    ${detailPopup("2つのステージのくわしい数字（教える人・専門家向け）", `${table}${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}`)}
   </div>`;
 }
 

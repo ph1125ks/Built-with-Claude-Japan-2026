@@ -157,9 +157,15 @@ export class App {
       const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
       if (btn) this.act(btn.dataset.action!);
     });
-    // 遊び方の絵は、左右の矢印キーでもめくれる
+    // 遊び方の絵は、左右の矢印キーでもめくれる。「くわしい数字」のポップアップは Esc で閉じる
     window.addEventListener("keydown", (e) => {
-      if (this.phase !== "howto" || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === "Escape") {
+        const popup = this.ui.screen.querySelector<HTMLElement>(".detail-popup");
+        if (popup && !popup.hidden) this.act("detail");
+        return;
+      }
+      if (this.phase !== "howto") return;
       if (e.key === "ArrowRight") this.act("howto-next");
       else if (e.key === "ArrowLeft") this.act("howto-prev");
     });
@@ -242,6 +248,15 @@ export class App {
       case "howto-prev":
         if (this.phase === "howto") this.howtoSlide = showHowtoSlide(this.ui.screen, this.howtoSlide + (action === "howto-next" ? 1 : -1));
         break;
+      case "detail": {
+        // 結果・まとめ画面の「くわしい数字」（教える人・専門家向け）のポップアップを開け閉めする（2026-11-06）
+        const popup = this.ui.screen.querySelector<HTMLElement>(".detail-popup");
+        if (popup) {
+          popup.hidden = !popup.hidden;
+          if (!popup.hidden) popup.scrollTop = 0;
+        }
+        break;
+      }
       case "howto-more": {
         // 「くわしく」を開いて、そこまで送る（録画の操作用。画面では summary を押す）
         const more = this.ui.screen.querySelector<HTMLDetailsElement>(".howto-more");

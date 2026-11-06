@@ -3232,6 +3232,580 @@ ul.tight li.small {
   margin: 12px 0 0;
 }
 
+/* ---------- 結果画面の主役（2026-11-06 作者の指摘「非医療従事者にも面白い結果を主役に」） ---------- */
+.r-main {
+  display: grid;
+  grid-template-columns: 180px minmax(330px, 1fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.r-main.one {
+  grid-template-columns: 1fr;
+  max-width: 900px;
+  margin: 14px auto 0;
+}
+
+.r-panel {
+  position: relative;
+  min-width: 0;
+  padding: 12px 16px 14px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.18));
+  box-shadow:
+    inset 0 0 0 2px var(--rim),
+    inset 0 3px 0 2px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: tile-in 0.4s both cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.r-panel:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.r-panel:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.r-panel h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  font-family: var(--pixel);
+  color: var(--accent-2);
+}
+
+/* 膀胱：ドット絵と残り */
+.r-bladder {
+  align-items: center;
+  text-align: center;
+}
+
+.r-bladder-art {
+  margin: 4px 0 2px;
+  filter: drop-shadow(0 0 12px rgba(255, 207, 63, 0.35));
+}
+
+.r-big {
+  font-family: var(--pixel);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1;
+  color: #fff;
+}
+
+.r-big small {
+  font-size: 16px;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.r-big.bad {
+  color: var(--bad);
+}
+
+.r-bar {
+  width: 100%;
+  height: 12px;
+  background: #0a0612;
+  box-shadow: 0 0 0 2px var(--edge), inset 0 0 0 1px var(--rim);
+  overflow: hidden;
+}
+
+.r-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#ffe37a 0 35%, #f2b632 35% 100%);
+}
+
+.r-bar i.mid {
+  background: linear-gradient(#ffb36b 0 35%, #f07a2a 35% 100%);
+}
+
+.r-bar i.low {
+  background: linear-gradient(#ff8095 0 35%, #e0304f 35% 100%);
+}
+
+/* 呼び出した兵士：絵・略号と一般名・回数の帯 */
+.r-drug-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.r-drug-list li {
+  --cls: #888;
+  display: grid;
+  grid-template-columns: 40px 1fr 72px 40px;
+  align-items: center;
+  gap: 8px;
+}
+
+.r-portrait {
+  --cls: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle at 50% 70%, color-mix(in srgb, var(--cls) 55%, transparent), transparent 70%), var(--bg0);
+  box-shadow: 0 0 0 2px var(--edge), inset 0 -5px 0 rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.r-portrait img {
+  transform: scale(0.9);
+}
+
+.r-drug-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.r-drug-name b {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--pixel);
+  font-size: 16px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.r-drug-name small {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r-drug-bar {
+  display: block;
+  height: 10px;
+  background: #0a0612;
+  box-shadow: 0 0 0 1px var(--edge);
+  overflow: hidden;
+}
+
+.r-drug-bar i {
+  display: block;
+  height: 100%;
+  background: var(--cls);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25);
+  animation: grow 0.7s 0.2s both cubic-bezier(0.2, 1, 0.4, 1);
+  transform-origin: left;
+}
+
+.r-drug-list em {
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--ink-2);
+  text-align: right;
+}
+
+.r-more {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.r-empty {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.r-trump {
+  margin: auto 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--rim);
+  font-size: 13px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.r-trump b {
+  font-family: var(--pixel);
+  font-size: 20px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.r-trump.good b {
+  color: var(--good);
+}
+
+.r-trump.warn b {
+  color: var(--warn);
+}
+
+.r-trump.bad b {
+  color: var(--bad);
+}
+
+/* 育った敵：細菌10匹の列（はじめ → 終わり） */
+.r-pop-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.r-pop-title b {
+  color: #fff;
+}
+
+.r-pop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.r-pop-row {
+  display: grid;
+  grid-template-columns: 92px max-content;
+  align-items: center;
+  gap: 10px;
+}
+
+.r-pop-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.r-pop-label b {
+  font-family: var(--pixel);
+  font-size: 22px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.r-pop-label b.bad {
+  color: var(--bad);
+}
+
+/* 10匹を 5×2 に（まとめ画面の広い欄では 10×1）。1匹の枠は 56px にそろえる（菌の絵の幅は種類で違う） */
+.r-bugs {
+  display: grid;
+  grid-template-columns: repeat(5, 56px);
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.r-main.one .r-bugs {
+  grid-template-columns: repeat(10, 56px);
+}
+
+.r-bugs > span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 30px;
+  filter: drop-shadow(0 0 4px rgba(255, 111, 165, 0.5));
+}
+
+.r-bugs > span.res {
+  filter: none;
+  background: rgba(255, 99, 82, 0.3);
+  box-shadow: 0 0 0 2px var(--bad), 0 0 10px rgba(255, 99, 82, 0.7);
+  animation: res-in 0.5s both cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes res-in {
+  from {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.r-pop-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.r-rises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.r-rises li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  border-top: 1px dashed var(--rim);
+}
+
+.r-rises b {
+  color: var(--bad);
+}
+
+/* 下の小さな数字 */
+.r-sub {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.r-sub > div {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 2px var(--rim);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.r-sub > div span {
+  flex: 1;
+}
+
+.r-sub > div b {
+  font-family: var(--pixel);
+  font-size: 22px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.r-sub > div.bad b {
+  color: var(--bad);
+}
+
+.r-foot {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+}
+
+.r-foot.center {
+  text-align: center;
+}
+
+/* 「くわしい数字」のボタン（主のボタンより控えめ） */
+.buttons button.ghost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  color: var(--teal);
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge),
+    calc(-1 * var(--px)) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    inset 0 0 0 2px rgba(59, 224, 198, 0.45),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.4),
+    0 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ポップアップ（画面の上に重ねる。#app が transform を持つので fixed は #app の中に収まる） */
+.detail-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(5, 3, 8, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.2s;
+}
+
+.detail-popup[hidden] {
+  display: none;
+}
+
+.popup-box {
+  width: 1120px;
+  max-height: 660px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: linear-gradient(180deg, var(--bg2), var(--bg1) 60%);
+  padding: 18px 28px 24px;
+  box-shadow:
+    0 -4px 0 0 var(--edge),
+    0 4px 0 0 var(--edge),
+    -4px 0 0 0 var(--edge),
+    4px 0 0 0 var(--edge),
+    inset 0 0 0 3px var(--teal),
+    0 16px 0 rgba(0, 0, 0, 0.5);
+  animation: panel-in 0.25s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.popup-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-family: var(--pixel);
+  margin-bottom: 10px;
+}
+
+.popup-head b {
+  flex: 1;
+  font-weight: 400;
+}
+
+.popup-head button {
+  border: 0;
+  background: var(--bg3);
+  padding: 6px 14px;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--edge), inset 0 -3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.popup-head button:hover {
+  background: var(--bg4);
+}
+
+.popup-box .stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.popup-box .summary {
+  min-width: 0;
+  width: 100%;
+}
+
+/* ---------- まとめ：2つのステージの振り返り ---------- */
+.f-cards {
+  display: grid;
+  grid-template-columns: 1fr 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.f-arrow {
+  text-align: center;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.f-card {
+  padding: 12px 16px 14px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.18));
+  box-shadow: inset 0 0 0 2px var(--rim), inset 0 3px 0 2px rgba(255, 255, 255, 0.04);
+  animation: tile-in 0.4s both cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.f-card.lost {
+  box-shadow: inset 0 0 0 2px rgba(255, 99, 82, 0.5), inset 0 3px 0 2px rgba(255, 255, 255, 0.04);
+}
+
+.f-card h3 {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.f-card h3 small {
+  color: var(--bad);
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 14px;
+}
+
+.f-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.f-bladder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.f-bladder b {
+  font-family: var(--pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.f-bladder b small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.f-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.f-outcome {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 24px;
+}
+
+.f-fact {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.25;
+}
+
+.f-fact b {
+  font-size: 15px;
+}
+
+.f-fact.good b {
+  color: var(--good);
+}
+
+.f-fact.warn b {
+  color: var(--warn);
+}
+
+.f-fact.bad b {
+  color: var(--bad);
+}
+
+.f-fact .r-portrait {
+  width: 36px;
+  height: 36px;
+}
+
 /* ---------- まとめ ---------- */
 .big-tagline {
   text-align: center;

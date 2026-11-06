@@ -113,7 +113,8 @@ export function bugImg(def: BacteriumDef, frame = 0, bare = false, z = bugScale(
   return img(`${STYLE.id}|bug|${def.id}|${frame}|${bare}|${z}`, () => bugFrame(def, frame, bare), z);
 }
 
-/** DOM に出す膀胱の絵（遊び方の絵）。w×h ドット、右の壁にレーンの入口を1つ（真ん中） */
-export function bladderImg(w: number, h: number, z: number): string {
-  return img(`bladder|${w}|${h}|${z}`, () => bladderSprite(w, h, 1, [0.5]), z);
+/** DOM に出す膀胱の絵（遊び方の絵・結果画面）。w×h ドット、右の壁にレーンの入口を1つ（真ん中）。frac は残りの耐久（1 で無傷。傷むほど赤い） */
+export function bladderImg(w: number, h: number, z: number, frac = 1): string {
+  const f = Math.round(Math.max(0, Math.min(1, frac)) * 20) / 20;
+  return img(`bladder|${w}|${h}|${z}|${f}`, () => bladderSprite(w, h, f, [0.5]), z);
 }
