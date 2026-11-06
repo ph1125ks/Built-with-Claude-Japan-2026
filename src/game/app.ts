@@ -136,7 +136,7 @@ export class App {
     private scenario: ScenarioDef,
     private params: AppParams,
     private board: BoardScene,
-    private ui: { screen: HTMLElement; play: HTMLElement },
+    private ui: { screen: HTMLElement; play: HTMLElement; overlay: HTMLElement },
   ) {
     // 耐性モデル：URL の指定 → タイトル画面で前に選んだもの → rules.json の既定
     this.setModel(params.model ?? storedModel() ?? loadGameData().rules.resistance.model);
@@ -153,15 +153,17 @@ export class App {
     ui.screen.addEventListener("scroll", this.updateScrollHint, { passive: true });
     // 遊び方の「アンチバイオグラムを見る」などで高さが変わったときも確かめ直す
     ui.screen.addEventListener("toggle", this.updateScrollHint, true);
-    ui.screen.addEventListener("click", (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
-      if (btn) this.act(btn.dataset.action!);
-    });
+    for (const el of [ui.screen, ui.overlay]) {
+      el.addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
+        if (btn) this.act(btn.dataset.action!);
+      });
+    }
     // 遊び方の絵は、左右の矢印キーでもめくれる。「くわしい数字」のポップアップは Esc で閉じる
     window.addEventListener("keydown", (e) => {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === "Escape") {
-        const popup = this.ui.screen.querySelector<HTMLElement>(".detail-popup");
+        const popup = this.ui.overlay.querySelector<HTMLElement>(".detail-popup");
         if (popup && !popup.hidden) this.act("detail");
         return;
       }
@@ -184,6 +186,29 @@ export class App {
       },
     });
     this.model = getResistanceModel(id);
+  }
+
+  /** スマホの縦向きのあいだ、こちらで止めたか（横向きに戻したら、こちらで止めたときだけ再開する） */
+  private rotatePaused = false;
+
+  /**
+   * スマホの縦向き（盤面が小さすぎる）のあいだ、遊んでいるステージを止めておく（main.ts の layout。index.html の #rotate-hint が盤面を覆う）。
+   * もともと止めていたとき（開始前・一時停止中・パネルを開いている間）はそのまま。横向きに戻したら、こちらで止めたときだけ再開する
+   */
+  setRotateBlock(block: boolean): void {
+    if (!this.session || !this.hud) {
+      this.rotatePaused = false;
+      return;
+    }
+    if (block) {
+      if (!this.rotatePaused && !this.session.paused) {
+        this.hud.setPaused(true);
+        this.rotatePaused = true;
+      }
+    } else if (this.rotatePaused) {
+      this.rotatePaused = false;
+      this.hud.setPaused(false);
+    }
   }
 
   /** 確認用：いまのステージを、実時間を待たずに seconds 秒ぶん進める（画面が隠れていると描画の時計が遅くなるため） */
@@ -250,7 +275,7 @@ export class App {
         break;
       case "detail": {
         // 結果・まとめ画面の「くわしい数字」（教える人・専門家向け）のポップアップを開け閉めする（2026-11-06）
-        const popup = this.ui.screen.querySelector<HTMLElement>(".detail-popup");
+        const popup = this.ui.overlay.querySelector<HTMLElement>(".detail-popup");
         if (popup) {
           popup.hidden = !popup.hidden;
           if (!popup.hidden) popup.scrollTop = 0;
@@ -303,6 +328,8 @@ export class App {
     this.ui.screen.innerHTML = html ?? "";
     this.ui.screen.classList.toggle("open", html !== null);
     this.ui.screen.scrollTop = 0;
+    // 「くわしい数字」のポップアップは、スクロールする #screen の外（#overlay）に移す（中に置くと、下まで読んだあとに開いたとき一緒に流れて見えない）
+    this.ui.overlay.replaceChildren(...this.ui.screen.querySelectorAll(".detail-popup"));
     this.updateScrollHint();
   }
 
@@ -453,6 +480,8 @@ export class App {
       },
     });
     if (firstPlay) this.hud.pauseAtStart(newDrugs.length ? "。手札が変わっています（新しい薬のカードに「追加」）" : "");
+    this.rotatePaused = false;
+    if (document.body.classList.contains("rotate")) this.setRotateBlock(true);
     this.board.banner(phase === "present" ? "ステージ1　" + stage.title : "ステージ2　" + stage.title, phase === "present" ? "細菌から膀胱を守る" : "自分が育てた耐性菌と戦う", phase === "present" ? "#3be0c6" : "#ff6352", 1500);
   }
 }

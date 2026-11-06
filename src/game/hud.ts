@@ -345,6 +345,12 @@ export class Hud {
     this.els.pause.innerHTML = pauseLabel(this.session.paused);
   }
 
+  /** 止める・再開する（app.ts：スマホの縦向きのあいだ止めておく）。パネルを開いている間は止めたまま */
+  setPaused(paused: boolean): void {
+    if (this.panel || this.session.paused === paused) return;
+    this.togglePause();
+  }
+
   private togglePause(): void {
     // パネルを開いている間は止めたまま（閉じると元に戻る）
     if (this.panel) return;

@@ -3,16 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="data:," />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover：画面の切り欠き（ノッチ）のあるスマホでも端まで使う（余白は style.css の safe-area-inset） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050308" />
+    <!-- ホーム画面に追加したときは、アドレスバーなしの全画面で開く -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>センタクアツ（仮）― あなたの選択が、未来の敵をつくる</title>
     <meta name="description" content="細菌から膀胱を守る、抗菌薬の適正使用を学ぶ教育用タワーディフェンス（教育用のシミュレーションで、実際の診療の判断には使えません）" />
   </head>
   <body>
-    <div id="rotate-hint">横向きにすると遊びやすくなります（画面は 16:9 で作っています）</div>
+    <!-- スマホの縦向きで遊んでいる間に出す（main.ts が body.rotate を付け、app.ts が止める。style.css） -->
+    <div id="rotate-hint"><i class="phone"></i><b>横向きにしてください</b><span>盤面は横長（16:9）で作っています。<br>横向きにすると、そのまま続けられます。</span></div>
     <div id="app">
-      <div id="board"></div>
-      <div id="play"></div>
+      <!-- 盤面と手札：1280×720 のまま、画面に合わせて縮める -->
+      <div id="stage">
+        <div id="board"></div>
+        <div id="play"></div>
+      </div>
+      <!-- 文字の画面（タイトル・遊び方・結果）：広い画面では盤面と同じ縮め方、狭い画面では縮めずに1列に組み直す -->
       <div id="screen"></div>
+      <!-- 「くわしい数字」のポップアップの置き場（#screen の外。#screen はスクロールするので、中に置くと一緒に流れてしまう。app.ts の showScreen が移す） -->
+      <div id="overlay"></div>
     </div>
     <script type="module" src="/src/game/main.ts"></script>
   </body>
