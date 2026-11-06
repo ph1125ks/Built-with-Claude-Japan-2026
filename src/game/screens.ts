@@ -2,7 +2,7 @@
 // ボタンは data-action を持ち、app.ts がまとめて受ける。
 import { futureYear, susceptibility, type BacteriumDef, type GameData, type ResistanceModelId, type ResistanceTable, type ScenarioDef, type StageDef, type StageResult } from "../engine/index.ts";
 import { GRAM_COLORS } from "./bugs.ts";
-import { escapeHtml, genericName, modelLabel, pct, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, yen } from "./format.ts";
+import { escapeHtml, genericName, isTouchDevice, modelLabel, pct, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, yen } from "./format.ts";
 import { LEVELS, SOLID_AT, bladderImg, bugImg, iconImg, levelForAmount, soldierImg } from "./pixel/index.ts";
 
 const css = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
@@ -291,15 +291,15 @@ function howtoDetails(data: GameData): string {
         </div>
         <ul class="tight">
           <li>まず効く見込みの高い薬（多くは広い範囲に効く薬）で始め、正体が分かったら、切り札を使わずに合う薬へ切り替えるか（デエスカレーション）、広い薬を続けるかを判断します</li>
-          <li>名前が分かる前は、<b>アンチバイオグラム</b>（細菌ごとに薬が効いた割合の表。右上のボタンか A キー）が手がかり</li>
+          <li>名前が分かる前は、<b>アンチバイオグラム</b>（細菌ごとに薬が効いた割合の表。右上のボタン${isTouchDevice() ? "" : "か A キー"}）が手がかり</li>
           <li>効かない細菌には弾がはじかれ、「効かない」「もともと効かない（自然耐性）」「効かない扱い（ゲームの決めごと：腸球菌に MEPM・IPM/CS）」が出ます</li>
         </ul>
       </section>
       <section>
         <h3>3. 抗菌薬を呼び出す</h3>
         <ul class="tight">
-          <li>カードを選び（数字キーでも）、レーンをクリック。医療費が減ります（時間とともに増える。高い薬ばかりだと足りなくなる）</li>
-          <li><b>カードの見かた</b>：大きな字＝一般名、上＝略号。${iconImg("coin", 1)}＝1回の医療費、${iconImg("hourglass", 1)}＝待ち時間＝投与間隔（ゲームの1日は24秒。「6時間毎」なら6秒）。絵の左下の数字＝数字キー。<b>切り札</b>＝カルバペネム系</li>
+          <li>${isTouchDevice() ? "カードを選び、レーンをタップ。" : "カードを選び（数字キーでも）、レーンをクリック。"}医療費が減ります（時間とともに増える。高い薬ばかりだと足りなくなる）</li>
+          <li><b>カードの見かた</b>：大きな字＝一般名、上＝略号。${iconImg("coin", 1)}＝1回の医療費、${iconImg("hourglass", 1)}＝待ち時間＝投与間隔（ゲームの1日は24秒。「6時間毎」なら6秒）。${isTouchDevice() ? "" : "絵の左下の数字＝数字キー。"}<b>切り札</b>＝カルバペネム系</li>
           <li><b>内服薬</b>は、体に届く割合（<b>吸収率</b>）のぶんの量で出るので、吸収率の低い薬は兵士が薄く出ます</li>
           <li>薬を使うと、さらされた細菌の中で効かない細菌が残り（<b>選択圧</b>）、<b>耐性率が上がります</b>。同じ系統ばかり使うと、その系統の耐性が早く進みます（進み方はタイトル画面で A／B）</li>
           <li class="small"><b>Access</b>（まず使う薬）・<b>Watch</b>（使いすぎ注意）は WHO の AWaRe 分類。「大腸菌など（大腸菌・肺炎桿菌・プロテウス）・緑膿菌・腸球菌」は、この地域のデータで効く見込みがあるかのゲーム内の目安で、実際の薬の選び方の根拠にはなりません</li>
@@ -734,11 +734,14 @@ function subStats(r: StageResult): string {
     </div>`;
 }
 
-/** 「くわしい数字」のポップアップ（教える人・専門家向け）。app.ts の data-action="detail" で開け閉め */
+/**
+ * 「くわしい数字」のポップアップ（教える人・専門家向け）。app.ts の data-action="detail" で開け閉め。
+ * 「（教える人・専門家向け）」は small に分け、狭い画面では見出しの下の行に出す（実機：縦向きでは見出しが閉じるボタンの横で3行に折れていた）
+ */
 function detailPopup(title: string, body: string): string {
   return `<div class="detail-popup" hidden>
       <div class="popup-box">
-        <div class="popup-head">${iconImg("chart", 2)}<b>${title}</b><button data-action="detail">閉じる（Esc）</button></div>
+        <div class="popup-head">${iconImg("chart", 2)}<b>${title}<small>（教える人・専門家向け）</small></b><button data-action="detail">閉じる<span class="key">（Esc）</span></button></div>
         ${body}
       </div>
     </div>`;
@@ -796,7 +799,7 @@ export function resultScreen(data: GameData, scenario: ScenarioDef, phase: "pres
       ${resultButtons(scenario, phase, r)}
       <button class="ghost" data-action="detail">${iconImg("chart", 1)}くわしい数字</button>
     </div>
-    ${detailPopup(`${phase === "present" ? "ステージ1" : "ステージ2"}のくわしい数字（教える人・専門家向け）`, detail)}
+    ${detailPopup(`${phase === "present" ? "ステージ1" : "ステージ2"}のくわしい数字`, detail)}
   </div>`;
 }
 
@@ -882,7 +885,7 @@ export function finalScreen(data: GameData, scenario: ScenarioDef, present: Stag
     <p class="foot strong r-foot center">耐性率の動きはゲーム用に大げさにした値です。現実の予測ではありません。</p>
     ${noticeShort()}
     <div class="buttons"><button class="primary" data-action="restart">最初からやり直す</button><button class="ghost" data-action="detail">${iconImg("chart", 1)}くわしい数字</button><button data-action="sources">出典と注意</button><button data-action="title">タイトルへ</button></div>
-    ${detailPopup("2つのステージのくわしい数字（教える人・専門家向け）", `${table}${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}`)}
+    ${detailPopup("2つのステージのくわしい数字", `${table}${used ? `<p class="why-note">${USED_RISE_NOTE}</p>` : ""}`)}
   </div>`;
 }
 

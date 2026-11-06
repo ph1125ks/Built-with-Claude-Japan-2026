@@ -3,7 +3,7 @@
 import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
 import { H, LAYOUT, laneTopY, zoneBounds } from "./board.ts";
 import { effectiveTag, nearestRevealed } from "./bugs.ts";
-import { AWARE_WORDS, cardKeys, escapeHtml, genericName, intervalShort, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, waitSeconds, yen } from "./format.ts";
+import { AWARE_WORDS, cardKeys, escapeHtml, genericName, intervalShort, isTouchDevice, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, waitSeconds, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
 import { iconImg, soldierImg } from "./pixel/index.ts";
 import type { IconName } from "./pixel/icons.ts";
@@ -12,9 +12,11 @@ const pauseLabel = (paused: boolean) => (paused ? `${iconImg("play", 1)}<span>�
 const speedLabel = (n: number) => `${iconImg("fast", 1)}<span>×${n}</span>`;
 type TickerKind = "warn" | "res" | "hint" | "pause";
 const TICKER_ICON: Record<TickerKind, IconName> = { warn: "warn", res: "up", hint: "info", pause: "pause" };
+/** 触る端末（スマホ・タブレット）では、案内で「クリック」「スペース」と言わない（実機で確認したあとの作者の判断 2026-11-06） */
+const TOUCH = isTouchDevice();
 /** 遊び方の案内（最初に召喚するまで出しておく）。数字キーなどの細かい操作は「？」のパネルで */
-const START_HINT = "① 下のカードを選ぶ → ② レーンをクリックで呼び出す";
-const PAUSE_HINT = "一時停止中（スペースで再開）。止めたままカードを選ぶと予約になります";
+const START_HINT = TOUCH ? "① 下のカードを選ぶ → ② レーンをタップで呼び出す" : "① 下のカードを選ぶ → ② レーンをクリックで呼び出す";
+const PAUSE_HINT = TOUCH ? "一時停止中（右上の「再開」で続き）。止めたままカードを選ぶと予約になります" : "一時停止中（スペースで再開）。止めたままカードを選ぶと予約になります";
 
 /** 手札の補助（効く薬のカードを光らせる）をオンにしたか、このブラウザで覚えておく（作者の判断：補助機能として、オンにしたときだけ） */
 const ASSIST_KEY = "sentakuatsu.assist";
@@ -44,12 +46,17 @@ function helpPanel(data: GameData, modelId: string, assist: boolean): string {
     <div class="help-cols">
       <section>
         <h4>${iconImg("play", 1)}操作</h4>
-        <ul>
+        ${TOUCH ? `<ul>
+          <li><b>カードをタップ</b>して選ぶ。もう一度タップすると選び直し</li>
+          <li><b>レーンをタップ</b>で呼び出す</li>
+          <li>右上の<b>「一時停止」</b>：止めている間にレーンを選ぶと<b>予約</b>になり、再開した瞬間に呼び出す</li>
+          <li>右上の<b>「アンチバイオグラム」</b>：細菌ごとに薬が効く割合の表。<b>「？」</b>：このパネル</li>
+        </ul>` : `<ul>
           <li><b>カードを選ぶ</b>：クリックか、数字キー <b>1〜9</b>（カードの絵の左下の数字。2つのステージで同じ薬に同じ数字）</li>
           <li><b>レーンをクリック</b>で呼び出す。右クリックか <b>Esc</b> で選び直し</li>
           <li><b>スペース</b>：一時停止。止めている間にレーンを選ぶと<b>予約</b>になり、再開した瞬間に呼び出す</li>
           <li><b>A</b>：アンチバイオグラム（細菌ごとに薬が効く割合の表）。<b>H</b>：このパネル</li>
-        </ul>
+        </ul>`}
       </section>
       <section>
         <h4>${iconImg("microscope", 1)}近づくほど分かる</h4>
@@ -412,7 +419,7 @@ export class Hud {
   pauseAtStart(extra = ""): void {
     if (this.session.paused) return;
     this.togglePause();
-    this.message(`スペースか「再開」で始まります。① 下のカードを選ぶ → ② レーンをクリック${extra}`, "hint", 0);
+    this.message(`${TOUCH ? "右上の「再開」をタップで始まります" : "スペースか「再開」で始まります"}。① 下のカードを選ぶ → ② レーンを${TOUCH ? "タップ" : "クリック"}${extra}`, "hint", 0);
   }
 
   private lastHp = Infinity;
@@ -517,7 +524,8 @@ export class Hud {
       }
       const r = canSummon(s, this.selected, lane);
       const abbr = data.drugById.get(this.selected)?.abbr ?? "";
-      let text = this.session.paused ? `ここに ${abbr} を予約（クリック）` : `ここに ${abbr} を呼び出す（クリック）`;
+      const tap = TOUCH ? "タップ" : "クリック";
+      let text = this.session.paused ? `ここに ${abbr} を予約（${tap}）` : `ここに ${abbr} を呼び出す（${tap}）`;
       if (r === "cooldown") {
         const left = ((s.readyAt.get(`${this.selected}:${lane}`) ?? 0) - s.tick) / tps;
         text = `${abbr}：待ち ${left.toFixed(1)}秒（投与間隔）`;

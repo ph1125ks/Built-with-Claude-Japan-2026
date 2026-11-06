@@ -120,6 +120,14 @@ export function modelShort(id: ResistanceModelId): string {
   return id === "A" ? "耐性 A（薬ごと）" : id === "B" ? "耐性 B（系統ごと）" : "耐性化なし";
 }
 
+/**
+ * 触る端末（マウスを持たないスマホ・タブレット）か。案内の言い回しを「クリック」「スペース」から「タップ」「右上のボタン」に替えるのに使う
+ * （2026-11-06 iPhone の実機で確認したあとの作者の判断）。Node（検証や録画の台本）では false
+ */
+export function isTouchDevice(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+}
+
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

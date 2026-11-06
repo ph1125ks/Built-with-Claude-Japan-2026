@@ -3724,6 +3724,11 @@ ul.tight li.small {
   font-weight: 400;
 }
 
+.popup-head b small {
+  font-size: inherit;
+  font-family: inherit;
+}
+
 .popup-head button {
   border: 0;
   background: var(--bg3);
@@ -4707,6 +4712,32 @@ body.narrow .debrief {
 }
 
 /* --- 「くわしい数字」のポップアップ：画面いっぱいに --- */
+/* 見出しは字を少し小さくし、「（教える人・専門家向け）」は下の行に。閉じるボタンは右上に小さく、「（Esc）」は出さない
+   （実機：縦向きでは見出しが閉じるボタンの横で3行に折れていた） */
+body.narrow .popup-head {
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+}
+
+body.narrow .popup-head b small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+body.narrow .popup-head button {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+body.narrow .popup-head button .key {
+  display: none;
+}
+
 body.narrow .detail-popup {
   align-items: stretch;
   padding: 8px;
@@ -4818,6 +4849,11 @@ body.rotate[data-phase="play2"] #rotate-hint {
     filter: none;
   }
 
+  /* 触る端末には Esc キーがない */
+  .popup-head button .key {
+    display: none;
+  }
+
   .buttons button:hover,
   .buttons a.btn:hover {
     transform: none;
@@ -4838,5 +4874,31 @@ body.rotate[data-phase="play2"] #rotate-hint {
 
   body.narrow .f-arrow {
     transform: none;
+  }
+}
+
+/* 横向きのスマホ（高さ 480px 未満）：下に固定するボタンの帯が画面の4割を占めて、読める部分が狭かった（iPhone の実機で確認 2026-11-06）。
+   ボタンを1列に並べ、主のボタンも1行まるごとにせず、帯を薄くする */
+@media (max-height: 479px) {
+  body.narrow .screen > .buttons:last-child {
+    padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  body.narrow .buttons {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  body.narrow .buttons button,
+  body.narrow .buttons a.btn {
+    flex: 1 1 auto;
+    padding: 6px 10px 8px;
+    font-size: 14px;
+  }
+
+  body.narrow .buttons button.primary {
+    flex: 2 1 auto;
+    padding: 7px 14px 9px;
+    font-size: 17px;
   }
 }
