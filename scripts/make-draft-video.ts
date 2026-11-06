@@ -1,6 +1,8 @@
 // 仮の動画（3分）を作る（docs/DEMO.md の時間配分どおり。台本 第5版：問題から入り、作者は身元の開示として名乗る、2026-11-06）。
 // 録画（scripts/record-demo.ts の recordings/*.mp4 と目印の *.json）を切り出して早送りし、台本のナレーションを字幕と声にして重ね、つなぐ。
-// 試算の図は scripts/make-hook-chart.ts（recordings/hook/hook.mp4）、道のりの絵は scripts/make-scene7.ts（recordings/scene7/）。
+// 試算の図は scripts/make-hook-chart.ts（recordings/hook/hook.mp4）、シーン2の動く絵（細菌が何年もかけて耐性を獲得していく）は
+// scripts/make-scene2.ts（recordings/scene2/scene2.mp4）、道のりの絵は scripts/make-scene7.ts（recordings/scene7/）。
+// 並べ比べ（シーン7）とエンドカードには、ゲームのドット絵（scripts/lib/pixel-art.ts）を添える。
 // 作者の写真は recordings/author/photo1.jpg（シーン3。顔を丸く小さく切る）。作者が用意したもので、Git に入れない。
 // BGM：scripts/make-bgm.ts があれば、シーンの区切りから曲の区間（cue）を作って合成し、声の下で小さく流す（声が出ている間はさらに下げる）
 // 字幕は画面なしの Chrome で透明な PNG に描き、ffmpeg で重ねる（手元の ffmpeg には文字を描く機能がないため）。
@@ -19,6 +21,7 @@ import QRCode from "qrcode";
 import { alignChunks, silences } from "./lib/align.ts";
 import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 import { openChrome, sleep, type Page } from "./lib/chrome.ts";
+import { bladderUrl, bugUrl, iconUrl, imgTag, soldierHeadUrl, soldierUrl } from "./lib/pixel-art.ts";
 
 const { values } = parseArgs({
   options: {
@@ -79,9 +82,9 @@ const PROPER = `proper-seed${values.seed}`;
 
 const FONT = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
-type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "gap" | "bigLow" | "hook" | "end";
+type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
 /** 背景まで描く絵（透明にしない） */
-const OPAQUE: Kind[] = ["card", "intro", "gap", "end"];
+const OPAQUE: Kind[] = ["card", "intro", "compare", "end"];
 /** エンドカードの QR（学生用の URL。評価役の「2.5秒では URL を読めない」を受けて足した） */
 const PLAY_URL = "https://ph1125ks.github.io/Built-with-Claude-Japan-2026/";
 const PLAY_QR = await QRCode.toDataURL(PLAY_URL, { margin: 1, width: 360, color: { dark: "#0b0812", light: "#ffffff" } });
@@ -95,6 +98,15 @@ const DOT = `"DG-la","DG-ja",${FONT}`;
 const photoUrl = (name: string) => `data:image/jpeg;base64,${readFileSync(join(REC, "author", name)).toString("base64")}`;
 /** 夜の盤面と同じ背景（ゲームの theme と同じ色） */
 const NIGHT = `background:radial-gradient(ellipse at 75% 10%,rgba(143,125,255,.16),transparent 55%),radial-gradient(ellipse at 10% 90%,rgba(59,224,198,.08),transparent 50%),#0b0812`;
+
+/** 並べ比べ（シーン7）の列。drug は使った薬（兵士の絵）、rows の icon は行の頭の絵 */
+type CompareIcon = "trump" | "bladderBad" | "bladderGood" | "shield" | "star";
+interface CompareCol {
+  head: string;
+  drug: string;
+  bad: boolean;
+  rows: { icon: CompareIcon; text: string }[];
+}
 
 function html(kind: Kind, text: string, extra?: string[]): string {
   const base = `html,body{margin:0;width:${W}px;height:${H}px;font-family:${FONT};}`;
@@ -138,33 +150,6 @@ p:last-of-type{font-size:24px;font-weight:600;color:#a493b6;white-space:nowrap}
     case "label":
       // 左上の札（シーン0の「いま」「2050年」）
       return `<style>${DOT_CSS}${base}div{position:absolute;left:180px;top:104px;padding:10px 24px;background:rgba(14,9,22,.86);box-shadow:inset 6px 0 0 #ffb347;color:#ffd38a;font-family:${DOT};font-size:40px}</style><div>${esc(text)}</div>`;
-    case "gap": {
-      // 時間のずれの図（シーン2）。text は段："0"＝「抗菌薬を、正しく使う」だけ、"2"＝いまの箱・何年も先の箱・矢印。
-      // 第7版：文字を3ブロック（正しく使う／いま：よくなる／何年も先：効かない細菌が増える）に減らした（初見の読み手役3人「6ブロックは速い声と同時に読めない」）
-      const st = Number(text);
-      const two = st >= 2;
-      const head = st === 0 ? "耐性を広げないために、欠かせないこと" : "でも";
-      return `<style>${DOT_CSS}${base}body{${NIGHT};color:#f4ecf7}
-.k{position:absolute;left:140px;top:150px;font-family:${DOT};font-size:38px;color:#3be0c6;letter-spacing:.08em}
-.one{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:${DOT};font-size:110px;color:#fff;letter-spacing:.06em;text-shadow:0 6px 30px rgba(59,224,198,.35);display:${st === 0 ? "block" : "none"}}
-.box{position:absolute;top:250px;width:640px;height:470px;box-sizing:border-box;padding:40px 44px;background:#160f22;display:${st === 0 ? "none" : "block"}}
-.now{left:140px;box-shadow:inset 0 0 0 4px #3be0c6}
-.later{left:1140px;box-shadow:inset 0 0 0 4px #ff6352;opacity:${two ? 1 : 0.12}}
-h2{margin:0 0 24px;font-family:${DOT};font-size:46px}
-.now h2{color:#3be0c6}.later h2{color:#ff8a7a}
-.mark{font-size:120px;line-height:1;font-weight:800;margin-bottom:18px}
-.now .mark{color:#5ef0a0}.later .mark{color:#ff6352}
-b{display:block;font-size:46px;font-weight:800;line-height:1.25}
-small{display:block;margin-top:14px;font-size:30px;color:#cdbfe0;font-weight:600}
-.arrow{position:absolute;left:800px;top:400px;width:320px;opacity:${two ? 1 : 0}}
-.arrow i{position:relative;display:block;height:0;width:280px;border-top:8px dashed #ffb347;margin:30px 0 0}
-.arrow i::after{content:"";position:absolute;right:-52px;top:-26px;border:22px solid transparent;border-left:30px solid #ffb347}
-.arrow span{display:block;width:320px;text-align:center;font-family:${DOT};font-size:26px;color:#ffd38a;line-height:1.35;white-space:nowrap}
-</style><p class="k">${head}</p><p class="one">抗菌薬を、正しく使う</p>
-<div class="box now"><h2>いま</h2><div class="mark">✓</div><b>よくなる</b></div>
-<div class="arrow"><span>使い方の影響が返るのは</span><i></i><span style="margin-top:30px">何年も先</span></div>
-<div class="box later"><h2>何年も先</h2><div class="mark">✗</div><b>効かない細菌が増える</b></div>`;
-    }
     case "speed":
       return speed(64);
     case "speedLow":
@@ -198,15 +183,41 @@ small{display:block;margin-top:14px;font-size:30px;color:#cdbfe0;font-weight:600
       // シーン8：Claude が自分で見つけて直した数字（右下。字幕の上）。第5版の評価（審査員「大きな文字で」）を受けて数字を 48 → 66px に
       return `<style>${base}div{position:absolute;right:36px;bottom:160px;width:404px;box-sizing:border-box;padding:14px 18px;background:rgba(14,9,22,.92);box-shadow:inset 6px 0 0 #ffb347;color:#fff}h2{margin:0;font-size:24px;color:#ffb347;line-height:1.3}b{display:block;font-size:66px;font-weight:800;margin:6px 0;white-space:nowrap}p{margin:0;font-size:19px;color:#cdbfe0;line-height:1.45}</style><div><h2>${esc(text)}</h2><b>${esc(extra?.[0] ?? "")}</b><p>${esc(extra?.[1] ?? "")}</p></div>`;
     case "compare": {
-      // シーン6の最後：1回目（切り札を連打）と2回目（その細菌に合う薬へ）の並べ比べ。text は JSON
-      const cols = JSON.parse(text) as { head: string; rows: string[]; bad: boolean }[];
-      const col = (c: { head: string; rows: string[]; bad: boolean }) =>
-        `<section class="${c.bad ? "bad" : "good"}"><h2>${esc(c.head)}</h2>${c.rows.map((r) => `<p>${esc(r)}</p>`).join("")}</section>`;
-      return `<style>${base}body{background:#0b0812;color:#f4ecf7;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:34px}h1{margin:0;font-size:46px;letter-spacing:.04em}div{display:flex;gap:40px}section{width:720px;padding:30px 36px;background:#160f22}section.bad{box-shadow:inset 0 0 0 4px #ff6352}section.good{box-shadow:inset 0 0 0 4px #3be0c6}h2{margin:0 0 18px;font-size:40px}section.bad h2{color:#ff8a7a}section.good h2{color:#3be0c6}p{margin:12px 0;font-size:32px;font-weight:700}</style><h1>同じ細菌、同じ手札。ちがうのは選び方だけ</h1><div>${cols.map(col).join("")}</div>`;
+      // シーン7の最後：1回目（切り札を連打）と2回目（その細菌に合う薬へ）の並べ比べ。text は JSON（CompareCol[]）。
+      // 第7版の直し（2026-11-06 作者「他のシーンも上げられるところは」）：文字だけの表に、ゲームの絵（使った薬の兵士・切り札の札・膀胱・盾）を添えた
+      const cols = JSON.parse(text) as CompareCol[];
+      const pic: Record<CompareIcon, string> = {
+        trump: imgTag(soldierHeadUrl("MEPM", 3)),
+        bladderBad: imgTag(bladderUrl(0.05, 2, 20, 32)),
+        bladderGood: imgTag(bladderUrl(0.88, 2, 20, 32)),
+        shield: imgTag(iconUrl("shield", 4)),
+        star: imgTag(iconUrl("star", 4)),
+      };
+      const col = (c: CompareCol) =>
+        `<section class="${c.bad ? "bad" : "good"}"><div class="hd"><h2>${esc(c.head)}</h2>${imgTag(soldierUrl(c.drug, "idle0", 4))}</div>${c.rows.map((r) => `<p><span class="ic">${pic[r.icon]}</span><span>${esc(r.text)}</span></p>`).join("")}</section>`;
+      return `<style>${DOT_CSS}${base}body{${NIGHT};color:#f4ecf7;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:40px}
+h1{margin:0;font-family:${DOT};font-size:50px;letter-spacing:.04em;color:#fff}
+div.cols{display:flex;gap:40px}section{width:780px;box-sizing:border-box;padding:24px 32px 18px;background:#160f22}
+section.bad{box-shadow:inset 0 0 0 4px #ff6352}section.good{box-shadow:inset 0 0 0 4px #3be0c6}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}h2{margin:0;font-size:40px;line-height:1.2}
+section.bad h2{color:#ff8a7a}section.good h2{color:#3be0c6}
+p{display:flex;align-items:center;gap:20px;margin:0;padding:12px 0;border-top:1px solid #33274f;font-size:31px;font-weight:700;line-height:1.3}
+.ic{width:72px;flex:none;display:flex;justify-content:center;align-items:center}img{image-rendering:pixelated;display:block}</style><h1>同じ細菌、同じ手札。ちがうのは選び方だけ</h1><div class="cols">${cols.map(col).join("")}</div>`;
     }
-    case "end":
-      // エンドカード（第4版）：左に作品名・一般の人への一言・URL、右に学生用の URL の QR
-      return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;align-items:center;justify-content:center;gap:80px}.t{max-width:1180px;display:flex;flex-direction:column;gap:22px}h1{margin:0 0 6px;font-size:76px}p{margin:0;font-size:32px;opacity:.95}p:first-of-type{font-size:38px;font-weight:700;opacity:1;margin-bottom:10px;line-height:1.5}figure{margin:0;text-align:center}figure img{width:340px;height:340px;display:block;image-rendering:pixelated}figcaption{font-size:28px;margin-top:12px}</style><div class="t"><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div><figure><img src="${PLAY_QR}"><figcaption>あそぶ</figcaption></figure>`;
+    case "end": {
+      // エンドカード（第4版）：左に作品名・一般の人への一言・URL、右に学生用の URL の QR。
+      // 第7版の直し（2026-11-06）：ゲームのタイトル画面と同じ作り（夜の盤面の色・ドット絵の文字のロゴ・名前の由来）にし、下にゲームの細菌を並べた
+      const bugs = ["ecoli", "kpneumoniae", "pmirabilis", "paeruginosa", "efaecalis"].map((id) => imgTag(bugUrl(id, 0, 3))).join("");
+      return `<style>${DOT_CSS}${base}body{${NIGHT};color:#fff;display:flex;align-items:center;justify-content:center;gap:90px}
+.t{max-width:1180px;display:flex;flex-direction:column;gap:20px}
+h1{margin:0;font-family:${DOT};font-weight:400;font-size:92px;line-height:1;letter-spacing:.04em;color:#fff;text-shadow:0 4px 0 #ff4f8b,0 8px 0 #b8255f,0 12px 0 #5a0b2e,0 0 40px rgba(255,79,139,.45)}
+h1 small{font-size:26px;color:#b7a6c6;letter-spacing:0;text-shadow:none;margin-left:6px}
+p.o{margin:-4px 0 14px;font-family:${DOT};font-size:22px;letter-spacing:.12em;color:#3be0c6}
+p{margin:0;font-size:32px;opacity:.95}p.lead{font-size:38px;font-weight:700;opacity:1;margin-bottom:10px;line-height:1.5}
+figure{margin:0;text-align:center}figure img{width:340px;height:340px;display:block;image-rendering:pixelated;box-shadow:0 0 0 8px #fff}figcaption{font-family:${DOT};font-size:28px;margin-top:20px;color:#3be0c6;letter-spacing:.1em}
+.frieze{position:absolute;left:0;right:0;bottom:44px;display:flex;justify-content:center;align-items:center;gap:80px}.frieze img{image-rendering:pixelated;display:block}</style>
+<div class="t"><h1>${esc(text.replace("（仮）", ""))}<small>（仮）</small></h1><p class="o">選択圧（せんたくあつ）から</p>${(extra ?? []).map((l, i) => `<p${i === 0 ? ' class="lead"' : ""}>${esc(l)}</p>`).join("")}</div><figure><img src="${PLAY_QR}"><figcaption>あそぶ</figcaption></figure><div class="frieze">${bugs}</div>`;
+    }
     case "card":
       return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}h1{margin:0;font-size:72px}p{margin:0;font-size:36px;opacity:.92;max-width:1500px}</style><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}`;
   }
@@ -493,16 +504,21 @@ async function main(): Promise<void> {
       parts: [fileClip(HOOK, hookDur), ...(DUR1 - hookDur > 0.05 && existsSync(HOOK_LAST) ? [still(HOOK_LAST, DUR1 - hookDur)] : [])],
       overlays: [],
     });
-    // 2 正しく使うことが大切・でも影響は何年も先・学ぶ機会が少ない（13秒）：時間のずれの図を2段で。
-    //   「抗菌薬を、正しく使う」→「でも」で「いま：よくなる」「何年も先：効かない細菌が増える」の箱と矢印
-    //   第7版：声を2文、図の文字を3ブロックに（第6版の5文・6ブロック・図の下の一行は、初見の読み手役3人が「読めない」）
-    const gapBoth = ANCHORS[2]?.find((a) => a.word === "でも、")?.at ?? 4;
+    // 2 正しく使うことが大切・でも影響は何年も先・学ぶ機会が少ない（13秒）：動く絵（scripts/make-scene2.ts）。
+    //   「抗菌薬を、正しく使う」の大きな字 →「でも」（4秒）で盤面：抗菌薬の兵士が薬を使うたびに効く細菌は倒れ、盾の印の効かない細菌だけが残って増える。
+    //   年表が いま → 1年後 → … → 何年も先 と進み、右の数字（効かない細菌の割合）が 7% → 86% に。
+    //   第7版の直し（2026-11-06 作者「この画面だけ質が低い。ゲームの細菌や抗菌薬の絵で、何年もかけて耐性を獲得していく姿をアニメーションに」）。
+    //   前は「いま：よくなる」「何年も先：効かない細菌が増える」の箱と矢印の静止画だった
+    const SCENE2 = join(REC, "scene2", "scene2.mp4");
+    const SCENE2_LAST = join(REC, "scene2", "scene2-last.png");
+    if (!existsSync(SCENE2)) throw new Error("シーン2の動く絵がない（npx tsx scripts/make-scene2.ts で作る）");
     const DUR2 = 13;
+    const s2dur = Math.min(probe(SCENE2), DUR2);
     await scene({
       n: 2,
       dur: DUR2,
-      screen: "時間のずれの図（コードで描いた）：「抗菌薬を、正しく使う」→ いま「よくなる」／ 何年も先「効かない細菌が増える」と矢印「使い方の影響が返るのは、何年も先」",
-      parts: [still(await render(page, "gap", "0"), gapBoth), still(await render(page, "gap", "2"), DUR2 - gapBoth)],
+      screen: "動く絵（コードで描いた。ゲームのドット絵）：「抗菌薬を、正しく使う」→「でも」で盤面。抗菌薬の兵士が薬を使うたびに、効く細菌は倒れ、盾の印の効かない細菌だけが残って分かれて増える。年表が いま → 1年後 → … → 何年も先 と進み、効かない細菌の割合が 7% → 86% に",
+      parts: [fileClip(SCENE2, s2dur), ...(DUR2 - s2dur > 0.05 && existsSync(SCENE2_LAST) ? [still(SCENE2_LAST, DUR2 - s2dur)] : [])],
       overlays: [],
     });
     // 3 ゲームにした → 作ったのは誰か（18秒）：タイトル画面（後ろでボットが遊ぶデモ。上に作品の一言）→「作ったのは」で丸く小さく切った作者の写真と経歴のカード
@@ -605,9 +621,28 @@ async function main(): Promise<void> {
     const t7c = t7w + WON7; // 並べ比べ
     const DUR7 = t7c + CMP7;
     const sup7 = script.get(7)?.supplements[0];
-    const COMPARE = [
-      { head: "1回目：切り札を連打", rows: ["ステージ1で切り札（カルバペネム系）を 100%", "2050年：膀胱が破られた", "手札のどの薬も効かない細菌 12%"], bad: true },
-      { head: "2回目：その細菌に合う薬へ", rows: ["ステージ1で切り札（カルバペネム系）を 3%", "2050年：守り切った（膀胱 88／100）", "手札のどの薬も効かない細菌 0%"], bad: false },
+    // 絵：1回目は切り札（メロペネム）の機械兵、2回目はセフメタゾールの兵士。行の頭に切り札の札・膀胱（破られた／守った）・盾（効かない細菌）
+    const COMPARE: CompareCol[] = [
+      {
+        head: "1回目：切り札を連打",
+        drug: "MEPM",
+        bad: true,
+        rows: [
+          { icon: "trump", text: "ステージ1で切り札（カルバペネム系）を 100%" },
+          { icon: "bladderBad", text: "2050年：膀胱が破られた" },
+          { icon: "shield", text: "手札のどの薬も効かない細菌 12%" },
+        ],
+      },
+      {
+        head: "2回目：その細菌に合う薬へ",
+        drug: "CMZ",
+        bad: false,
+        rows: [
+          { icon: "trump", text: "ステージ1で切り札（カルバペネム系）を 3%" },
+          { icon: "bladderGood", text: "2050年：守り切った（膀胱 88／100）" },
+          { icon: "star", text: "手札のどの薬も効かない細菌 0%" },
+        ],
+      },
     ];
     await scene({
       n: 7,
@@ -631,7 +666,7 @@ async function main(): Promise<void> {
         ...(sup7 ? [await ov("top", sup7, t7a, t7r)] : []),
       ],
     });
-    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.join("／")}`).join(" ｜ "), start: t7c, end: DUR7 });
+    built.at(-1)!.overlays.push({ kind: "compare", text: COMPARE.map((c) => `${c.head}：${c.rows.map((r) => r.text).join("／")}`).join(" ｜ "), start: t7c, end: DUR7 });
     // 8 教える側（24秒）：教員モードの録画（record-demo.ts の teacher。本物の Claude を動かした回）。
     // 入力（全体、3.5秒）→ Claude の作業を拡大（17.5秒。自分で見つけて直す場面は等倍 4.5秒）→ できたステージと承認・QR（3秒）。
     // 第7版：紙芝居をやめた分で 16 → 24秒に戻した（初見の読み手役3人「Claude の見せ場がいちばん薄い」「教員モードは22〜24秒」）
