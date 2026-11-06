@@ -189,7 +189,8 @@ function howtoSlides(data: GameData, region: string, year: number): string[] {
         </div>`;
 
   // 3. 使うほど、効かない細菌が残る：薬を使う前 → 効く細菌は倒れる → 効かない細菌が増える
-  const pop = (kinds: string) => `<div class="a-pop">${[...kinds].map((k, j) => `<span class="${k === "r" ? "res" : k === "x" ? "dead" : ""}">${bg("ecoli", j % 2)}</span>`).join("")}</div>`;
+  // 薬が効かない細菌は盾の印（動画・「はじめての人へ」・結果画面と同じ。2026-11-06 に朱の枠から統一）
+  const pop = (kinds: string) => `<div class="a-pop">${[...kinds].map((k, j) => `<span class="${k === "r" ? "res" : k === "x" ? "dead" : ""}">${bg("ecoli", j % 2)}${k === "r" ? SHIELD() : ""}</span>`).join("")}</div>`;
   const art3 = `
         <div class="art art-selection">
           <div class="a-step">${pop("ssrsssss")}<p>効かない細菌が<br>少しだけまじっている</p></div>
@@ -197,7 +198,7 @@ function howtoSlides(data: GameData, region: string, year: number): string[] {
           <div class="a-step">${pop("xxrxxxxx")}<p>効く細菌は倒れ、<br>効かない細菌が残る</p></div>
           <div class="a-arrow">▶<small>増える</small></div>
           <div class="a-step">${pop("rrrrrrrr")}<p>効かない細菌ばかりに<br>なる（選択圧）</p></div>
-          <p class="a-legend"><span class="res">${bg("ecoli")}</span>＝薬が効かない細菌（耐性菌）</p>
+          <p class="a-legend"><span class="res">${bg("ecoli")}${SHIELD()}</span>盾の印＝薬が効かない細菌（耐性菌）</p>
         </div>`;
 
   return [
@@ -680,11 +681,14 @@ function drugsPanel(data: GameData, r: StageResult): string {
     </section>`;
 }
 
-/** 10匹の細菌の列。p の割合（四捨五入）を「薬が効かない細菌」（朱の枠）にする。幅をそろえるため、べん毛のない絵（bare）で描く */
+/** 薬が効かない細菌の印：盾（動画のシーン2・「はじめての人へ」・盤面で弾がはじかれたときと同じ。2026-11-06 作者の指摘で、朱の枠から統一） */
+const SHIELD = () => `<i class="bug-shield">${iconImg("shield", 2)}</i>`;
+
+/** 10匹の細菌の列。p の割合（四捨五入）を「薬が効かない細菌」（盾の印）にする。幅をそろえるため、べん毛のない絵（bare）で描く */
 function bugRow(def: BacteriumDef | undefined, p: number, n = 10): string {
   if (!def) return "";
   const res = Math.round(Math.max(0, Math.min(1, p)) * n);
-  return `<span class="r-bugs">${Array.from({ length: n }, (_, i) => `<span class="${i < res ? "res" : ""}">${bugImg(def, i % 2, true, 2)}</span>`).join("")}</span>`;
+  return `<span class="r-bugs">${Array.from({ length: n }, (_, i) => `<span class="${i < res ? "res" : ""}">${bugImg(def, i % 2, true, 2)}${i < res ? SHIELD() : ""}</span>`).join("")}</span>`;
 }
 
 /**
@@ -699,6 +703,7 @@ function enemyPanel(data: GameData, start: ResistanceTable, end: ResistanceTable
       <h4>${iconImg("germ", 1)}育った敵：薬が効かない細菌</h4>
       <div class="r-pop"><div class="r-pop-row"><span class="r-pop-label">${fromLabel}</span>${bugRow(data.bacteria[0], 0)}</div><div class="r-pop-row"><span class="r-pop-label">${toLabel}</span>${bugRow(data.bacteria[0], 0)}</div></div>
       <p class="r-pop-note">${used ? "大きく増えた組はありません" : "抗菌薬を使わなかったので、増えていません"}</p>
+      <p class="r-pop-note r-pop-legend">${iconImg("shield", 2)}盾の印＝薬が効かない細菌</p>
     </section>`;
   }
   const def = data.bacteriumById.get(top.species);
@@ -715,6 +720,7 @@ function enemyPanel(data: GameData, start: ResistanceTable, end: ResistanceTable
         <div class="r-pop-row"><span class="r-pop-label">${fromLabel}<b>${pct(top.from)}</b></span>${bugRow(def, top.from)}</div>
         <div class="r-pop-row"><span class="r-pop-label">${toLabel}<b class="bad">${pct(top.to)}</b></span>${bugRow(def, top.to)}</div>
       </div>
+      <p class="r-pop-note r-pop-legend">${iconImg("shield", 2)}盾の印＝薬が効かない細菌</p>
       ${others ? `<ul class="r-rises">${others}</ul>` : ""}
     </section>`;
 }

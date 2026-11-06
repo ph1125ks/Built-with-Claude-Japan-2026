@@ -2551,14 +2551,32 @@ ul.tight li.small {
   filter: drop-shadow(0 0 5px rgba(255, 111, 165, 0.6));
 }
 
-/* 薬が効かない細菌：朱の枠で囲む（細菌の色＝グラム染色の色は変えない） */
+/* 薬が効かない細菌：盾の印を右上に（動画・「はじめての人へ」・盤面で弾がはじかれたときと同じ印。2026-11-06 に朱の枠から統一。細菌の色＝グラム染色の色は変えない） */
+.bug-shield {
+  position: absolute;
+  right: -10px;
+  top: -12px;
+  display: block;
+  line-height: 0;
+  filter: drop-shadow(0 0 4px rgba(255, 99, 82, 0.8));
+  animation: shield-in 0.5s both cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes shield-in {
+  from {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
 .a-pop span.res,
 .a-legend span.res {
-  filter: none;
-  padding: 3px;
-  margin: -3px;
-  background: rgba(255, 99, 82, 0.3);
-  box-shadow: 0 0 0 2px var(--bad), 0 0 12px rgba(255, 99, 82, 0.7);
+  filter: drop-shadow(0 0 5px rgba(255, 99, 82, 0.5));
+}
+
+.a-legend span.res .bug-shield {
+  right: -8px;
+  top: -10px;
 }
 
 /* 倒れた細菌：灰色にして × */
@@ -3523,24 +3541,27 @@ ul.tight li.small {
   filter: drop-shadow(0 0 4px rgba(255, 111, 165, 0.5));
 }
 
+/* 薬が効かない細菌：盾の印（.bug-shield）。細菌の絵は少し暗くして、盾を目立たせる */
 .r-bugs > span.res {
-  filter: none;
-  background: rgba(255, 99, 82, 0.3);
-  box-shadow: 0 0 0 2px var(--bad), 0 0 10px rgba(255, 99, 82, 0.7);
-  animation: res-in 0.5s both cubic-bezier(0.2, 1.6, 0.4, 1);
+  filter: drop-shadow(0 0 4px rgba(255, 99, 82, 0.55));
 }
 
-@keyframes res-in {
-  from {
-    transform: scale(1.5);
-    opacity: 0;
-  }
+.r-bugs > span .bug-shield {
+  right: 2px;
+  top: -8px;
 }
 
 .r-pop-note {
   margin: 0;
   font-size: 12.5px;
   color: var(--muted);
+}
+
+.r-pop-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
 }
 
 .r-rises {
