@@ -216,7 +216,7 @@ p.o{margin:-4px 0 14px;font-family:${DOT};font-size:22px;letter-spacing:.12em;co
 p{margin:0;font-size:32px;opacity:.95}p.lead{font-size:38px;font-weight:700;opacity:1;margin-bottom:10px;line-height:1.5}
 figure{margin:0;text-align:center}figure img{width:340px;height:340px;display:block;image-rendering:pixelated;box-shadow:0 0 0 8px #fff}figcaption{font-family:${DOT};font-size:28px;margin-top:20px;color:#3be0c6;letter-spacing:.1em}
 .frieze{position:absolute;left:0;right:0;bottom:44px;display:flex;justify-content:center;align-items:center;gap:80px}.frieze img{image-rendering:pixelated;display:block}</style>
-<div class="t"><h1>${esc(text.replace("（仮）", ""))}<small>（仮）</small></h1><p class="o">選択圧（せんたくあつ）から</p>${(extra ?? []).map((l, i) => `<p${i === 0 ? ' class="lead"' : ""}>${esc(l)}</p>`).join("")}</div><figure><img src="${PLAY_QR}"><figcaption>あそぶ</figcaption></figure><div class="frieze">${bugs}</div>`;
+<div class="t"><h1>${esc(text)}</h1><p class="o">選択圧（せんたくあつ）から</p>${(extra ?? []).map((l, i) => `<p${i === 0 ? ' class="lead"' : ""}>${esc(l)}</p>`).join("")}</div><figure><img src="${PLAY_QR}"><figcaption>あそぶ</figcaption></figure><div class="frieze">${bugs}</div>`;
     }
     case "card":
       return `<style>${base}body{background:linear-gradient(135deg,#3b0a24,#7a1e45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}h1{margin:0;font-size:72px}p{margin:0;font-size:36px;opacity:.92;max-width:1500px}</style><h1>${esc(text)}</h1>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}`;
@@ -787,8 +787,8 @@ async function main(): Promise<void> {
       "はじめての人へ・Claude の作業記録：同じサイトの intro.html・replay.html",
       "コード：github.com/ph1125ks/Built-with-Claude-Japan-2026",
     ];
-    await scene({ n: 11, dur: 4, screen: "エンドカード（右に学生用の URL の QR）", parts: [still(await render(page, "end", "センタクアツ（仮）", endLines), 4)], overlays: [] });
-    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ（仮）", ...endLines, "QR：学生用の URL"].join(" ／ "), start: 0, end: 4 });
+    await scene({ n: 11, dur: 4, screen: "エンドカード（右に学生用の URL の QR）", parts: [still(await render(page, "end", "センタクアツ", endLines), 4)], overlays: [] });
+    built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ", ...endLines, "QR：学生用の URL"].join(" ／ "), start: 0, end: 4 });
   } finally {
     close();
   }

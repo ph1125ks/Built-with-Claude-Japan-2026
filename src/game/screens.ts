@@ -36,7 +36,7 @@ export function titleScreen(data: GameData, scenario: ScenarioDef, model: Resist
   void data;
   return `
   <div class="screen title-screen">
-    <div class="title-logo"><h1>センタクアツ<small>（仮）</small></h1><p class="title-origin">選択圧（せんたくあつ）から</p></div>
+    <div class="title-logo"><h1>センタクアツ</h1><p class="title-origin">選択圧（せんたくあつ）から</p></div>
     <p class="tagline">あなたの選択が、未来の敵をつくる</p>
     <p class="lead">細菌から膀胱を守る、抗菌薬（いわゆる抗生物質）のタワーディフェンス。<br>使うほど「薬が効かない細菌」が残って増え（選択圧）、「${escapeHtml(scenario.future.title)}」で自分が残した細菌と戦います。</p>
     <div class="title-main">

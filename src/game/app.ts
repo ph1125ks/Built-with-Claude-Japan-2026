@@ -266,7 +266,7 @@ export class App {
   private shareText(): string {
     const plain = (html: string) => new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
     const sc = this.scenario;
-    const lines = ["センタクアツ（仮）：抗菌薬のタワーディフェンス"];
+    const lines = ["センタクアツ：抗菌薬のタワーディフェンス"];
     if (this.present) lines.push(`ステージ1「${sc.present.title}」：${plain(causeLine(this.data, sc, "present", this.present).text)}`);
     if (this.future) lines.push(`ステージ2「${sc.future.title}」：${plain(causeLine(this.data, sc, "future", this.future, this.present ?? undefined).text)}`);
     lines.push("あなたの選択が、未来の敵をつくる", `${location.origin}${location.pathname}?seed=${this.shareSeed}`);
@@ -284,7 +284,7 @@ export class App {
       window.setTimeout(() => (btn.innerHTML = old), 1800);
     };
     if (isTouchDevice() && typeof navigator.share === "function") {
-      navigator.share({ title: "センタクアツ（仮）", text }).catch(() => undefined);
+      navigator.share({ title: "センタクアツ", text }).catch(() => undefined);
       return;
     }
     const clip = navigator.clipboard;
