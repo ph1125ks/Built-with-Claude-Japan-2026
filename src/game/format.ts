@@ -66,7 +66,7 @@ export function cardKeys(hand: string[], allDrugs: string[]): Map<string, number
   return new Map(hand.map((d, i) => [d, useAll ? order.indexOf(d) + 1 : i + 1]));
 }
 
-/** 切り札の系統（カードの「切り札」の札と、結果画面の原因の一文。2026-11-05 作者の判断：MEPM・IPM/CS） */
+/** 切り札の系統（カードの「切り札」の札と、結果画面の原因の一文。2026-11-05 作者の判断：カルバペネム系＝MEPM（IPM/CS はカタログにあるが、2026-11-06 に手札から外した）） */
 export const TRUMP_CLASS = "carbapenem";
 
 /**

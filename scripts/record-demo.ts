@@ -152,18 +152,15 @@ async function playthrough(s: Step, withFinal: boolean): Promise<void> {
   await s.hold(6000);
   await s.press("play", "ステージ1を始める");
   await s.until("result1");
-  await s.hold(3000);
-  await s.scrollTo(".rtable");
-  await s.hold(7000);
+  // 結果画面は1画面に収まる（2026-11-06 に作り直した。耐性率の表は「くわしい数字」のポップアップ）ので、スクロールせずに映す
+  await s.hold(10000);
   await s.press("future", "結果1 → ブリーフィング（2050年）");
   await s.hold(3000);
   await s.scrollTo("table.timeline");
   await s.hold(7000);
   await s.press("play", "2050年を始める");
   await s.until("result2");
-  await s.hold(3000);
-  await s.scrollTo(".rtable");
-  await s.hold(6000);
+  await s.hold(9000);
   if (withFinal) {
     await s.press("final", "結果2 → まとめ");
     await s.hold(8000);

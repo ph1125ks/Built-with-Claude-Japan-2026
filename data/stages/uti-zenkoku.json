@@ -52,10 +52,9 @@
       { "drug": "CAZ" },
       { "drug": "LVFX_PO" },
       { "drug": "TAZPIPC" },
-      { "drug": "MEPM" },
-      { "drug": "IPMCS" }
+      { "drug": "MEPM" }
     ],
-    "shortage": { "count": 2 },
+    "shortage": { "count": 1 },
     "waves": [
       { "at": 2, "lane": "random", "species": "auto", "count": 5, "spacing": 2.0 },
       { "at": 22, "lane": "random", "species": "auto", "count": 6, "spacing": 1.8 },

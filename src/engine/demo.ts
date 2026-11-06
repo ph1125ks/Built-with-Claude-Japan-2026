@@ -1,6 +1,6 @@
 // 録画用の操作シナリオ（デモ動画のシーン3〜5。docs/DEMO.md）。手で遊ぶと尺がぶれるので、決まった考え方で自動に遊ぶ。
 // 2026-11-04 作者の判断：
-//   乱用＝ステージ1も2050年も、カルバペネム系を連打する（MEPM。待ち時間中は IPM/CS）
+//   乱用＝ステージ1も2050年も、カルバペネム系（MEPM）を連打する（2026-11-06 までは 2050年の手札に IPM/CS もあり、MEPM の待ち時間中に使っていた。作者の判断で外した）
 //   適正＝台本どおり。グラム陰性桿菌にはまず CTRX、CTRX が効かない大腸菌・肺炎桿菌には CMZ、腸球菌には ABPC、
 //         緑膿菌には CAZ。途中で内服の CFDN を1回使う（吸収率が低く、薄く出ることを見せる）
 // どちらも見えている情報（Observation）だけで判断する。乱数は使わないので、同じ種なら毎回同じ展開になる。
@@ -23,7 +23,7 @@ function nearestByLane(obs: Observation): (ObservedBacterium | undefined)[] {
 
 const usable = (obs: Observation, drug: string, lane: number) => obs.hand.find((h) => h.drug === drug)?.usable[lane] === true;
 
-/** 乱用：菌のいるレーンに、MEPM を使えるたびに召喚する。MEPM が待ち時間中なら IPM/CS */
+/** 乱用：菌のいるレーンに、MEPM を使えるたびに召喚する（手札に IPM/CS があれば、MEPM の待ち時間中はそれ） */
 export function demoAbuseBot(): Bot {
   return {
     name: "録画：乱用",
