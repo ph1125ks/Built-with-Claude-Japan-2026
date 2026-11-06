@@ -4902,3 +4902,56 @@ body.rotate[data-phase="play2"] #rotate-hint {
     font-size: 17px;
   }
 }
+
+/* 「3・2・1・はじめ！」（hud.ts の startCountdown。2026-11-06 作者の判断で、止めた状態で始めるのをやめた）：レーンの真ん中に大きく */
+.countdown {
+  position: absolute;
+  left: 58%;
+  top: 24%;
+  transform: translate(-50%, -50%);
+  font-family: var(--pixel);
+  font-size: 100px;
+  line-height: 1;
+  color: #fff;
+  white-space: nowrap;
+  text-shadow:
+    0 0 28px var(--teal),
+    0 0 6px var(--teal),
+    5px 5px 0 #1a0a24;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.countdown.pop {
+  animation: count-pop 0.75s ease-out;
+}
+
+@keyframes count-pop {
+  from {
+    transform: translate(-50%, -50%) scale(1.8);
+    opacity: 0;
+  }
+
+  25% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.85;
+  }
+}
+
+/* 「くわしい数字」の末尾：この回の種 */
+.seed-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.seed-note code {
+  font-family: ui-monospace, Menlo, monospace;
+  background: var(--bg3);
+  padding: 1px 5px;
+}

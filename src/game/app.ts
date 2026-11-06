@@ -27,7 +27,8 @@ import {
 } from "../engine/index.ts";
 import type { BoardScene } from "./board.ts";
 import { Hud } from "./hud.ts";
-import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, dropsNote, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, showHowtoSlide, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
+import { isTouchDevice } from "./format.ts";
+import { antibiogramBlock, biggestDrops, biggestRises, briefingScreen, causeLine, dropsNote, finalScreen, howtoScreen, milestoneYears, resultScreen, risesTimeline, showHowtoSlide, sourcesScreen, titleScreen, year2050Note } from "./screens.ts";
 import { PlaySession } from "./session.ts";
 
 const bundled = import.meta.glob<ScenarioDef>("../../data/stages/*.json", { eager: true, import: "default" });
@@ -77,10 +78,16 @@ export function readParams(search: string): AppParams {
     cost: cost === "yakka" || cost === "abstract" ? cost : undefined,
     debug: q.has("debug"),
     budget: parseBudget(q.get("budget")),
-    seed: Number(q.get("seed") ?? 20261104) || 20261104,
+    // 種：?seed= がなければ開くたびに変える（2026-11-06 作者の指摘：既定が固定だと、供給制限で使えない薬と細菌の並びが毎回同じだった）。録画・テストは ?seed=570 のように固定する
+    seed: Number(q.get("seed")) || randomSeed(),
     region: q.get("region") ?? undefined,
     auto: q.get("auto") ?? undefined,
   };
+}
+
+/** 開くたびに変わる種（6桁）。結果画面の「くわしい数字」と共有の文に出して、同じ条件でもう一度遊べるようにする */
+function randomSeed(): number {
+  return 100000 + Math.floor(Math.random() * 900000);
 }
 
 function parseBudget(v: string | null): AppParams["budget"] {
@@ -120,6 +127,10 @@ export class App {
   /** ステージの種。同じ種なら毎回同じ展開・同じ供給制限になる（シミュレーターと同じく、未来は種をずらす） */
   private stageSeed(phase: "present" | "future"): number {
     return this.params.seed + this.attempt * 1000 + (phase === "future" ? 7919 : 0);
+  }
+  /** 「くわしい数字」と共有の文に出す種。これを ?seed= に付けると、いまの回と同じ供給制限・同じ細菌の並びになる（やり直した回数の分をずらしてある） */
+  private get shareSeed(): number {
+    return this.params.seed + this.attempt * 1000;
   }
   private attempt = 0;
   /** 遊び方を一度見たか（初めての人は「はじめる」のあとに必ず一度出す） */
@@ -201,7 +212,7 @@ export class App {
       return;
     }
     if (block) {
-      if (!this.rotatePaused && !this.session.paused) {
+      if (!this.rotatePaused && (!this.session.paused || this.hud.counting)) {
         this.hud.setPaused(true);
         this.rotatePaused = true;
       }
@@ -249,6 +260,42 @@ export class App {
       default:
         return undefined;
     }
+  }
+
+  /** 結果・まとめの「共有」の文（2026-11-06 作者の判断）：ステージごとの結果の一文と、同じ条件で遊べる URL */
+  private shareText(): string {
+    const plain = (html: string) => new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
+    const sc = this.scenario;
+    const lines = ["センタクアツ（仮）：抗菌薬のタワーディフェンス"];
+    if (this.present) lines.push(`ステージ1「${sc.present.title}」：${plain(causeLine(this.data, sc, "present", this.present).text)}`);
+    if (this.future) lines.push(`ステージ2「${sc.future.title}」：${plain(causeLine(this.data, sc, "future", this.future, this.present ?? undefined).text)}`);
+    lines.push("あなたの選択が、未来の敵をつくる", `${location.origin}${location.pathname}?seed=${this.shareSeed}`);
+    return lines.join("\n");
+  }
+
+  /** 触る端末では共有シート、PC ではクリップボードに（ボタンの字をしばらく「コピーしました」に） */
+  private share(): void {
+    const text = this.shareText();
+    const btn = this.ui.screen.querySelector<HTMLElement>('[data-action="share"]');
+    const say = (msg: string) => {
+      if (!btn) return;
+      const old = btn.innerHTML;
+      btn.textContent = msg;
+      window.setTimeout(() => (btn.innerHTML = old), 1800);
+    };
+    if (isTouchDevice() && typeof navigator.share === "function") {
+      navigator.share({ title: "センタクアツ（仮）", text }).catch(() => undefined);
+      return;
+    }
+    const clip = navigator.clipboard;
+    if (!clip) {
+      say("コピーできませんでした");
+      return;
+    }
+    clip.writeText(text).then(
+      () => say("コピーしました"),
+      () => say("コピーできませんでした"),
+    );
   }
 
   private act(action: string): void {
@@ -315,6 +362,9 @@ export class App {
         this.future = null;
         this.attempt++;
         this.go("brief2");
+        break;
+      case "share":
+        this.share();
         break;
       case "restart":
         this.present = this.future = this.futureStart = null;
@@ -400,7 +450,7 @@ export class App {
         this.startStage("present");
         break;
       case "result1":
-        this.showScreen(resultScreen(data, scenario, "present", this.present!, undefined, this.short.present));
+        this.showScreen(resultScreen(data, scenario, "present", this.present!, undefined, this.short.present, undefined, this.shareSeed));
         break;
       case "brief2": {
         this.stopPlay();
@@ -423,11 +473,11 @@ export class App {
         this.startStage("future");
         break;
       case "result2":
-        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart, this.short.future, this.present ?? undefined));
+        this.showScreen(resultScreen(data, scenario, "future", this.future!, this.present?.resistanceStart, this.short.future, this.present ?? undefined, this.shareSeed));
         break;
       case "final":
         this.stopPlay();
-        this.showScreen(finalScreen(data, scenario, this.present!, this.future!, this.short));
+        this.showScreen(finalScreen(data, scenario, this.present!, this.future!, this.short, this.shareSeed));
         break;
     }
   }
@@ -448,8 +498,8 @@ export class App {
       autopilot: this.autopilot(),
     });
     session.speed = this.speed;
-    // ステージ1の最初の回と、ステージ2は止めた状態で始める（試遊の指摘：ステージ2が、変わった手札を読む前に始まっていた）
-    const firstPlay = (phase === "future" || this.attempt === 0) && !this.params.auto;
+    // 「3・2・1」のあと自動で始める（2026-11-06 作者の判断。前はステージ1の最初の回とステージ2を止めた状態で始め、「再開」を押させていた）。自動で遊ばせるときは数えない
+    const countdown = !this.params.auto;
     const presentHand = new Set(this.scenario.present.hand.map((h) => h.drug));
     const newDrugs = phase === "future" ? stage.hand.map((h) => h.drug).filter((d) => !presentHand.has(d)) : [];
     this.session = session;
@@ -479,7 +529,7 @@ export class App {
         }
       },
     });
-    if (firstPlay) this.hud.pauseAtStart(newDrugs.length ? "。手札が変わっています（新しい薬のカードに「追加」）" : "");
+    if (countdown) this.hud.startCountdown(newDrugs.length ? "。手札が変わっています（新しい薬のカードに「追加」）" : "");
     this.rotatePaused = false;
     if (document.body.classList.contains("rotate")) this.setRotateBlock(true);
     this.board.banner(phase === "present" ? "ステージ1　" + stage.title : "ステージ2　" + stage.title, phase === "present" ? "細菌から膀胱を守る" : "自分が育てた耐性菌と戦う", phase === "present" ? "#3be0c6" : "#ff6352", 1500);

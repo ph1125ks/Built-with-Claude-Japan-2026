@@ -3,7 +3,7 @@
 import { canSummon, costPerDose, MAX_CARDS, type GameData, type GameEvent, type ResistanceChange } from "../engine/index.ts";
 import { H, LAYOUT, laneTopY, zoneBounds } from "./board.ts";
 import { effectiveTag, nearestRevealed } from "./bugs.ts";
-import { AWARE_WORDS, cardKeys, escapeHtml, genericName, intervalShort, isTouchDevice, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, waitSeconds, yen } from "./format.ts";
+import { AWARE_WORDS, cardKeys, escapeHtml, genericName, hoursLabel, intervalShort, isTouchDevice, modelShort, pct, rejectLabel, routeLabel, SPECTRUM_LABELS, spectrumOf, TRUMP_CLASS, waitHours, yen } from "./format.ts";
 import type { PlaySession } from "./session.ts";
 import { iconImg, soldierImg } from "./pixel/index.ts";
 import type { IconName } from "./pixel/icons.ts";
@@ -71,7 +71,7 @@ function helpPanel(data: GameData, modelId: string, assist: boolean): string {
         <h4>${iconImg("coin", 1)}カードの見かた</h4>
         <ul>
           <li>大きな字＝薬の一般名、上＝略号。<b class="access">Access</b>＝まず使う薬、<b class="watch">Watch</b>＝使いすぎ注意（WHO の AWaRe 分類）。<b class="trump-word">切り札</b>＝カルバペネム系（ほとんどの細菌に効く）</li>
-          <li>${iconImg("coin", 1)}＝1回の医療費（時間とともに増える）。${iconImg("hourglass", 1)}＝待ち時間＝投与間隔（ゲームの1日は ${data.rules.time.secondsPerGameDay}秒）</li>
+          <li>${iconImg("coin", 1)}＝1回の医療費（時間とともに増える）。${iconImg("hourglass", 1)}＝待ち時間＝投与間隔。<b>h</b> はゲーム内の時間（1時間＝1秒、1日＝${data.rules.time.secondsPerGameDay}秒）</li>
           <li>「大腸菌など・緑膿菌・腸球菌」＝効く見込みのある細菌（ゲーム内の目安）。下の3つの枠＝レーンごとの待ち時間（緑＝呼べる）</li>
           <li>内服薬は、体に届く割合（吸収率）のぶん薄い兵士で出ます。カードに触れると系統と投与間隔が出ます</li>
         </ul>
@@ -79,7 +79,7 @@ function helpPanel(data: GameData, modelId: string, assist: boolean): string {
       <section>
         <h4>${iconImg("up", 1)}効かない細菌が残る</h4>
         <ul>
-          <li>薬を使うと効く細菌は倒れ、効かない細菌だけが残って増えます（<b>選択圧</b>）。波が片付くたびに、使った薬が効かない割合が上がります</li>
+          <li>薬を使うと効く細菌は倒れ、効かない細菌だけが残って増えます（<b>選択圧</b>）。その日の細菌が片付くたびに、使った薬が効かない割合が上がります</li>
           <li>効かなくなる速さは、ゲーム用に大げさにしています</li>
           <li>耐性の進み方：<b>${escapeHtml(modelShort(modelId as "A"))}</b>（タイトル画面で A／B を選べます）。1レーンに兵士は ${B.maxUnitsPerLane} 人まで</li>
         </ul>
@@ -183,7 +183,7 @@ export class Hud {
           </div>
           <div class="gname${gname.length > 9 ? " long" : ""}">${escapeHtml(gname).replace(/・/g, "・<wbr>")}</div>
           <div class="aware-row"><span class="aware ${d.aware.toLowerCase()}">${d.aware}</span><span class="aware-word ${d.aware.toLowerCase()}">${escapeHtml(word)}</span></div>
-          <div class="meta"><span class="cost" title="1回の医療費">${iconImg("coin", 1)}<b>${yen(costPerDose(data, d.id))}</b></span><span class="wait" title="待ち時間＝投与間隔（${escapeHtml(intervalShort(d))}）">${iconImg("hourglass", 1)}<b>${waitSeconds(data, d).toFixed(0)}秒</b></span></div>
+          <div class="meta"><span class="cost" title="1回の医療費">${iconImg("coin", 1)}<b>${yen(costPerDose(data, d.id))}</b></span><span class="wait" title="待ち時間＝投与間隔（${escapeHtml(intervalShort(d))}。h はゲーム内の時間で、1時間＝1秒）">${iconImg("hourglass", 1)}<b>${hoursLabel(waitHours(d))}</b></span></div>
           <div class="spec">${spec}</div>
           ${gauge}
           <div class="dots" title="レーン1〜3ごとの待ち時間（緑＝呼べる）">${Array.from({ length: lanesCount }, (_, l) => `<i><b></b><em>${l + 1}</em></i>`).join("")}</div>
@@ -316,6 +316,7 @@ export class Hud {
   private dealTimer = 0;
 
   destroy(): void {
+    this.cancelCountdown();
     window.clearTimeout(this.dealTimer);
     for (const t of this.badgeTimers.values()) window.clearTimeout(t);
     this.opts.onPreview?.(null, 0);
@@ -343,7 +344,10 @@ export class Hud {
     abg.hidden = next !== "abg";
     help.hidden = next !== "help";
     if (next && !this.panel) {
-      this.pausedBeforePanel = this.session.paused;
+      // 「3・2・1」の途中で開いたら数えるのをやめ、閉じたときに動かす
+      const counting = this.countingDown;
+      if (counting) this.cancelCountdown();
+      this.pausedBeforePanel = counting ? false : this.session.paused;
       this.session.paused = true;
     } else if (!next && this.panel) {
       this.session.paused = this.pausedBeforePanel;
@@ -354,13 +358,28 @@ export class Hud {
 
   /** 止める・再開する（app.ts：スマホの縦向きのあいだ止めておく）。パネルを開いている間は止めたまま */
   setPaused(paused: boolean): void {
-    if (this.panel || this.session.paused === paused) return;
+    if (this.panel) return;
+    if (this.countingDown) {
+      // 「3・2・1」の途中（止めてある）：止める指示なら数えるのをやめて止めたままにする（横向きに戻すと setPaused(false) で動く）
+      if (paused) {
+        this.cancelCountdown();
+        this.els.pause.innerHTML = pauseLabel(true);
+        this.root.classList.add("paused");
+      }
+      return;
+    }
+    if (this.session.paused === paused) return;
     this.togglePause();
   }
 
   private togglePause(): void {
     // パネルを開いている間は止めたまま（閉じると元に戻る）
     if (this.panel) return;
+    // 「3・2・1」の途中で押したら、数えるのをやめて止まる（ボタンは「一時停止」のまま出ているので、押した人は止めたいはず）
+    if (this.countingDown) {
+      this.cancelCountdown();
+      this.session.paused = false;
+    }
     this.session.paused = !this.session.paused;
     this.els.pause.innerHTML = pauseLabel(this.session.paused);
     this.root.classList.toggle("paused", this.session.paused);
@@ -412,14 +431,57 @@ export class Hud {
     }
   }
 
+  /** 「3・2・1」を数えているあいだ（止めてある。数え終わったら動かす） */
+  private countingDown = false;
+  private countdownTimer = 0;
+  private countdownEl: HTMLElement | null = null;
+
+  /** 確認用：「3・2・1」を数えている最中か（app.ts の setRotateBlock も見る） */
+  get counting(): boolean {
+    return this.countingDown;
+  }
+
   /**
-   * ステージを止めた状態で始める（試遊の指摘：操作を知る前に菌が来る。ステージ2も、変わった手札を読む前に始まっていた）。
-   * 遊び方の案内（①②）も同じ帯に入れる（試遊の指摘：一時停止の帯に隠れて読めなかった）
+   * 「3・2・1・はじめ！」を数えてから自動で始める（2026-11-06 作者の判断。前は止めた状態で始め「再開」を押させていた：
+   * 試遊の指摘「操作を知る前に菌が来る」への対応だったが、毎回押すのが煩雑で、初めての人が「なぜ始まらない」と迷う。
+   * 最初の菌が膀胱に着くまで 17〜29 秒あるので、数えてから始めても間に合う）。
+   * 数えているあいだは止めておく（カードを選んでレーンを押すと予約になる）。遊び方の案内（①②）は最初に召喚するまで残す。
+   * 途中で「一時停止」やパネルを開くと数えるのをやめる（togglePause・togglePanel・setPaused）
    */
-  pauseAtStart(extra = ""): void {
-    if (this.session.paused) return;
-    this.togglePause();
-    this.message(`${TOUCH ? "右上の「再開」をタップで始まります" : "スペースか「再開」で始まります"}。① 下のカードを選ぶ → ② レーンを${TOUCH ? "タップ" : "クリック"}${extra}`, "hint", 0);
+  startCountdown(extra = ""): void {
+    this.cancelCountdown();
+    this.countingDown = true;
+    this.session.paused = true;
+    this.message(`${START_HINT}${extra}`, "hint", 0);
+    const el = document.createElement("div");
+    el.className = "countdown";
+    this.root.appendChild(el);
+    this.countdownEl = el;
+    const steps = ["3", "2", "1", "はじめ！"];
+    let i = 0;
+    const tick = () => {
+      if (i >= steps.length) {
+        this.cancelCountdown();
+        this.session.paused = false;
+        return;
+      }
+      el.textContent = steps[i]!;
+      el.classList.remove("pop");
+      void el.offsetWidth;
+      el.classList.add("pop");
+      i++;
+      this.countdownTimer = window.setTimeout(tick, i === steps.length ? 600 : 750);
+    };
+    tick();
+  }
+
+  /** 数えるのをやめる（止めたまま。動かすかどうかは呼ぶ側で決める） */
+  private cancelCountdown(): void {
+    window.clearTimeout(this.countdownTimer);
+    this.countdownTimer = 0;
+    this.countdownEl?.remove();
+    this.countdownEl = null;
+    this.countingDown = false;
   }
 
   private lastHp = Infinity;
@@ -456,8 +518,9 @@ export class Hud {
     const startedWaves = s.spawnIndex > 0 ? (s.spawnPlan[s.spawnIndex - 1]?.wave ?? 0) + 1 : 0;
     const cleared = s.waveRemaining.filter((r) => r === 0).length;
     // 片付いた波の数は、帯の下の目盛り（緑）で分かるので、文字では書かない（2026-11-06「文字が多すぎる」）
-    this.set("wave", this.els.wave, "text", `波 ${startedWaves} / ${s.stage.waves.length}`);
-    this.els.wave.title = `片付いた波 ${cleared} / ${s.stage.waves.length}`;
+    // 波は1日に1つ来るので、画面では「○日目」と呼ぶ（2026-11-06 作者の判断。波の時刻は 2・22・45…145 秒で、日の始まりとほぼ重なる）
+    this.set("wave", this.els.wave, "text", `${Math.max(1, startedWaves)}日目 / ${s.stage.waves.length}日間`);
+    this.els.wave.title = `片付けた日 ${cleared} / ${s.stage.waves.length}（細菌は1日に1群れ来る）`;
     this.els.pips.forEach((pip, i) => this.set(`pip${i}`, pip, "class", s.waveRemaining[i] === 0 && i < startedWaves ? "done" : i < startedWaves ? "on" : ""));
     if (s.bladderHp < this.lastHp - 1e-6) this.pulse(this.els.bladderBox, "hit");
     this.lastHp = s.bladderHp;
@@ -528,7 +591,7 @@ export class Hud {
       let text = this.session.paused ? `ここに ${abbr} を予約（${tap}）` : `ここに ${abbr} を呼び出す（${tap}）`;
       if (r === "cooldown") {
         const left = ((s.readyAt.get(`${this.selected}:${lane}`) ?? 0) - s.tick) / tps;
-        text = `${abbr}：待ち ${left.toFixed(1)}秒（投与間隔）`;
+        text = `${abbr}：あと ${hoursLabel((left / data.rules.time.secondsPerGameDay) * 24)}（投与間隔）`;
       } else if (r) text = `${abbr}：${rejectLabel(r)}`;
       const hover = this.hoverLane === lane;
       this.set(`lane${lane}`, el, "class", `lane target${r ? " blocked" : ""}${hover ? " hover" : ""}`);
@@ -563,7 +626,7 @@ export class Hud {
         // 2026-11-06「文字が多すぎる」：1行目を短く、2行目は「効かない割合」を頭に一度だけ書く
         const head =
           e.cause === "wave"
-            ? `波${(e.wave ?? 0) + 1}が片付いた：効く細菌は減り、効かない細菌が残った（選択圧）`
+            ? `${(e.wave ?? 0) + 1}日目の細菌が片付いた：効く細菌は減り、効かない細菌が残った（選択圧）`
             : `耐性ゲージ（${escapeHtml(data.classById.get(e.drugClass ?? "")?.name ?? e.drugClass ?? "")}）が1段上がった：この系統がまとめて効きにくくなった`;
         const note = this.anyLinked(e.changes) ? "　※まだ使っていない薬（耐性の連動）" : "";
         const lines = this.topChanges(e.changes);

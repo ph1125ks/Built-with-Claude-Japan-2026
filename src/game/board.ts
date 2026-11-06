@@ -478,7 +478,7 @@ export class BoardScene extends Phaser.Scene {
     const total = st.stage.waves.length;
     // 波の始まりは上の帯（HUD）が光って知らせる。盤面の札は最後の波だけ（試遊の指摘：札がレーン1の菌を隠す）
     this.events.emit("wave", started, total);
-    if (started === total && total > 1) this.waveTagShow(`最後の波　${started} / ${total}`, true);
+    if (started === total && total > 1) this.waveTagShow(`最後の日　${started} / ${total}`, true);
   }
 
   private syncBugs(s: PlaySession): void {
@@ -1095,7 +1095,7 @@ export class BoardScene extends Phaser.Scene {
         }
         case "end": {
           if (e.outcome === "won") {
-            this.banner("守り切った！", "すべての波をしのいだ", COLORS.good, 1000);
+            this.banner("守り切った！", "最後の日まで守り切った", COLORS.good, 1000);
             this.celebrate();
           } else {
             this.banner("膀胱が破られた", "", COLORS.bad, 1000);

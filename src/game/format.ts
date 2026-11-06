@@ -40,6 +40,19 @@ export function waitSeconds(data: GameData, drug: DrugDef): number {
   return data.rules.time.secondsPerGameDay / drug.dosesPerDay;
 }
 
+/**
+ * 待ち時間をゲーム内の時間（時間）で。1日＝24秒なので 1時間＝1秒で、数字は秒と同じ。
+ * 2026-11-06 作者の判断：カードの「6秒」を「6h」に（現実の投与間隔 q6h・q8h・q24h と同じ数字。×2・×4 の速さでも正しい）
+ */
+export function waitHours(drug: DrugDef): number {
+  return 24 / drug.dosesPerDay;
+}
+
+/** 「6h」「3.5h」の書き方 */
+export function hoursLabel(hours: number): string {
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+}
+
 export interface Spectrum {
   entero: boolean;
   pseudomonas: boolean;

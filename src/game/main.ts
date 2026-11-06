@@ -83,6 +83,8 @@ async function loadBoardFont(): Promise<void> {
       "？遊び方の要点操作近づくほど分かるカードの見かた細菌が残る効く：補助",
       // スマホの縦向きで出す案内（index.html の #rotate-hint）
       "横向きにしてください",
+      // 「○日目」・「最後の日」・「3・2・1・はじめ！」（2026-11-06）
+      "日目間最後の日まで守り切ったはじめ！",
     ].join("");
     await Promise.race([document.fonts.load('16px "DotGothic16"', words), new Promise((r) => setTimeout(r, 2500))]);
   } catch {
