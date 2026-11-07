@@ -4,6 +4,7 @@
 // scripts/make-scene2.ts（recordings/scene2/scene2.mp4）、道のりの絵は scripts/make-scene7.ts（recordings/scene7/）。
 // 並べ比べ（シーン7）とエンドカードには、ゲームのドット絵（scripts/lib/pixel-art.ts）を添える。
 // 作者の写真は recordings/author/photo1.jpg（シーン3。顔を丸く小さく切る）。作者が用意したもので、Git に入れない。
+// 作者が自分を撮った映像 recordings/author/self.mp4 があれば、シーン3は写真の代わりにその映像を置き、声もその映像から取る（2026-11-07 作者の判断）。
 // BGM：scripts/make-bgm.ts があれば、シーンの区切りから曲の区間（cue）を作って合成し、声の下で小さく流す（声が出ている間はさらに下げる）
 // 字幕は画面なしの Chrome で透明な PNG に描き、ffmpeg で重ねる（手元の ffmpeg には文字を描く機能がないため）。
 // 声：recordings/voice/scene{N}.wav（m4a・aiff・mp3 も可）があれば作者の録音を使う。なければ macOS の読み上げ（say）で仮の声を作る。
@@ -30,6 +31,10 @@ const { values } = parseArgs({
     voice: { type: "string", default: "Kyoko" },
     // 仮の読み上げの速さ（say -r）。178 で1秒に約5.3字（作者の録音で測った速さ。第6版の 200 は1割早口）
     rate: { type: "string", default: "178" },
+    // 作者が自分を撮った映像（シーン3）。省くと recordings/author/self.mp4（mov・m4v も可）を探す。--self none で使わない
+    self: { type: "string" },
+    // 書き出す名前（recordings/<out>.mp4・.srt・.json）。既定は draft-video。試しに作るときだけ変える
+    out: { type: "string", default: "draft-video" },
   },
 });
 const W = 1920;
@@ -38,6 +43,17 @@ const REC = values.rec!;
 const TMP = join(REC, "_draft");
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
+const OUT_BASE = values.out!;
+/**
+ * 作者が自分を撮った映像（シーン3の名乗り。作者が用意したもので、Git に入れない）。
+ * 2026-11-07 作者の判断：主催（セッション5）と受賞者（セッション4）が「本人が映る動画」を推したので、写真のカードから替える。
+ * recordings/author/self.mp4（mov・m4v も可）があればそれを使い、なければ今までどおり写真のカード。--self <file> で別の場所、--self none で使わない。
+ * 撮り方は docs/DEMO.md「収録前に作者が確かめること」
+ */
+const SELF = values.self === "none" ? undefined : (values.self ?? ["mp4", "mov", "MOV", "m4v"].map((e) => join(REC, "author", `self.${e}`)).find((f) => existsSync(f)));
+if (values.self && values.self !== "none" && !existsSync(values.self)) throw new Error(`--self の映像がない：${values.self}`);
+/** 作者の映像を置く枠（16:9。縦横とも偶数：yuv420p の縮小は偶数に丸まるので、315 のような奇数だと pad が失敗する）。introVideo の .shot と selfClip で同じ大きさを使う */
+const SELF_BOX = { w: 704, h: 396 };
 
 // ---------- 台本を読む ----------
 
@@ -82,9 +98,9 @@ const PROPER = `proper-seed${values.seed}`;
 
 const FONT = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
-type Kind = "sub" | "top" | "big" | "intro" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
+type Kind = "sub" | "top" | "big" | "intro" | "introVideo" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
 /** 背景まで描く絵（透明にしない） */
-const OPAQUE: Kind[] = ["card", "intro", "compare", "end"];
+const OPAQUE: Kind[] = ["card", "intro", "introVideo", "compare", "end"];
 /** エンドカードの QR（学生用の URL。評価役の「2.5秒では URL を読めない」を受けて足した） */
 const PLAY_URL = "https://ph1125ks.github.io/Built-with-Claude-Japan-2026/";
 const PLAY_QR = await QRCode.toDataURL(PLAY_URL, { margin: 1, width: 360, color: { dark: "#0b0812", light: "#ffffff" } });
@@ -143,6 +159,19 @@ p{margin:0;padding:12px 0;font-size:30px;font-weight:700;line-height:1.45;border
 p:first-of-type{font-size:32px;font-weight:800;color:#fff}
 p:last-of-type{font-size:24px;font-weight:600;color:#a493b6;white-space:nowrap}
 </style><div class="wrap"><div class="face"><img src="${photoUrl("photo1.jpg")}"></div><div class="card"><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
+    }
+    case "introVideo": {
+      // 名乗りの場面（シーン3）で、写真の代わりに作者の映像を置く版（2026-11-07）。左の .shot の枠は空けておき、あとから ffmpeg で映像を重ねる（selfClip）。
+      // 枠は 16:9（SELF_BOX、704×396。試しの 576×324 では本人が小さかったので広げた）。カードは 1120px に狭め（704 + 48 + 1120 = 1872 ≤ 1920）、最後の行は折り返す
+      return `<style>${base}body{${NIGHT}}
+.wrap{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:center;align-items:center;gap:48px}
+.shot{width:${SELF_BOX.w}px;height:${SELF_BOX.h}px;flex:none;background:#0b0812;box-shadow:0 0 0 6px #0b0812,0 0 0 12px #3be0c6,0 14px 40px rgba(0,0,0,.55)}
+.card{width:1120px;box-sizing:border-box;padding:28px 40px 22px;background:rgba(14,9,22,.9);box-shadow:inset 8px 0 0 #3be0c6;color:#f4ecf7}
+b{display:block;font-size:60px;margin-bottom:10px;letter-spacing:.02em}
+p{margin:0;padding:12px 0;font-size:30px;font-weight:700;line-height:1.45;border-top:1px solid #33274f;color:#f4ecf7}
+p:first-of-type{font-size:32px;font-weight:800;color:#fff}
+p:last-of-type{font-size:24px;font-weight:600;color:#a493b6}
+</style><div class="wrap"><div class="shot"></div><div class="card"><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
     }
     case "note":
       // 図の下の一行（シーン2の最後）。図の箱（〜720px）と字幕（930px〜）の間に置く
@@ -277,6 +306,13 @@ function stillZoom(png: string, dur: number, amount = 0.035): string {
   ff(["-loop", "1", "-framerate", "30", "-t", String(dur), "-i", png, "-vf", `scale=${W * 2}:${H * 2},${zp},scale=${W}:${H}:out_range=tv,${COLOR}`, "-frames:v", String(frames), ...ENC, out]);
   return out;
 }
+/** 作者の映像（シーン3）の ss 秒から dur 秒を、経歴のカードの絵（bg。左の枠が空いている）の枠 box に収めて重ねる。縦横比は保ち、余りは夜の色。短ければ最後のコマで止める */
+function selfClip(file: string, ss: number, dur: number, bg: string, box: { x: number; y: number; w: number; h: number }): string {
+  const out = join(TMP, `seg${++segCount}.mp4`);
+  const fc = `[1:v]fps=30,scale=${box.w}:${box.h}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=${box.w}:${box.h}:(ow-iw)/2:(oh-ih)/2:color=#0b0812,setsar=1,tpad=stop_mode=clone:stop_duration=${dur}[v];[0:v][v]overlay=${box.x}:${box.y},scale=${W}:${H}:out_range=tv,${COLOR}`;
+  ff(["-loop", "1", "-framerate", "30", "-t", String(dur), "-i", bg, "-ss", String(ss), "-t", String(dur), "-i", file, "-filter_complex", fc, "-t", String(dur), ...ENC, out]);
+  return out;
+}
 function concat(parts: string[], out: string): string {
   const list = join(TMP, `list${++segCount}.txt`);
   writeFileSync(list, parts.map((p) => `file '${p.split("/").pop()}'`).join("\n"));
@@ -367,6 +403,21 @@ function voiceFor(n: number, text: string, from: number, anchors: [string, numbe
   return { file: out, dur: probe(out), source: "仮の読み上げ", parts };
 }
 
+/**
+ * 作者の映像（シーン3）の声。映像から音を取り出し、頭の無音（話し始めるまで）を測って切る。
+ * 映像も同じだけ切って使う（selfClip の ss に head を足す）ので、声と口の動きがそろう。終わりの無音は録音と同じように切る
+ */
+function selfVoice(n: number, file: string): Voice & { head: number } {
+  const raw = join(TMP, `self${n}-raw.wav`);
+  ff(["-i", file, "-vn", "-ac", "1", "-ar", "48000", raw]);
+  const lead = silences(raw, "-45dB", 0.05).find((s) => s.start <= 0.05);
+  const head = lead ? Math.max(0, lead.end - 0.05) : 0;
+  const out = join(TMP, `rec${n}.wav`);
+  const trim = "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB";
+  ff(["-ss", String(head), "-i", raw, "-af", `areverse,${trim},areverse`, out]);
+  return { file: out, dur: probe(out), source: "録音", head };
+}
+
 /** シーンの長さちょうどの音声（声を from 秒から置く。声がなければ無音） */
 function sceneAudio(n: number, dur: number, voice?: Voice, from = 0.3): string {
   const out = join(TMP, `audio${n}.wav`);
@@ -390,6 +441,8 @@ interface SceneSpec {
   anchors?: [string, number][];
   /** ナレーションの語に合わせて出す絵（その語で始まる字幕と同時に出し、len 秒出す） */
   cues?: { word: string; len: number; png: string; kind: Kind; text: string }[];
+  /** 声を別に用意したとき（シーン3の作者の映像）。省くと録音か仮の読み上げ */
+  voice?: Voice;
 }
 interface Built {
   n: number;
@@ -423,7 +476,7 @@ async function main(): Promise<void> {
       const base = s.parts.length === 1 ? s.parts[0]! : concat(s.parts, join(TMP, `base${s.n}.mp4`));
       const text = script.get(s.n)?.narration;
       const anchors = s.anchors ?? (ANCHORS[s.n] ?? []).map((a): [string, number] => [a.word, a.at]);
-      const voice = text ? voiceFor(s.n, text, from, anchors) : undefined;
+      const voice = s.voice ?? (text ? voiceFor(s.n, text, from, anchors) : undefined);
       // 字幕：仮の声は区切りの時刻どおり。録音は、無音を除いて話している時間を文字数の割合で分け、近くの無音にそろえる（scripts/lib/align.ts）
       let subs: Sub[] = [];
       if (text && voice?.parts) subs = voice.parts.map((p) => ({ start: from + p.start, end: from + p.end, text: p.text }));
@@ -473,7 +526,7 @@ async function main(): Promise<void> {
     const pr2 = at(PROPER, "画面：result2");
     // タイトル画面（後ろで適正ボットが遊ぶデモが動いている）。シーン3と10で別の場面を使う
     if (at("title", "タイトル → 遊び方") < 38) throw new Error("title の録画のタイトル画面が短い（scripts/record-demo.ts の title で撮り直す）");
-    if (!existsSync(join(REC, "author", "photo1.jpg"))) throw new Error("作者の写真 recordings/author/photo1.jpg がない（作者が用意した写真を置く。Git に入れない）");
+    if (!SELF && !existsSync(join(REC, "author", "photo1.jpg"))) throw new Error("作者の写真 recordings/author/photo1.jpg がない（作者が用意した写真を置く。Git に入れない）");
 
     // 台本 第7版（2026-11-06。第2〜6版を比べ直し、しくみの紙芝居をやめてゲームを 0:49 に出す。docs/DEMO.md・docs/eval/story/versions/）
     // 0 負ける（6.5秒、声なし）：乱用のステージ1の終わり（×8、2秒）→ 2050年に膀胱が破られる（等倍、4.5秒）。
@@ -528,12 +581,28 @@ async function main(): Promise<void> {
     const sup3 = script.get(3)?.supplements[0];
     const toCard3 = ANCHORS[3]?.find((a) => a.word === "作ったのは")?.at ?? 7.5;
     const DUR3 = 19.5; // 第7版：仮の読み上げが 18秒では 0.8秒はみ出した（経歴の文をゆっくり読む）ので、シーン8・9・10から 0.5秒ずつ
+    // 作者の映像（recordings/author/self.mp4）があれば、カードの左に映像を置き、声もその映像から取る（2026-11-07）。なければ写真のカード
+    const selfVoice3 = SELF ? selfVoice(3, SELF) : undefined;
+    let part3: string;
+    if (SELF && selfVoice3) {
+      const bg = await render(page, "introVideo", intro[0] ?? "沢田 佳祐", intro.slice(1));
+      const rect = await page.eval<{ x: number; y: number }>("(() => { const r = document.querySelector('.shot').getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top) }; })()");
+      // 声は VOICE_FROM 秒から置くので、カードに切り替わる toCard3 秒の時点の映像は、話し始め（head）から (toCard3 - VOICE_FROM) 秒のところ
+      const ss = selfVoice3.head + (toCard3 - VOICE_FROM);
+      const need = ss + (DUR3 - toCard3);
+      const selfDur = probe(SELF);
+      if (selfDur < need) warnings.push(`シーン3：作者の映像が ${selfDur.toFixed(1)} 秒で、${need.toFixed(1)} 秒まで要る（足りない分は最後のコマで止めた。話し終えてから1秒ほど待って止める）`);
+      part3 = selfClip(SELF, ss, DUR3 - toCard3, bg, { ...rect, ...SELF_BOX });
+    } else part3 = still(await render(page, "intro", intro[0] ?? "沢田 佳祐", intro.slice(1)), DUR3 - toCard3);
     await scene({
       n: 3,
       dur: DUR3,
-      screen: "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者の写真（顔を丸く小さく。白衣の1枚目）と右に経歴のカード",
-      parts: [clip("title", 1, 1 + toCard3), still(await render(page, "intro", intro[0] ?? "沢田 佳祐", intro.slice(1)), DUR3 - toCard3)],
+      screen: SELF
+        ? "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者が自分を撮った映像（recordings/author/self.mp4。声もこの映像から）と右に経歴のカード"
+        : "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者の写真（顔を丸く小さく。白衣の1枚目）と右に経歴のカード",
+      parts: [clip("title", 1, 1 + toCard3), part3],
       overlays: sup3 ? [await ov("top", sup3, 0, toCard3)] : [],
+      voice: selfVoice3,
     });
     built.at(-1)!.overlays.push({ kind: "intro", text: intro.join(" ／ "), start: toCard3, end: DUR3 });
     // 4 遊び方（17秒。第7版）：乱用のステージ1の始まりを等倍で 8秒（細菌が近づいて名前・効く薬の札が出る。手札から薬を出す）→ 早送り 9秒。
@@ -794,7 +863,7 @@ async function main(): Promise<void> {
   }
 
   // 映像と声をつなぎ、声の大きさをそろえて（EBU R128、-16 LUFS）重ねる
-  const out = join(REC, "draft-video.mp4");
+  const out = join(REC, `${OUT_BASE}.mp4`);
   concat(
     built.map((b) => b.file),
     join(TMP, "all.mp4"),
@@ -830,11 +899,15 @@ async function main(): Promise<void> {
     report.push({ n: b.n, start: offset, dur: b.dur, screen: b.screen, narration: b.narration, voice: b.voice, subs: b.subs, overlays: b.overlays });
     offset += b.dur;
   }
-  writeFileSync(join(REC, "draft-video.srt"), srt.join("\n"));
+  writeFileSync(join(REC, `${OUT_BASE}.srt`), srt.join("\n"));
   if (offset > 180) warnings.push(`全体が ${offset} 秒で、3分を超えている`);
+  else if (offset > 178) warnings.push(`全体が ${offset} 秒で、3分まで ${(180 - offset).toFixed(1)} 秒しかない（録音が長いと超える。DEMO.md「尺が超えたときに削る順」）`);
+  // 提出版に仮の声が混ざらないように：録音のないシーンを名指しで知らせる（2026-11-07、オフィスアワーの助言「仮の声が残らないか」）
+  const tts = report.filter((r) => r.voice?.source === "仮の読み上げ").map((r) => r.n);
+  if (tts.length) warnings.push(`仮の読み上げのシーン：${tts.join("・")}（提出版は作者の録音にする。recordings/voice/scene{n}.m4a を置いて書き出し直す）`);
   // シーンごとの記録（絵コンテ表の元）
-  writeFileSync(join(REC, "draft-video.json"), JSON.stringify({ made: new Date().toISOString(), total: offset, voice: values.voice, warnings, scenes: report }, null, 2));
-  console.log(`→ ${out}（${offset} 秒）と draft-video.srt・draft-video.json`);
+  writeFileSync(join(REC, `${OUT_BASE}.json`), JSON.stringify({ made: new Date().toISOString(), total: offset, voice: values.voice, warnings, scenes: report }, null, 2));
+  console.log(`→ ${out}（${offset} 秒）と ${OUT_BASE}.srt・${OUT_BASE}.json${SELF ? `。シーン3は作者の映像 ${SELF}` : ""}`);
   for (const w of warnings) console.warn(`⚠ ${w}`);
 }
 

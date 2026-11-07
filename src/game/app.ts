@@ -80,7 +80,8 @@ export function readParams(search: string): AppParams {
     budget: parseBudget(q.get("budget")),
     // 種：?seed= がなければ開くたびに変える（2026-11-06 作者の指摘：既定が固定だと、供給制限で使えない薬と細菌の並びが毎回同じだった）。録画・テストは ?seed=570 のように固定する
     seed: Number(q.get("seed")) || randomSeed(),
-    region: q.get("region") ?? undefined,
+    // 地域：JANIS の地域名（全国・府県名）だけ。長すぎる値や記号は捨てる（安全点検。知らない地域名はステージの検査で止まる）
+    region: /^[^\s<>&"'`]{1,20}$/.test(q.get("region") ?? "") ? q.get("region")! : undefined,
     auto: q.get("auto") ?? undefined,
   };
 }
@@ -100,7 +101,7 @@ function parseBudget(v: string | null): AppParams["budget"] {
 /** 同梱のステージ（data/stages）か、公開用のステージ（stages/<id>.json）を読む */
 export async function loadScenario(id: string): Promise<ScenarioDef> {
   for (const [path, s] of Object.entries(bundled)) if (path.endsWith(`/${id}.json`)) return structuredClone(s);
-  if (!/^[a-z0-9-]+$/.test(id)) throw new Error(`ステージの名前が正しくない：${id}`);
+  if (!/^[a-z0-9-]+$/.test(id)) throw new Error("ステージの名前が正しくない（使えるのは英小文字・数字・ハイフンだけ）");
   const res = await fetch(`stages/${id}.json`);
   if (!res.ok) throw new Error(`ステージ ${id} が見つからない`);
   return (await res.json()) as ScenarioDef;

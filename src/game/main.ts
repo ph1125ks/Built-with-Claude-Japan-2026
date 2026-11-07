@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import { loadGameData } from "../engine/index.ts";
 import { App, loadScenario, readParams } from "./app.ts";
 import { BoardScene, H, W } from "./board.ts";
+import { escapeHtml } from "./format.ts";
 import "./style.css";
 
 const appEl = document.getElementById("app")!;
@@ -122,7 +123,8 @@ async function main(): Promise<void> {
     document.body.classList.add("ready");
   } catch (e) {
     screenEl.classList.add("open");
-    screenEl.innerHTML = `<div class="screen"><h2>読み込めませんでした</h2><pre>${String((e as Error).message ?? e)}</pre></div>`;
+    // URL の値（?stage= や ?region=）が誤りの文に入ることがあるので、HTML として描かない（2026-11-07 安全点検：反射型 XSS の直し）
+    screenEl.innerHTML = `<div class="screen"><h2>読み込めませんでした</h2><pre>${escapeHtml(String((e as Error).message ?? e))}</pre></div>`;
     console.error(e);
   }
 }

@@ -46,6 +46,14 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  // 手元のブラウザ以外からの要求は受けない（2026-11-07 安全点検）：
+  //   Host が loopback でない → DNS リバインディング、Origin が手元でない／POST が JSON でない → 他サイトのページからの fetch。
+  //   開発サーバー（vite.config.ts の proxy）を通る要求は Host が localhost:5173 で届くので、ポートは見ない
+  const host = (req.headers.host ?? "").replace(/:\d+$/, "");
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(host)) return json(res, 403, { error: "手元（localhost）からだけ使えます" });
+  const origin = req.headers.origin;
+  if (origin && !/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(origin)) return json(res, 403, { error: "手元（localhost）からだけ使えます" });
+  if (req.method === "POST" && !String(req.headers["content-type"] ?? "").startsWith("application/json")) return json(res, 415, { error: "JSON だけ受け付けます" });
   const url = new URL(req.url ?? "/", `http://${HOST}`);
 
   if (req.method === "GET" && url.pathname === "/api/meta") {
@@ -85,6 +93,8 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if ("errors" in r) return json(res, 400, { error: "規則の検査に通りません", errors: r.errors });
     if (!r.evaluation!.passed) return json(res, 400, { error: "確かめ直しで合格の目安を満たしませんでした", evaluation: r.evaluation });
     const id = d.scenario.id;
+    // 書き出し先は public/stages/ の中だけ（submit_stage の検査と同じ形をもう一度確かめる。手で直した下書きへの備え）
+    if (!/^[a-z0-9-]+$/.test(id)) return json(res, 400, { error: "ステージの名前が正しくありません（英小文字・数字・ハイフンだけ）" });
     mkdirSync(join("public", "stages"), { recursive: true });
     const out = {
       _comment: `教員モードで作ったステージ（${new Date(d.createdAt).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" })}、${d.model}）。地域：${d.input.region}／対象：${d.input.audience}／教えたいこと：${d.input.goal}。承認時の確かめ（各ボット100回、種2001〜）：${r.evaluation!.checks.map((c) => `${c.label} ${c.value}`).join("、")}`,
