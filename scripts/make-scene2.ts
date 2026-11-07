@@ -1,6 +1,6 @@
 // シーン2の動く絵（第7版、2026-11-06 作者の依頼「ゲームの細菌や抗菌薬の絵で、細菌が何年もかけて耐性を獲得していく姿をアニメーションに」）。
 // 「抗菌薬を、正しく使う」の大きな字 →「でも」で盤面：抗菌薬の兵士が薬を使うたびに、効く細菌は倒れ、盾の印の効かない細菌だけが残って
-// 分かれて増える。年が進む（いま → 1年後 → … → 何年も先）につれ、効かない細菌の割合が上がる。
+// 分かれて増える。年が進む（いま → 5年後 → 10年後 → … → 何年も先）につれ、効かない細菌の割合が上がる。
 // 絵はゲームのドット絵（src/game/pixel：大腸菌・セフトリアキソンの兵士・盾・斬撃・床・粘膜）をそのまま使う（scripts/lib/pixel-art.ts）。外の画像は使わない。
 // 誰が倒れ、誰から生まれるかは乱数の種を固定して決め、毎回同じ動きにする（scripts/make-hook-chart.ts と同じく、1コマずつ Chrome で描いて ffmpeg でつなぐ）。
 //   npx tsx scripts/make-scene2.ts [--dur 13] [--out recordings/scene2]
@@ -339,7 +339,7 @@ window.render = (t) => {
   for (let i = 0; i <= CYCLES; i++) $("tick" + i).classList.toggle("on", tick(i) <= mx + 1);
   const ylab = $("ylab");
   ylab.style.left = mx + "px";
-  ylab.textContent = yi > 0 && yi < CYCLES ? yi + "年後" : ""; // 「いま」と「何年も先」は年表の両端に書いてある
+  ylab.textContent = yi > 0 && yi < CYCLES ? yi * 5 + "年後" : ""; // 「いま」と「何年も先」は年表の両端に書いてある。第8版の続き：1年刻みから5年刻みに（作者の指摘：もっと先だと伝わるように）
   $("later").classList.toggle("on", yi >= CYCLES);
 };
 window.render(0);

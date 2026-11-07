@@ -195,7 +195,7 @@ export const COMPARE = {
     { key: "abuse", label: "切り札ばかり使う", present: "楽に守れる", future: "自分が残した、薬が効かない細菌に負ける", win: [true, false] },
     { key: "proper", label: LABELS.deescalation, present: "守れる", future: "2050年も守れる", win: [true, true] },
   ],
-  stage1: "ステージ1（いま）",
+  stage1: "ステージ1（現在）",
   stage2: "ステージ2（2050年）",
 } as const;
 

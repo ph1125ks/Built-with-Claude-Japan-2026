@@ -5,7 +5,7 @@
   "region": "全国",
   "target": "開発用",
   "present": {
-    "title": "いま",
+    "title": "現在",
     "budget": 100,
     "budgetPerDay": 200,
     "bladderHp": 100,
@@ -36,7 +36,7 @@
     ]
   },
   "future": {
-    "title": "2050年",
+    "title": "未来（2050年）",
     "yearsLater": 25,
     "budget": 100,
     "budgetPerDay": 200,

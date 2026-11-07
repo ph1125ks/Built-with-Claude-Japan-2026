@@ -191,6 +191,6 @@ export function draftHtml(rec: DraftRecord, drugs: DrugMeta[]): string {
     <p class="t-sum">${esc(rec.summary)}</p>
     ${checksHtml(rec.evaluation.checks, "t-checks big")}
     <p class="t-usage">適正ボットの系統の使い分け：${esc(rec.evaluation.appropriateUsageByClass.slice(0, 5).join("、"))}（各ボット ${rec.evaluation.runsPerBot} 回）</p>
-    <div class="t-stages">${stageFacts(s.present, "ステージ1「いま」")}${stageFacts(s.future, "ステージ2「2050年」", `（${s.future.yearsLater}年後）`)}</div>
+    <div class="t-stages">${stageFacts(s.present, `ステージ1「${s.present.title}」`)}${stageFacts(s.future, `ステージ2「${s.future.title}」`, `（${s.future.yearsLater}年後）`)}</div>
     ${s.debrief ? `<div class="t-debrief"><h4>振り返り</h4><p>${esc(s.debrief)}</p></div>` : ""}`;
 }

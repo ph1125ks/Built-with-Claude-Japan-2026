@@ -5,6 +5,7 @@
 // 並べ比べ（シーン7）とエンドカードには、ゲームのドット絵（scripts/lib/pixel-art.ts）を添える。
 // 作者の写真は recordings/author/photo1.jpg（シーン3。顔を丸く小さく切る）。作者が用意したもので、Git に入れない。
 // 作者が自分を撮った映像 recordings/author/self.mp4 があれば、シーン3は写真の代わりにその映像を置き、声もその映像から取る（2026-11-07 作者の判断）。
+// recordings/author/self10.mp4 があれば、シーン10 はスマホの縦画面の写し（recordings/phone/title-portrait.png）＋作者の映像＋使っていく場面のカードにする（2026-11-08 作者の案）。
 // BGM：scripts/make-bgm.ts があれば、シーンの区切りから曲の区間（cue）を作って合成し、声の下で小さく流す（声が出ている間はさらに下げる）
 // 字幕は画面なしの Chrome で透明な PNG に描き、ffmpeg で重ねる（手元の ffmpeg には文字を描く機能がないため）。
 // 声：recordings/voice/scene{N}.wav（m4a・aiff・mp3 も可）があれば作者の録音を使う。なければ macOS の読み上げ（say）で仮の声を作る。
@@ -33,6 +34,8 @@ const { values } = parseArgs({
     rate: { type: "string", default: "178" },
     // 作者が自分を撮った映像（シーン3）。省くと recordings/author/self.mp4（mov・m4v も可）を探す。--self none で使わない
     self: { type: "string" },
+    // シーン10 の作者の映像。省くと recordings/author/self10.mp4（mov・m4v も可）を探す。--self10 none で使わない（第7版の形：タイトル画面の上に使っていく場面）
+    self10: { type: "string" },
     // 書き出す名前（recordings/<out>.mp4・.srt・.json）。既定は draft-video。試しに作るときだけ変える
     out: { type: "string", default: "draft-video" },
   },
@@ -52,6 +55,11 @@ const OUT_BASE = values.out!;
  */
 const SELF = values.self === "none" ? undefined : (values.self ?? ["mp4", "mov", "MOV", "m4v"].map((e) => join(REC, "author", `self.${e}`)).find((f) => existsSync(f)));
 if (values.self && values.self !== "none" && !existsSync(values.self)) throw new Error(`--self の映像がない：${values.self}`);
+/** シーン10 の作者の映像（2026-11-08 作者の案：スマホの縦画面＋話す映像＋使っていく場面）。なければ第7版の形 */
+const SELF10 = values.self10 === "none" ? undefined : (values.self10 ?? ["mp4", "mov", "MOV", "m4v"].map((e) => join(REC, "author", `self10.${e}`)).find((f) => existsSync(f)));
+if (values.self10 && values.self10 !== "none" && !existsSync(values.self10)) throw new Error(`--self10 の映像がない：${values.self10}`);
+/** スマホの縦画面のタイトル画面の写し（scripts/make-phone-shot.ts。シーン10 の絵に使う） */
+const PHONE_SHOT = join(REC, "phone", "title-portrait.png");
 /** 作者の映像を置く枠（16:9。縦横とも偶数：yuv420p の縮小は偶数に丸まるので、315 のような奇数だと pad が失敗する）。introVideo の .shot と selfClip で同じ大きさを使う */
 const SELF_BOX = { w: 704, h: 396 };
 
@@ -98,9 +106,26 @@ const PROPER = `proper-seed${values.seed}`;
 
 const FONT = `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
-type Kind = "sub" | "top" | "big" | "intro" | "introVideo" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
+/** 長い字幕を、真ん中に近い「、」「。」「→」で2行に分ける（語の途中で折り返さず、右の札や図と重ならない幅にするため。2026-11-08） */
+function twoLines(t: string, max = 30): string {
+  if (t.length <= max) return esc(t);
+  const chars = [...t];
+  let best = -1;
+  let bestD = Infinity;
+  chars.forEach((ch, i) => {
+    if (!"、。→".includes(ch)) return;
+    const d = Math.abs(i - chars.length / 2);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  });
+  if (best < 0) return esc(t);
+  return `${esc(chars.slice(0, best + 1).join("").trim())}<br>${esc(chars.slice(best + 1).join("").trim())}`;
+}
+type Kind = "sub" | "top" | "topRight" | "big" | "intro" | "introVideo" | "closing" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
 /** 背景まで描く絵（透明にしない） */
-const OPAQUE: Kind[] = ["card", "intro", "introVideo", "compare", "end"];
+const OPAQUE: Kind[] = ["card", "intro", "introVideo", "closing", "compare", "end"];
 /** エンドカードの QR（学生用の URL。評価役の「2.5秒では URL を読めない」を受けて足した） */
 const PLAY_URL = "https://ph1125ks.github.io/Built-with-Claude-Japan-2026/";
 const PLAY_QR = await QRCode.toDataURL(PLAY_URL, { margin: 1, width: 360, color: { dark: "#0b0812", light: "#ffffff" } });
@@ -133,7 +158,11 @@ function html(kind: Kind, text: string, extra?: string[]): string {
       // 画面の幅いっぱいまで使えるよう、外側の箱で中央に寄せる（left:50% だと半分の幅で折り返してしまう）
       return `<style>${base}body{display:flex;justify-content:center;align-items:flex-end}div{margin-bottom:56px;max-width:1720px;padding:12px 30px;border-radius:14px;background:rgba(24,10,18,.74);color:#fff;font-size:46px;font-weight:700;line-height:1.35;text-align:center;white-space:pre-wrap}</style><div>${esc(text)}</div>`;
     case "top":
-      return `<style>${base}body{display:flex;justify-content:center;align-items:flex-start}div{margin-top:64px;max-width:1500px;padding:10px 26px;border-radius:12px;background:rgba(122,30,69,.9);color:#fff;font-size:32px;font-weight:700;text-align:center}</style><div>${esc(text)}</div>`;
+      // 第8版の続き（2026-11-08 作者「位置・大きさが見づらい」）：32px → 38px、幅を 1640px に抑えて長い文は2行に折り返す
+      return `<style>${base}body{display:flex;justify-content:center;align-items:flex-start}div{margin-top:60px;max-width:1640px;padding:12px 30px;border-radius:12px;background:rgba(122,30,69,.94);color:#fff;font-size:38px;font-weight:700;line-height:1.3;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.4)}</style><div>${twoLines(text)}</div>`;
+    case "topRight":
+      // シーン3のタイトル画面の一行。中央に置くとロゴに重なるので、右の盤面の上に右寄せで（2〜3行）
+      return `<style>${base}body{display:flex;justify-content:flex-end;align-items:flex-start}div{margin:60px 48px 0 0;max-width:800px;padding:12px 30px;border-radius:12px;background:rgba(122,30,69,.94);color:#fff;font-size:38px;font-weight:700;line-height:1.3;text-align:left;text-shadow:0 2px 8px rgba(0,0,0,.4)}</style><div>${esc(text)}</div>`;
     case "big":
     case "bigLow":
       // bigLow：ゲームの帯（「膀胱が破られた」など）が画面の中ほどに出る場面では、下寄りに置く（シーン0）
@@ -157,7 +186,7 @@ function html(kind: Kind, text: string, extra?: string[]): string {
 b{display:block;font-size:60px;margin-bottom:10px;letter-spacing:.02em}
 p{margin:0;padding:12px 0;font-size:30px;font-weight:700;line-height:1.45;border-top:1px solid #33274f;color:#f4ecf7}
 p:first-of-type{font-size:32px;font-weight:800;color:#fff}
-p:last-of-type{font-size:24px;font-weight:600;color:#a493b6;white-space:nowrap}
+p:last-of-type{color:#a493b6}
 </style><div class="wrap"><div class="face"><img src="${photoUrl("photo1.jpg")}"></div><div class="card"><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
     }
     case "introVideo": {
@@ -170,20 +199,36 @@ p:last-of-type{font-size:24px;font-weight:600;color:#a493b6;white-space:nowrap}
 b{display:block;font-size:60px;margin-bottom:10px;letter-spacing:.02em}
 p{margin:0;padding:12px 0;font-size:30px;font-weight:700;line-height:1.45;border-top:1px solid #33274f;color:#f4ecf7}
 p:first-of-type{font-size:32px;font-weight:800;color:#fff}
-p:last-of-type{font-size:24px;font-weight:600;color:#a493b6}
+p:last-of-type{color:#a493b6}
 </style><div class="wrap"><div class="shot"></div><div class="card"><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
     }
     case "note":
       // 図の下の一行（シーン2の最後）。図の箱（〜720px）と字幕（930px〜）の間に置く
       return `<style>${DOT_CSS}${base}body{display:flex;justify-content:center;align-items:flex-start}div{margin-top:772px;padding:10px 30px;background:rgba(14,9,22,.86);box-shadow:inset 6px 0 0 #ffb347;color:#ffd38a;font-family:${DOT};font-size:38px;letter-spacing:.04em}</style><div>${esc(text)}</div>`;
     case "label":
-      // 左上の札（シーン0の「いま」「2050年」）
-      return `<style>${DOT_CSS}${base}div{position:absolute;left:180px;top:104px;padding:10px 24px;background:rgba(14,9,22,.86);box-shadow:inset 6px 0 0 #ffb347;color:#ffd38a;font-family:${DOT};font-size:40px}</style><div>${esc(text)}</div>`;
+      // シーン0の札「現在：…」「未来（2050年）」。第8版の続き（作者「位置・大きさが見づらい」）：左上の小さな札（40px）から、上の中央の大きな札（54px）に
+      return `<style>${DOT_CSS}${base}body{display:flex;justify-content:center;align-items:flex-start}div{margin-top:84px;padding:12px 40px;background:rgba(14,9,22,.92);box-shadow:inset 10px 0 0 #ffb347,0 10px 30px rgba(0,0,0,.5);color:#ffd38a;font-family:${DOT};font-size:54px;letter-spacing:.04em}</style><div>${esc(text)}</div>`;
     case "speed":
       return speed(64);
     case "speedLow":
       // 拡大した教員用の画面では、右上に経過時間が出るので、その下に置く
       return speed(124);
+    case "closing": {
+      // シーン10（第8版の続き、2026-11-08 作者の案）：左にスマホの縦画面の枠（実際のタイトル画面の写し。スマホでも遊べることが分かる）、
+      // 右に作者の映像の枠（.shot。あとから selfClip で映像を重ねる）と「使っていく場面」のカード。字幕は下に出るので、どれも 890px より上に収める
+      const shot = existsSync(PHONE_SHOT) ? `<img src="data:image/png;base64,${readFileSync(PHONE_SHOT).toString("base64")}">` : "";
+      return `<style>${base}body{${NIGHT}}
+.phone{position:absolute;left:180px;top:110px;width:360px;height:780px;border-radius:56px;background:#101014;box-shadow:0 0 0 6px #3a3a44,0 30px 80px rgba(0,0,0,.65)}
+.phone .scr{position:absolute;left:15px;top:15px;width:330px;height:750px;border-radius:42px;overflow:hidden;background:#0b0812}
+.phone img{width:330px;height:auto;display:block}
+.phone .notch{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:110px;height:28px;border-radius:14px;background:#000}
+.cap{position:absolute;left:150px;top:62px;width:420px;text-align:center;font-size:24px;font-weight:700;color:#a493b6}
+.shot{position:absolute;left:640px;top:110px;width:${SELF_BOX.w}px;height:${SELF_BOX.h}px;background:#0b0812;box-shadow:0 0 0 6px #0b0812,0 0 0 12px #3be0c6,0 14px 40px rgba(0,0,0,.55)}
+.card{position:absolute;left:640px;top:${110 + SELF_BOX.h + 50}px;width:1090px;box-sizing:border-box;padding:22px 36px 18px;background:rgba(14,9,22,.9);box-shadow:inset 8px 0 0 #3be0c6;color:#fff}
+.card h2{margin:0 0 6px;font-size:28px;color:#3be0c6;letter-spacing:.08em}
+.card p{margin:0;padding:11px 0;font-size:40px;font-weight:800;border-top:1px solid #33274f}
+</style><div class="phone"><div class="scr">${shot}</div><div class="notch"></div></div><p class="cap">スマホでも、ブラウザで遊べます</p><div class="shot"></div><div class="card"><h2>${esc(text)}</h2>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+    }
     case "places":
       // 使っていく場面（シーン10）。タイトル画面の上に出すので、左のロゴに重ならないよう右の盤面の上に置く
       return `<style>${base}div{position:absolute;left:820px;top:250px;width:1000px;box-sizing:border-box;padding:30px 40px 24px;background:rgba(14,9,22,.9);box-shadow:inset 8px 0 0 #3be0c6;color:#fff}h2{margin:0 0 10px;font-size:30px;color:#3be0c6;letter-spacing:.08em}p{margin:0;padding:16px 0;font-size:50px;font-weight:800;border-top:1px solid #33274f}</style><div><h2>${esc(text)}</h2>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
@@ -632,7 +677,7 @@ async function main(): Promise<void> {
         ? "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者が自分を撮った映像（recordings/author/self.mp4。声もこの映像から）と右に経歴のカード"
         : "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者の写真（顔を丸く小さく。白衣の1枚目）と右に経歴のカード",
       parts: [clip("title", 1, 1 + toCard3), part3],
-      overlays: sup3 ? [await ov("top", sup3, 0, toCard3)] : [],
+      overlays: sup3 ? [await ov("topRight", sup3, 0, toCard3)] : [],
       voice: v3,
     });
     built.at(-1)!.overlays.push({ kind: "intro", text: intro.join(" ／ "), start: toCard3, end: DUR3 });
@@ -660,7 +705,7 @@ async function main(): Promise<void> {
     // 「ところが」を結果画面に、「これが選択圧」を紙芝居のコマに合わせる。残す紙芝居はこの1コマだけ（読み手役の審査員の案）
     const INTRO_TAKE = "intro";
     const RES5 = 5;
-    const SEL5 = 5.5; // 第8版：7 → 5.5秒（声「これが選択圧。…ゲームの名前です」は約4秒。浮いた分を足した文に回す）
+    const SEL5 = 7; // 第8版で 5.5秒にしたが、続きでシーン5の文が長くなった（第1ステージは／増えてしまいました／研究テーマであり、この）ので 7秒に戻した（作者の速さで余り約1秒）
     const sup5 = script.get(5)?.supplements[0];
     const selParts = existsSync(join(REC, `${INTRO_TAKE}.mp4`))
       ? [clip(INTRO_TAKE, at(INTRO_TAKE, "段5：選択圧") + 2, at(INTRO_TAKE, "段5：選択圧") + 2 + SEL5)]
@@ -872,25 +917,50 @@ async function main(): Promise<void> {
     // 第5版：2枚目の写真はやめた（作者の判断。写真は名乗りの場面だけ）。第6版：尺のため「勉強会や実習、講義で使い始め、」を声から外した（使う場面は箱に残る）
     const PLACES = script.get(10)?.places?.length ? script.get(10)!.places! : ["院内の新人・若手の勉強会", "病院の実務実習の薬学生", "大学の講義・実習"];
     const main10 = script.get(10)?.main ?? "いまの一手が、未来をつくる。";
-    const v10 = preVoice(10);
+    // 作者の映像（recordings/author/self10.mp4）があれば、第8版の続きの形：左にスマホの縦画面の写し、右に作者の映像と使っていく場面のカード（声は映像から）。
+    // なければ第7版の形：タイトル画面の上に使っていく場面（声は録音か仮の読み上げ）
+    const selfVoice10 = SELF10 ? selfVoice(10, SELF10) : undefined;
+    const v10 = selfVoice10 ?? preVoice(10);
     // 大きな字は声の「いまの一手が」に合わせて出す（使っていく場面の箱はその直前まで）。長さも声に合わせる（上限 16秒）
     const toBig10 = (v10 && chunkStart(v10, script.get(10)?.narration ?? "", "いまの一手が", VOICE_FROM)) ?? ANCHORS[10]?.find((a) => a.word === "いまの一手が")?.at ?? 7.5;
     const DUR10 = fit(v10, toBig10 + 3.5, 16, VOICE_FROM, 1.5); // 大きな字は 3.5秒以上
-    await scene({
-      n: 10,
-      dur: DUR10,
-      voice: v10,
-      screen: "タイトル画面（後ろのデモが動く。シーン3とは別の場面）と右に使っていく場面 → 大きな字",
-      parts: [clip("title", 22, 22 + DUR10)],
-      overlays: [{ ...(await ov("places", "使っていく場面", 0.3, toBig10 - 0.1, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
-      cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "big", main10), kind: "big", text: main10 }],
-    });
+    if (SELF10 && selfVoice10) {
+      if (!existsSync(PHONE_SHOT)) warnings.push("シーン10：スマホの縦画面の写し（recordings/phone/title-portrait.png）がない。開発サーバーを動かして npx tsx scripts/make-phone-shot.ts で作る");
+      const bg = await render(page, "closing", "使っていく場面", PLACES);
+      const rect = await page.eval<{ x: number; y: number }>("(() => { const r = document.querySelector('.shot').getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top) }; })()");
+      // 映像はシーンの頭から。声は VOICE_FROM 秒から置くので、映像の頭は話し始め（head）の VOICE_FROM 秒前（撮り始めが近ければ 0）
+      const ss = Math.max(0, selfVoice10.head - VOICE_FROM);
+      const selfDur = probe(SELF10);
+      if (selfDur < ss + DUR10) warnings.push(`シーン10：作者の映像が ${selfDur.toFixed(1)} 秒で、${(ss + DUR10).toFixed(1)} 秒まで要る（足りない分は最後のコマで止めた。話し終えてから2秒ほど待って止める）`);
+      await scene({
+        n: 10,
+        dur: DUR10,
+        voice: v10,
+        screen: "左にスマホの縦画面の枠（実際のタイトル画面の写し）、右に作者が自分を撮った映像（recordings/author/self10.mp4。声もこの映像から）と「使っていく場面」のカード → 大きな字",
+        parts: [selfClip(SELF10, ss, DUR10, bg, { ...rect, ...SELF_BOX })],
+        overlays: [],
+        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "big", main10), kind: "big", text: main10 }],
+      });
+      built.at(-1)!.overlays.unshift({ kind: "places", text: `使っていく場面：${PLACES.join(" ／ ")}（スマホの縦画面の写しと作者の映像の横）`, start: 0, end: DUR10 });
+    } else {
+      await scene({
+        n: 10,
+        dur: DUR10,
+        voice: v10,
+        screen: "タイトル画面（後ろのデモが動く。シーン3とは別の場面）と右に使っていく場面 → 大きな字",
+        parts: [clip("title", 22, 22 + DUR10)],
+        overlays: [{ ...(await ov("places", "使っていく場面", 0.3, toBig10 - 0.1, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
+        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "big", main10), kind: "big", text: main10 }],
+      });
+    }
     // 11 エンドカード（4秒）。一般の人への一言（作者の方針。第3版の締めの声から移した）と、学生用の URL の QR
     const endLines = [
       "なぜ抗菌薬を正しく使うのか。知ることは、抗菌薬を受け取る人の理解にもつながる。",
       "ブラウザですぐ遊べる：ph1125ks.github.io/Built-with-Claude-Japan-2026",
       "はじめての人へ・Claude の作業記録：同じサイトの intro.html・replay.html",
       "コード：github.com/ph1125ks/Built-with-Claude-Japan-2026",
+      // 第8版の続き（2026-11-08）：作成禁止の例「医療アドバイスを行う AI」と誤解されないように、動画の中にも注意書きを1行
+      "教育用のシミュレーション。診療の判断には使えません。Claude は学生と会話しません",
     ];
     await scene({ n: 11, dur: 4, screen: "エンドカード（右に学生用の URL の QR）", parts: [still(await render(page, "end", "センタクアツ", endLines), 4)], overlays: [] });
     built.at(-1)!.overlays.push({ kind: "card", text: ["センタクアツ", ...endLines, "QR：学生用の URL"].join(" ／ "), start: 0, end: 4 });
