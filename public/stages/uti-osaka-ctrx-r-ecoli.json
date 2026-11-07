@@ -1,0 +1,211 @@
+{
+  "_comment": "教員モードで作ったステージ（2026-11-08、claude-opus-5-5）。地域：大阪府／対象：病院実務実習の薬学生／教えたいこと：第3世代セフェムが効かない大腸菌に、カルバペネムを使わずに勝つ経験をさせたい。承認時の確かめ（各ボット100回、種2001〜）：適正ボットは、いまも2050年も守り切る 勝率 100%／100%、乱用ボットも、いまは勝てる 勝率 88%、乱用ボットは、2050年に負ける 勝率 11%、でたらめに選ぶより、適正に選ぶほうが強い 勝率 58% < 100%、何もしなければ負ける 勝率 0%、適正ボットの系統の使い分け（AHI） 0.36、教えたい場面：大腸菌（CTRX 耐性）が出てくる 平均 8.8 体",
+  "id": "uti-osaka-ctrx-r-ecoli",
+  "title": "尿路（大阪府）CTRXが効かない大腸菌",
+  "region": "大阪府",
+  "target": "病院実務実習の薬学生",
+  "learningGoal": "第3世代セフェムが効かない大腸菌に、カルバペネム系を使わずに勝つ",
+  "debrief": "広く効く薬（カルバペネム系やキノロン系）ばかり使うと、その場は勝てても、2050年には手札のどの薬も効かない菌が増えます。大阪府の大腸菌（入院検体・すべての検査材料）のCTRX感性率は59.5%でした（JANIS 2025年報）。このゲームでは、CTRXが効かない大腸菌にCMZで対応すると、カルバペネム系を温存できることがあります。CMZへの切り替えは効く範囲を狭めるものではなく、カルバペネム系を取っておくための選択です（CMZは大腸菌全体の感性率が97.9%）。ほかの菌でも、正体が分かったら狭い薬へ切り替えましょう。耐性化の速さはゲーム用に大きく誇張しています。実際の薬の選び方は、施設のアンチバイオグラムや国の手引きなどにもとづいて決められます。",
+  "present": {
+    "title": "現在",
+    "briefing": "大阪府の公開データ（JANIS 2025年報）の耐性率から始まります。遠くの菌はグラム染色の見た目だけ、近づくと菌名、さらに近づくと効かない薬が分かります。大阪府の大腸菌（入院検体・すべての検査材料）のCTRX感性率は59.5%。CTRXが効かない大腸菌が来たら、カルバペネム系を使わずに守る手を探しましょう。",
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      {
+        "drug": "ABPC"
+      },
+      {
+        "drug": "AMPC_PO"
+      },
+      {
+        "drug": "CEZ"
+      },
+      {
+        "drug": "CEX_PO"
+      },
+      {
+        "drug": "CMZ"
+      },
+      {
+        "drug": "CTRX"
+      },
+      {
+        "drug": "CTX"
+      },
+      {
+        "drug": "CAZ"
+      },
+      {
+        "drug": "CFDN_PO"
+      },
+      {
+        "drug": "CFPM"
+      },
+      {
+        "drug": "LVFX_PO"
+      },
+      {
+        "drug": "TAZPIPC"
+      },
+      {
+        "drug": "MEPM"
+      }
+    ],
+    "shortage": {
+      "count": 5,
+      "candidates": [
+        "ABPC",
+        "AMPC_PO",
+        "CEZ",
+        "CEX_PO",
+        "CTRX",
+        "CTX",
+        "CAZ",
+        "CFDN_PO",
+        "CFPM",
+        "LVFX_PO"
+      ]
+    },
+    "waves": [
+      {
+        "at": 2,
+        "lane": "random",
+        "species": "auto",
+        "count": 4,
+        "spacing": 2
+      },
+      {
+        "at": 22,
+        "lane": "random",
+        "species": "auto",
+        "count": 5,
+        "spacing": 2
+      },
+      {
+        "at": 45,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 70,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 95,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.5
+      },
+      {
+        "at": 120,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      },
+      {
+        "at": 145,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      }
+    ]
+  },
+  "future": {
+    "title": "未来（2050年）",
+    "briefing": "25年後の2050年です。現在の戦い方によって、効く薬の割合が変わっています。カルバペネム系を温存できていれば、CTRXが効かない大腸菌にも、まだ打つ手が残っているはずです。",
+    "budget": 100,
+    "budgetPerDay": 200,
+    "bladderHp": 100,
+    "hand": [
+      {
+        "drug": "ABPC"
+      },
+      {
+        "drug": "AMPC_PO"
+      },
+      {
+        "drug": "CMZ"
+      },
+      {
+        "drug": "CTRX"
+      },
+      {
+        "drug": "CAZ"
+      },
+      {
+        "drug": "LVFX_PO"
+      },
+      {
+        "drug": "TAZPIPC"
+      },
+      {
+        "drug": "MEPM"
+      }
+    ],
+    "shortage": {
+      "count": 1
+    },
+    "waves": [
+      {
+        "at": 2,
+        "lane": "random",
+        "species": "auto",
+        "count": 5,
+        "spacing": 2
+      },
+      {
+        "at": 22,
+        "lane": "random",
+        "species": "auto",
+        "count": 6,
+        "spacing": 1.8
+      },
+      {
+        "at": 45,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.6
+      },
+      {
+        "at": 70,
+        "lane": "random",
+        "species": "auto",
+        "count": 7,
+        "spacing": 1.6
+      },
+      {
+        "at": 95,
+        "lane": "random",
+        "species": "auto",
+        "count": 8,
+        "spacing": 1.5
+      },
+      {
+        "at": 120,
+        "lane": "random",
+        "species": "auto",
+        "count": 9,
+        "spacing": 1.4
+      },
+      {
+        "at": 145,
+        "lane": "random",
+        "species": "auto",
+        "count": 9,
+        "spacing": 1.4
+      }
+    ],
+    "yearsLater": 25
+  }
+}
