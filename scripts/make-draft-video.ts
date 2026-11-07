@@ -418,6 +418,23 @@ function selfVoice(n: number, file: string): Voice & { head: number } {
   return { file: out, dur: probe(out), source: "録音", head };
 }
 
+/**
+ * 場面の長さを声に合わせる（2026-11-07 作者の判断「場面を声に合わせる」。作者の録音は台本の計算より速く、各シーンの終わりに3〜6秒の間ができた）。
+ * 声（from 秒から）が終わったあと tail 秒おいた長さにし、min（絵や動きが要る長さ）〜max（台本の枠）に収める。
+ * ゲームの録画が主役の場面（4〜8）は録画の切り出しで長さが決まるので、ここでは合わせない（声のあとは画面が動いたまま）
+ */
+const FIT_TAIL = 1.2;
+function fit(voice: Voice | undefined, min: number, max: number, from = VOICE_FROM, tail = FIT_TAIL): number {
+  if (!voice) return max;
+  return Math.round(Math.min(max, Math.max(min, from + voice.dur + tail)) * 10) / 10;
+}
+/** 声の中で、word で始まる字幕の区切りが始まる秒（シーンの頭から）。録音は無音で区切り、仮の読み上げは区切りの時刻から */
+function chunkStart(voice: Voice, text: string, word: string, from: number): number | undefined {
+  const parts = voice.parts ?? alignChunks(chunks(text), voice.dur, silences(voice.file));
+  const p = parts.find((x) => x.text.startsWith(word));
+  return p ? Math.round((from + p.start) * 10) / 10 : undefined;
+}
+
 /** シーンの長さちょうどの音声（声を from 秒から置く。声がなければ無音） */
 function sceneAudio(n: number, dur: number, voice?: Voice, from = 0.3): string {
   const out = join(TMP, `audio${n}.wav`);
@@ -471,6 +488,11 @@ async function main(): Promise<void> {
     });
     const speedBadge = (k: number, start: number, end: number, kind: Kind = "speed") => ov(kind, `早送り ×${Math.round(k)}`, start, end);
 
+    /** シーン n の声を先に作る（場面の長さを声に合わせるとき。scene() に voice として渡す） */
+    const preVoice = (n: number, from = VOICE_FROM): Voice | undefined => {
+      const text = script.get(n)?.narration;
+      return text ? voiceFor(n, text, from, (ANCHORS[n] ?? []).map((a): [string, number] => [a.word, a.at])) : undefined;
+    };
     const scene = async (s: SceneSpec) => {
       const from = s.from ?? VOICE_FROM;
       const base = s.parts.length === 1 ? s.parts[0]! : concat(s.parts, join(TMP, `base${s.n}.mp4`));
@@ -548,11 +570,14 @@ async function main(): Promise<void> {
     const HOOK = join(REC, "hook", "hook.mp4");
     const HOOK_LAST = join(REC, "hook", "hook-last.png");
     if (!existsSync(HOOK)) throw new Error("試算の図がない（npx tsx scripts/make-hook-chart.ts で作る）");
-    const DUR1 = 12;
-    const hookDur = Math.min(probe(HOOK), DUR1);
+    const DUR1_MAX = 12;
+    const hookDur = Math.min(probe(HOOK), DUR1_MAX);
+    const v1 = preVoice(1);
+    const DUR1 = fit(v1, hookDur + 0.5, DUR1_MAX); // 図が動き終わって 0.5秒は見せる
     await scene({
       n: 1,
       dur: DUR1,
+      voice: v1,
       screen: "図「薬剤耐性（AMR）に起因する死亡者数の推定（年間）」：2050年の棒が 1,000万人まで伸び、がんを超える（O'Neill 2014 p.5 の数値から描いた）",
       parts: [fileClip(HOOK, hookDur), ...(DUR1 - hookDur > 0.05 && existsSync(HOOK_LAST) ? [still(HOOK_LAST, DUR1 - hookDur)] : [])],
       overlays: [],
@@ -565,11 +590,14 @@ async function main(): Promise<void> {
     const SCENE2 = join(REC, "scene2", "scene2.mp4");
     const SCENE2_LAST = join(REC, "scene2", "scene2-last.png");
     if (!existsSync(SCENE2)) throw new Error("シーン2の動く絵がない（npx tsx scripts/make-scene2.ts で作る）");
-    const DUR2 = 13;
+    const DUR2_MAX = 13;
+    const v2 = preVoice(2);
+    const DUR2 = fit(v2, 11.5, DUR2_MAX); // 動く絵は 13秒。右の見出しが赤くなる 10.3秒から 1.2秒は見せる
     const s2dur = Math.min(probe(SCENE2), DUR2);
     await scene({
       n: 2,
       dur: DUR2,
+      voice: v2,
       screen: "動く絵（コードで描いた。ゲームのドット絵）：「抗菌薬を、正しく使う」→「でも」で盤面。抗菌薬の兵士が薬を使うたびに、効く細菌は倒れ、盾の印の効かない細菌だけが残って分かれて増える。年表が いま → 1年後 → … → 何年も先 と進み、効かない細菌の割合が 7% → 86% に",
       parts: [fileClip(SCENE2, s2dur), ...(DUR2 - s2dur > 0.05 && existsSync(SCENE2_LAST) ? [still(SCENE2_LAST, DUR2 - s2dur)] : [])],
       overlays: [],
@@ -579,10 +607,13 @@ async function main(): Promise<void> {
     // 第7版：タイトル画面に一行「抗菌薬の選び方を学ぶタワーディフェンス」（読み手役の審査員「最初に作品の一言説明がほしい」）
     const intro = script.get(3)?.intro ?? [];
     const sup3 = script.get(3)?.supplements[0];
-    const toCard3 = ANCHORS[3]?.find((a) => a.word === "作ったのは")?.at ?? 7.5;
-    const DUR3 = 19.5; // 第7版：仮の読み上げが 18秒では 0.8秒はみ出した（経歴の文をゆっくり読む）ので、シーン8・9・10から 0.5秒ずつ
     // 作者の映像（recordings/author/self.mp4）があれば、カードの左に映像を置き、声もその映像から取る（2026-11-07）。なければ写真のカード
     const selfVoice3 = SELF ? selfVoice(3, SELF) : undefined;
+    const v3 = selfVoice3 ?? preVoice(3);
+    const text3 = script.get(3)?.narration ?? "";
+    // カードへの切り替えは、声の「作ったのは」に合わせる（録音は無音の区切りから。分からなければ台本の 7.5秒）。タイトル画面は 5秒以上見せる
+    const toCard3 = Math.max(5, (v3 && chunkStart(v3, text3, "作ったのは", VOICE_FROM)) ?? ANCHORS[3]?.find((a) => a.word === "作ったのは")?.at ?? 7.5);
+    const DUR3 = fit(v3, toCard3 + 6, 19.5, VOICE_FROM, 1.5); // カードは 6秒以上。第7版の枠 19.5秒が上限
     let part3: string;
     if (SELF && selfVoice3) {
       const bg = await render(page, "introVideo", intro[0] ?? "沢田 佳祐", intro.slice(1));
@@ -602,7 +633,7 @@ async function main(): Promise<void> {
         : "タイトル画面（後ろでボットが遊ぶデモが動く。等倍。上に作品の一言）→ 作者の写真（顔を丸く小さく。白衣の1枚目）と右に経歴のカード",
       parts: [clip("title", 1, 1 + toCard3), part3],
       overlays: sup3 ? [await ov("top", sup3, 0, toCard3)] : [],
-      voice: selfVoice3,
+      voice: v3,
     });
     built.at(-1)!.overlays.push({ kind: "intro", text: intro.join(" ／ "), start: toCard3, end: DUR3 });
     // 4 遊び方（17秒。第7版）：乱用のステージ1の始まりを等倍で 8秒（細菌が近づいて名前・効く薬の札が出る。手札から薬を出す）→ 早送り 9秒。
@@ -629,7 +660,7 @@ async function main(): Promise<void> {
     // 「ところが」を結果画面に、「これが選択圧」を紙芝居のコマに合わせる。残す紙芝居はこの1コマだけ（読み手役の審査員の案）
     const INTRO_TAKE = "intro";
     const RES5 = 5;
-    const SEL5 = 7;
+    const SEL5 = 5.5; // 第8版：7 → 5.5秒（声「これが選択圧。…ゲームの名前です」は約4秒。浮いた分を足した文に回す）
     const sup5 = script.get(5)?.supplements[0];
     const selParts = existsSync(join(REC, `${INTRO_TAKE}.mp4`))
       ? [clip(INTRO_TAKE, at(INTRO_TAKE, "段5：選択圧") + 2, at(INTRO_TAKE, "段5：選択圧") + 2 + SEL5)]
@@ -677,7 +708,7 @@ async function main(): Promise<void> {
     const BRF7 = 3; // 2050年の説明（秒）
     const FF7B = 2.5; // 2050年（秒）
     const WON7 = 1.5; // 守り切った（秒）
-    const CMP7 = 5.1; // 並べ比べ（秒。第5版の評価「読み終わる前に消える」で 5秒に。第6版で 3.6 にしたが、第7版で戻した）
+    const CMP7 = 6.5; // 並べ比べ（秒。第5版の評価「読み終わる前に消える」で 5秒に。第6版で 3.6 にしたが、第7版で戻し、第8版で 6.5秒に）
     const k7p = (SWITCH[0] - p1) / PRE7;
     const k7a = (pr1 - SWITCH[1]) / FF7A;
     const k7b = (won2 - p2) / FF7B;
@@ -823,7 +854,8 @@ async function main(): Promise<void> {
       ["review.png", 7],
       ["eval.png", 5.5],
     ];
-    const DUR9 = 12.5;
+    const v9 = preVoice(9);
+    const DUR9 = fit(v9, 11, 16); // 絵2枚で 11秒以上（評価の絵が 5秒は見えるように。9秒だと 4.4秒だった）。声を足したときのために上限は 16秒
     const have9 = sc9.filter(([f]) => existsSync(join(REC, "scene7", f)));
     if (have9.length !== sc9.length) warnings.push(`シーン9：絵が足りない（${sc9.map(([f]) => f).filter((f) => !have9.some(([g]) => g === f)).join("・")}）。npx tsx scripts/make-scene7.ts で作る`);
     const scale9 = DUR9 / have9.reduce((a, [, d]) => a + d, 0);
@@ -834,16 +866,20 @@ async function main(): Promise<void> {
       screen: `開発の画面を順に：${have9.map(([f, d]) => `${name9[f]}（${(d * scale9).toFixed(1)}秒）`).join(" → ")}`,
       parts: have9.map(([f, d]) => still(join(REC, "scene7", f), d * scale9)),
       overlays: [],
+      voice: v9,
     });
     // 10 締め（12秒）：タイトル画面（後ろのデモが動く。シーン3とは別の場面）の上に使っていく場面 →「いまの一手が」で大きな字。
     // 第5版：2枚目の写真はやめた（作者の判断。写真は名乗りの場面だけ）。第6版：尺のため「勉強会や実習、講義で使い始め、」を声から外した（使う場面は箱に残る）
     const PLACES = script.get(10)?.places?.length ? script.get(10)!.places! : ["院内の新人・若手の勉強会", "病院の実務実習の薬学生", "大学の講義・実習"];
-    const toBig10 = ANCHORS[10]?.find((a) => a.word === "いまの一手が")?.at ?? 7.5;
     const main10 = script.get(10)?.main ?? "いまの一手が、未来をつくる。";
-    const DUR10 = 11.5;
+    const v10 = preVoice(10);
+    // 大きな字は声の「いまの一手が」に合わせて出す（使っていく場面の箱はその直前まで）。長さも声に合わせる（上限 16秒）
+    const toBig10 = (v10 && chunkStart(v10, script.get(10)?.narration ?? "", "いまの一手が", VOICE_FROM)) ?? ANCHORS[10]?.find((a) => a.word === "いまの一手が")?.at ?? 7.5;
+    const DUR10 = fit(v10, toBig10 + 3.5, 16, VOICE_FROM, 1.5); // 大きな字は 3.5秒以上
     await scene({
       n: 10,
       dur: DUR10,
+      voice: v10,
       screen: "タイトル画面（後ろのデモが動く。シーン3とは別の場面）と右に使っていく場面 → 大きな字",
       parts: [clip("title", 22, 22 + DUR10)],
       overlays: [{ ...(await ov("places", "使っていく場面", 0.3, toBig10 - 0.1, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],

@@ -7,7 +7,9 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ANCHORS, chunks, VOICE_FROM } from "./lib/video-cues.ts";
 
-const PACE = 5.3; // 読む速さの目安（1秒あたりの字数。2026-11-05 に作者の録音9本で測った値。第6版で1割増しの 5.8 にしたが、第7版で戻した。DEMO.md の「語り手」）
+const PACE = 6.1; // 読む速さの目安（1秒あたりの字数。2026-11-07 の作者の仮の録音10本で測った値（756字を 123.5秒）。第7版までは 5.3。DEMO.md の「語り手」）
+/** 声に合わせて長さが伸び縮みするシーンと、その上限（秒）。make-draft-video.ts の fit と同じ値。ほかのシーンは枠が決まっている */
+const FIT: Record<number, number> = { 1: 12, 2: 13, 3: 19.5, 9: 16, 10: 16 };
 const OUT = join("recordings", "recording-sheet");
 mkdirSync(OUT, { recursive: true });
 
@@ -51,7 +53,8 @@ const totalChars = rows.reduce((a, r) => a + r.text.length, 0);
 
 const cards = rows
   .map((r) => {
-    const limit = r.dur - VOICE_FROM * 2;
+    const fitMax = FIT[r.n];
+    const limit = fitMax ? fitMax - VOICE_FROM - 1.5 : r.dur - VOICE_FROM * 2;
     const need = r.text.length / PACE;
     const lines = chunks(r.text);
     // t：シーンの頭からの秒。間をあけたら、そのあとの文はその分だけ遅れて始まる（2026-11-05 第4版：間が2つ以上あるシーンで、
@@ -81,7 +84,7 @@ const cards = rows
     <label class="done"><input type="checkbox" id="done${r.n}" data-n="${r.n}"> 録った</label>
   </header>
   <dl class="stats">
-    <div><dt>枠</dt><dd>${r.dur}秒</dd></div>
+    <div><dt>枠</dt><dd>${fitMax ? `声に合わせる（上限 ${fitMax}秒）` : `${r.dur}秒`}</dd></div>
     <div><dt>読み終える上限</dt><dd>${limit.toFixed(1)}秒</dd></div>
     <div><dt>字数</dt><dd>${r.text.length}字</dd></div>
     <div><dt>1秒に${PACE}字なら</dt><dd>${need.toFixed(1)}秒${pauseTotal >= 0.05 ? `＋間 ${pauseTotal.toFixed(1)}秒` : ""}</dd></div>
@@ -154,11 +157,13 @@ input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   <section class="how">
     <h2>録り方</h2>
     <ol>
-      <li><b>台本 第7版</b>（2026-11-06。しくみの紙芝居をやめ、シーン4・5はゲーム画面の上で言う。シーン2・3・8・9の文も変わった）。シーン0（負ける場面）とシーン11（エンドカード）は声がないので、録るのはシーン1〜10の10本。前に録った第2版の録音（<code>recordings/voice/_v2/</code>）は使えない。読む速さは、第2版の録音で測った<b>1秒に約${PACE}字</b>で計算している（第6版の「1割早口」はやめた。ふだんの速さでよい）。余りが小さいシーンは、とくに間をあけすぎない</li>
-      <li>シーン3（名乗り）と10（締め）は作者自身の言葉。気持ちを込めて、少しゆっくりでよい（締めのシーン10は、余りの範囲でゆっくり読む）</li>
+      <li><b>台本 第8版</b>（2026-11-07。第7版の文に、シーン2「薬学生や新人が」、シーン4「実際の検査の結果が、時間差で届くのと同じです。」、シーン8「数値は公開データのまま、Claude には作らせません。」、シーン10「まず、私の病院の新人の勉強会と、実務実習の薬学生から。」を足した）。シーン0（負ける場面）とシーン11（エンドカード）は声がないので、録るのはシーン1〜10の10本。11/7 の仮の録音は音量がそろっていて、文が変わっていないシーン（1・5・6・7・9）はそのまま使える。読む速さは、仮の録音で測った<b>1秒に約${PACE}字</b>で計算している（仮の録音と同じ速さでよい）</li>
+      <li><b>枠が「声に合わせる」のシーン（1・2・3・9・10）</b>は、声の長さに合わせて場面が伸び縮みする（上限まで）。ゲームの場面（4〜8）は枠が決まっているので、「読み終える上限」より前に読み終える</li>
+      <li><b>シーン3は、スマホで自分を撮る</b>（横向き・約20秒。顔は画面の中ほど。撮り始めて1秒待ってから読み、読み終えてからも2秒ほど待って止める）。声はその映像から取るので、<code>scene3.m4a</code> は要らない。映像は <code>recordings/author/self.mp4</code> に置く（Git には入らない）</li>
+      <li>シーン3（名乗り）と10（締め）は作者自身の言葉。気持ちを込めて、少しゆっくりでよい</li>
       <li>シーンごとに1つのファイルに録る。ファイル名は <code>scene1.m4a</code> のようにシーンの番号で（wav・m4a・aiff・mp3 のどれでもよい）</li>
       <li>録ったファイルは、リポジトリの <code>recordings/voice/</code> に置く</li>
-      <li>読む速さの目安は1秒に${PACE}字。「読み終える上限」より前に読み終える。録り始めと終わりの無音は自動で切るので、気にしなくてよい</li>
+      <li>録り始めと終わりの無音は自動で切るので、気にしなくてよい</li>
       <li>「間」の印のところは、画面の切り替わりを待つ。字幕は声の中の無音に合わせて出るので、間ははっきりあける</li>
       <li>置き終えたら、Claude に「録音を置いた」と伝える（書き出して、はみ出しや字幕のずれを確かめる）</li>
     </ol>
