@@ -13,6 +13,7 @@
 //     録音のときは、頭と終わりの無音を切り、声の中の無音を手がかりに字幕の時刻を合わせる（scripts/lib/align.ts）
 //   npx tsx scripts/make-draft-video.ts [--rec recordings] [--seed 570] [--voice Kyoko] [--rate 200]
 //   --rate：仮の読み上げの速さ（say -r）。200 で1秒に約5.8字（作者が少し早口で読む速さ。第6版、2026-11-06）。省くと 200
+//   --deess：歯擦音（さ行・sh）の抑え方。なし・弱・中・強。省くと 中（2026-11-08）
 //   → recordings/draft-video.mp4（1920×1080、30fps、声は AAC）、ナレーションの字幕 recordings/draft-video.srt、
 //     シーンごとの記録 recordings/draft-video.json（絵コンテ表を作る scripts/make-storyboard.ts が読む）
 import { execFileSync, spawnSync } from "node:child_process";
@@ -38,6 +39,8 @@ const { values } = parseArgs({
     self10: { type: "string" },
     // 書き出す名前（recordings/<out>.mp4・.srt・.json）。既定は draft-video。試しに作るときだけ変える
     out: { type: "string", default: "draft-video" },
+    // 歯擦音（さ行・sh の「シャキシャキ」）の抑え方：なし・弱・中・強（既定は 中。2026-11-08 作者の求め。DEESS を見よ）
+    deess: { type: "string", default: "中" },
   },
 });
 const W = 1920;
@@ -47,6 +50,24 @@ const TMP = join(REC, "_draft");
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 const OUT_BASE = values.out!;
+/**
+ * ディエッサー（2026-11-08 作者「さしすせそや sh の音がシャキシャキして耳に障る」）。
+ * 声を 4.5 kHz で2つの帯域に分け（Linkwitz-Riley 4次：2次の Butterworth を2回。足し戻すと平ら）、上の帯域だけを速い圧縮にかけて足し戻す。
+ * 作者の録音は -16 LUFS にそろえたあとで 4.5 kHz より上のピークが -5 dBFS（母音の山とほぼ同じ高さ）、10 kHz より上も -7 dBFS と明るい。
+ * 中（既定）で上の帯域のピークが約 8 dB、10 kHz より上が約 9 dB 下がり、2〜4.5 kHz（子音の輪郭・母音の響き）は 0.5 dB も動かない。全体の大きさは 0.4 LU 下がる。
+ * しきい値は -16 LUFS にそろえた声に合わせてあるので、normalizeVoice の loudnorm のあとにかける。
+ * attack は 0.3 ms（1 ms だと、シーン1の録音にある 5 ms のクリック（-2.8 dBFS）が -7 までしか下がらなかった。0.3 ms で -13。0.1 ms より歪みにくい側）
+ */
+const DEESS_LEVELS: Record<string, string | undefined> = {
+  なし: undefined,
+  弱: "threshold=0.08:ratio=3",
+  中: "threshold=0.05:ratio=4",
+  強: "threshold=0.03:ratio=6",
+};
+if (!(values.deess! in DEESS_LEVELS)) throw new Error(`--deess は なし・弱・中・強 のどれか：${values.deess}`);
+const DEESS = DEESS_LEVELS[values.deess!]
+  ? `,asplit[lo][hi];[lo]lowpass=f=4500:p=2,lowpass=f=4500:p=2[l];[hi]highpass=f=4500:p=2,highpass=f=4500:p=2,acompressor=${DEESS_LEVELS[values.deess!]}:attack=0.3:release=60:detection=peak:knee=2[h];[l][h]amix=inputs=2:normalize=0`
+  : "";
 /**
  * 作者が自分を撮った映像（シーン3の名乗り。作者が用意したもので、Git に入れない）。
  * 2026-11-07 作者の判断：主催のセッションの助言から、写真のカードを本人が映る映像に替える。
@@ -514,7 +535,7 @@ function chunkStart(voice: Voice, text: string, word: string, from: number): num
 }
 
 /**
- * 声の大きさをシーンの間でそろえる（2パスの loudnorm。-16 LUFS・ピーク -1.5 dB）。
+ * 声の大きさをシーンの間でそろえる（2パスの loudnorm。-16 LUFS・ピーク -1.5 dB）。そのあと歯擦音を抑える（DEESS、--deess）。
  * 2026-11-08：声の列全体に1パスの loudnorm をかけるだけだと、始まりのシーン1の声が 10 dB ほど小さいまま（フィルタが追いつく前）で、
  * 録音ごとの音量の差（-31〜-28 LUFS）も残った。声を1本ずつ測ってからそろえる
  */
@@ -529,7 +550,8 @@ function normalizeVoice(file: string): string {
   const j = JSON.parse(m[0]) as Record<string, string>;
   if (!isFinite(Number(j.input_i))) return file; // 無音
   const out = file.replace(/\.wav$/, "-norm.wav");
-  ff(["-i", file, "-af", `loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=${j.input_i}:measured_TP=${j.input_tp}:measured_LRA=${j.input_lra}:measured_thresh=${j.input_thresh}:offset=${j.target_offset}`, "-ar", "48000", out]); // 録音の声はピークが大きい（-8 dBTP 前後）ので linear=true だと -16 に届かない。2パスの測定値つきの dynamic で
+  // 録音の声はピークが大きい（-8 dBTP 前後）ので linear=true だと -16 に届かない。2パスの測定値つきの dynamic で。そのあとディエッサー（DEESS）
+  ff(["-i", file, "-af", `loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=${j.input_i}:measured_TP=${j.input_tp}:measured_LRA=${j.input_lra}:measured_thresh=${j.input_thresh}:offset=${j.target_offset}${DEESS}`, "-ar", "48000", out]);
   return out;
 }
 
