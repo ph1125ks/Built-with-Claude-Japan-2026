@@ -174,7 +174,7 @@
 
 ## 監修待ちの項目
 
-`review.status` が「仮」の値は、作者の監修が済むまでの暫定値。一覧は次で出る。
+`review.status` が「仮」の値は、作者の監修が済むまでの暫定値。一覧は次で出る。2026-11-08 時点では、`catalog/drugs.json`・`catalog/bacteria.json`・`rules.json` の `review.status` はすべて「確認済み」で、「仮」は残っていない。
 
 ```bash
 npm run data:verify

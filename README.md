@@ -4,7 +4,7 @@
 
 **教育用のシミュレーションで、実際の診療の判断には使えません。** 学生が遊ぶ画面に AI はいません。Claude は、教える人のためにステージを下書きする役だけで、教える人が確かめて承認するまで、学生には届きません（下の「Claude に任せないこと」）。
 
-作者：沢田 佳祐（薬剤師・博士（薬学）。病院で抗菌薬の使い方を支える AST（抗菌薬適正使用支援チーム）の薬剤師。感染制御専門薬剤師・抗菌化学療法認定薬剤師。経歴は [researchmap](https://researchmap.jp/ph1125ks/) と [LinkedIn](https://www.linkedin.com/in/ph1125ks/)）。Built with Claude: Japan 2026 の応募作品（テーマ1「あなたにしかない深さを。」）。作者が個人として作った作品で、勤務先の病院や大学の公式のもの・公認を受けたものではありません
+作者：沢田 佳祐（薬剤師・博士（薬学）。病院で抗菌薬の使い方を支える AST（抗菌薬適正使用支援チーム）の薬剤師。感染制御専門薬剤師・抗菌化学療法認定薬剤師。経歴は [researchmap](https://researchmap.jp/ph1125ks/) と [LinkedIn](https://www.linkedin.com/in/ph1125ks/)）。Built with Claude: Japan 2026 の応募作品（テーマ1「あなたにしかない深さを。」）。作者が個人として作った作品で、勤務先の病院や大学の公式のもの・公認を受けたものではありません。
 
 - **デモ動画（3分。日本語と英語の字幕を選べます）**：https://www.youtube.com/watch?v=kh1P8bZhaeI
 - **遊ぶ**（ブラウザだけ・ログイン不要。PC・タブレット・スマホ。スマホでは盤面を横向きで）：https://ph1125ks.github.io/Built-with-Claude-Japan-2026/

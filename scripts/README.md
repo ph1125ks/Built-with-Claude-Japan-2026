@@ -25,7 +25,7 @@
 
 | スクリプト | 何をするか |
 |---|---|
-| `record-demo.ts` | 画面なしの Chrome でゲームを自動で遊び、MP4 に録画する（`--take title|abuse|proper|teacher` など）。画面が切り替わった時刻を同じ名前の JSON に残す |
+| `record-demo.ts` | 画面なしの Chrome でゲームを自動で遊び、MP4 に録画する（`--take` は title・intro・abuse・proper・teacher・all）。画面が切り替わった時刻を同じ名前の JSON に残す |
 | `make-draft-video.ts` | 台本（`docs/DEMO.md`）の時間配分どおりに、録画を切り出して字幕・声・BGM を重ね、3分の動画にする。作者の録音があればそれに字幕の時刻を合わせる（`lib/align.ts`）。英語の字幕（SRT）も出す |
 | `make-hook-chart.ts` | 冒頭の図：薬剤耐性による死亡者数の推定（2014年の報告書の数値だけを使い、ゲームの画風で描き直す） |
 | `make-scene2.ts` | シーン2の動く絵：細菌が何年もかけて耐性を獲得していく（ゲームのドット絵で） |
