@@ -1,7 +1,8 @@
 // YouTube のサムネイル（1280×720）の案を描く（2026-11-08 作者の求め「YouTube に上げるので題名・概要欄・サムネイルを」）。
 // 録画のコマ（recordings/*.mp4。目印は *.json）と作者の映像から絵を取り、ゲームと同じドット絵の文字（DotGothic16）と大きな見出しを重ねる。
 // 画面なしの Chrome で描く（字幕と同じ仕組み。scripts/lib/chrome.ts）。
-//   npx tsx scripts/make-thumbnail.ts [--rec recordings] [--out recordings/thumbnail] [--self recordings/author/self.mov] [--self-at 2.5]
+//   npx tsx scripts/make-thumbnail.ts [--rec recordings] [--out recordings/thumbnail] [--self recordings/author/self.mov] [--self-at 2.5] [--photo recordings/author/portrait.jpg]
+//   --photo：作者の写真（白衣の肖像）。あれば A 案の右上に顔を丸く小さく置く（2026-11-08 作者の求め）。--photo none で置かない
 //   → recordings/thumbnail/A-効かない.png / B-現在と未来.png / C-作者.png（と同じ名前の .jpg）。Git に入れない（作者の顔が入る案がある）
 // 案：A 「抗菌薬が、効かない。」（2050年に膀胱が破られる場面の上に）、B 現在と未来の2つの盤面を並べる、C 作者の顔とロゴ（顔は作者が決める）
 import { execFileSync } from "node:child_process";
@@ -17,6 +18,7 @@ const { values } = parseArgs({
     out: { type: "string", default: join("recordings", "thumbnail") },
     self: { type: "string" },
     "self-at": { type: "string", default: "2.5" },
+    photo: { type: "string" },
   },
 });
 const REC = values.rec!;
@@ -49,6 +51,15 @@ const rush = frame(ABUSE, at("abuse-seed570", "画面：result2") - 1.6, "abuse-
 const win1 = frame(ABUSE, at("abuse-seed570", "画面：result1") - 1.2, "abuse-stage1-win"); // 現在：守り切った！（金色）
 const win2 = frame(PROPER, at("proper-seed570", "画面：result2") - 0.9, "proper-2050-win"); // 未来：守り切った！
 const self = SELF ? frame(SELF, Number(values["self-at"]), "self") : undefined;
+/** 作者の写真（recordings/author/portrait.jpg。作者が用意したもので Git に入れない）から、顔の周りを正方形に切り出す（白衣の肖像：顔が上から 2〜5割、横は中央） */
+const PHOTO = values.photo === "none" ? undefined : (values.photo ?? ["jpg", "jpeg", "png"].map((e) => join(REC, "author", `portrait.${e}`)).find((f) => existsSync(f)));
+if (values.photo && values.photo !== "none" && !existsSync(values.photo)) throw new Error(`--photo の写真がない：${values.photo}`);
+const face = (() => {
+  if (!PHOTO) return undefined;
+  const out = join(FRAMES, "face.jpg");
+  execFileSync("ffmpeg", ["-y", "-v", "error", "-i", PHOTO, "-vf", "crop=iw*0.72:iw*0.72:iw*0.13:ih*0.04,scale=480:480", "-q:v", "2", out]);
+  return `data:image/jpeg;base64,${readFileSync(out).toString("base64")}`;
+})();
 
 // ゲームと同じドット絵の文字（DotGothic16。@fontsource/dotgothic16 に同梱。SIL OFL 1.1）
 const fontData = (f: string) => readFileSync(join("node_modules/@fontsource/dotgothic16/files", f)).toString("base64");
@@ -78,9 +89,10 @@ const pageA = `<style>${base}
 .big{position:absolute;left:44px;top:150px;font-size:148px}
 .sub{position:absolute;left:48px;top:482px;padding:10px 22px;background:rgba(14,9,22,.86);box-shadow:inset 8px 0 0 #ffb347;font-size:38px;font-weight:700;color:#ffd38a;white-space:nowrap}
 .kind{position:absolute;left:48px;bottom:24px;font-size:26px;font-weight:700;color:#d9cbe8}
-.bugs{position:absolute;right:40px;bottom:96px;display:flex;align-items:flex-end;gap:14px;filter:drop-shadow(0 0 18px rgba(255,79,139,.7))}</style>
+.bugs{position:absolute;right:40px;bottom:96px;display:flex;align-items:flex-end;gap:14px;filter:drop-shadow(0 0 18px rgba(255,79,139,.7))}
+.face{position:absolute;right:44px;top:34px;width:176px;height:176px;border-radius:50%;background-image:url(${face ?? ""});background-size:cover;background-position:center;box-shadow:0 0 0 5px #fff,0 0 0 9px rgba(14,9,22,.9),0 0 34px rgba(255,79,139,.75)}</style>
 <div class="bg"></div><div class="shade"></div>
-<div class="logo">センタクアツ</div>
+<div class="logo">センタクアツ</div>${face ? '<div class="face"></div>' : ""}
 <div class="big">抗菌薬が、<br>効かない。</div>
 <div class="sub">あなたの選択が、未来の敵をつくる</div>
 <div class="kind">抗菌薬の使い方を体感する、教育タワーディフェンス</div>
@@ -133,6 +145,7 @@ const pages: [string, string][] = [
   ...(self ? ([["C-作者", pageC]] as [string, string][]) : []),
 ];
 if (!self) console.warn("⚠ 作者の映像がないので C 案は作らない（--self <file>）");
+if (!face) console.warn("⚠ 作者の写真がないので A 案に顔を置かない（--photo <file>）");
 
 const { page, close } = await openChrome({ width: W, height: H });
 try {
