@@ -171,8 +171,8 @@ URL で選べるもの：`?stage=`（ステージ。既定は「尿路（全国�
 | `src/intro/`・`intro.html` | はじめての人へ（抗菌薬と耐性菌のしくみ。動画の「しくみ」の場面にも使う。公開） |
 | `server/` | 教員モードのサーバーと、Claude のツール |
 | `data/` | 菌・薬・薬価・感受性・ルール・ステージ、出典（`data/README.md`） |
-| `scripts/` | データの取り込み、シミュレーション、スキルの評価、デモ動画づくり |
-| `docs/` | 開発の記録（`DEVLOG.md`）、動画の台本（`DEMO.md`）、引き継ぎメモ（`HANDOFF.md`）、評価の記録（`eval/`） |
+| `scripts/` | データの取り込み、シミュレーション、スキルの評価、デモ動画づくり（一覧は [scripts/README.md](scripts/README.md)） |
+| `docs/` | 開発の記録（`DEVLOG.md`）、動画の台本（`DEMO.md`）、引き継ぎメモ（`HANDOFF.md`）、評価の記録（`eval/`）。読む順は [docs/README.md](docs/README.md) |
 
 仕様は [SPEC.md](SPEC.md)。main に push すると、GitHub Actions がテストとビルドをして GitHub Pages に公開します。
 
