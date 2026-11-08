@@ -715,7 +715,8 @@ async function main(): Promise<void> {
     const LIVE4 = 8;
     const FF4 = 9;
     const FF5 = 8;
-    const k45 = (r1 - (s1 + LIVE4)) / (FF4 + FF5);
+    const WIN5 = 1.45; // 乱用のステージ1の「守り切った！」の帯（等倍。結果画面の約1.45秒前から。2026-11-08 作者の求め「第1ステージは楽勝です、の勝つ場面をちゃんと見せる」）
+    const k45 = (r1 - WIN5 - (s1 + LIVE4)) / (FF4 + FF5);
     const mid45 = s1 + LIVE4 + FF4 * k45;
     const sup4 = script.get(4)?.supplements ?? [];
     const DUR4 = LIVE4 + FF4;
@@ -732,8 +733,8 @@ async function main(): Promise<void> {
     //   → 紙芝居の1コマ（7秒。「はじめての人へ」の見せ方の段5：細菌の列に薬をかけると効かない細菌だけが残って増える）。
     // 「ところが」を結果画面に、「これが選択圧」を紙芝居のコマに合わせる。残す紙芝居はこの1コマだけ（読み手役の審査員の案）
     const INTRO_TAKE = "intro";
-    const RES5 = 5;
-    const SEL5 = 7; // 第8版で 5.5秒にしたが、続きでシーン5の文が長くなった（第1ステージは／増えてしまいました／研究テーマであり、この）ので 7秒に戻した（作者の速さで余り約1秒）
+    const RES5 = 4.5; // 結果画面（秒。帯を等倍で見せる分、5 → 4.5）
+    const SEL5 = 6; // 紙芝居のコマ（秒。作者の録音では声「これが選択圧。…ゲームの名前です」が約4.5秒。帯の分、7 → 6）
     const sup5 = script.get(5)?.supplements[0];
     const selParts = existsSync(join(REC, `${INTRO_TAKE}.mp4`))
       ? [clip(INTRO_TAKE, at(INTRO_TAKE, "段5：選択圧") + 2, at(INTRO_TAKE, "段5：選択圧") + 2 + SEL5)]
@@ -741,10 +742,10 @@ async function main(): Promise<void> {
         [still(await render(page, "card", "選択圧（仮の絵）", ["薬を使うと、効く細菌は倒れ、効かない細菌だけが残って増える"]), SEL5)]);
     await scene({
       n: 5,
-      dur: FF5 + RES5 + SEL5,
-      screen: `乱用のステージ1の続き（早送り ×${Math.round(k45)}。切り札のカルバペネム系を連打して勝つ）→ 結果画面（等倍。いちばん上に原因の一文）→ 紙芝居の1コマ（細菌の列に薬をかけると、効かない細菌だけが残って増える）`,
-      parts: [clip(ABUSE, mid45, r1, k45), clip(ABUSE, r1, r1 + RES5), ...selParts],
-      overlays: [await speedBadge(k45, 0, FF5)],
+      dur: FF5 + WIN5 + RES5 + SEL5,
+      screen: `乱用のステージ1の続き（早送り ×${Math.round(k45)}。切り札のカルバペネム系を連打して勝つ）→ 盤面の「守り切った！」（等倍）→ 結果画面（等倍。いちばん上に原因の一文）→ 紙芝居の1コマ（細菌の列に薬をかけると、効かない細菌だけが残って増える）`,
+      parts: [clip(ABUSE, mid45, r1 - WIN5, k45), clip(ABUSE, r1 - WIN5, r1 + RES5), ...selParts],
+      overlays: [await speedBadge(k45, 0, FF5), await ov("speed", "等倍：楽勝", FF5, FF5 + WIN5)],
       cues: [...(sup5 ? [{ word: "これが選択圧", len: SEL5, png: await render(page, "top", sup5), kind: "top" as Kind, text: sup5 }] : [])],
     });
     // 6 2050年（15秒）：推移の表（4.5秒）→ 2050年を早送り（4.5秒）→ 膀胱が破られる（等倍、6秒。シーン0と同じ場面。負けの結果画面が出て1秒まで。
