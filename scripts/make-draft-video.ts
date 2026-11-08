@@ -123,7 +123,7 @@ function twoLines(t: string, max = 30): string {
   if (best < 0) return esc(t);
   return `${esc(chars.slice(0, best + 1).join("").trim())}<br>${esc(chars.slice(best + 1).join("").trim())}`;
 }
-type Kind = "sub" | "top" | "topRight" | "big" | "intro" | "introVideo" | "closing" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
+type Kind = "sub" | "top" | "topRight" | "big" | "intro" | "introVideo" | "closing" | "spot" | "speed" | "speedLow" | "places" | "card" | "loop" | "fact" | "compare" | "label" | "note" | "bigLow" | "hook" | "end";
 /** 背景まで描く絵（透明にしない） */
 const OPAQUE: Kind[] = ["card", "intro", "introVideo", "closing", "compare", "end"];
 /** エンドカードの QR（学生用の URL。評価役の「2.5秒では URL を読めない」を受けて足した） */
@@ -202,6 +202,12 @@ p:first-of-type{font-size:32px;font-weight:800;color:#fff}
 p:last-of-type{color:#a493b6}
 </style><div class="wrap"><div class="shot"></div><div class="card"><b>${esc(text)}</b>${(extra ?? []).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
     }
+    case "spot":
+      // シーン4「ほとんどの細菌に効く「切り札」もあります」：手札の8枚目（MEPM。1280×720 の盤面で x 784〜868・y 396〜538 → 1080p で x 1568〜1736・y 792〜1076）の
+      // 上半分（名前と「切り札」の札。下の字幕と重ならない範囲）を囲み、上に名札を出す（2026-11-08 作者の求め「どのカードのことか分かるように」）
+      return `<style>${base}.box{position:absolute;left:1560px;top:786px;width:188px;height:162px;box-sizing:border-box;border:6px solid #ffb347;border-radius:14px;box-shadow:0 0 0 4px rgba(14,9,22,.85),0 0 30px rgba(255,179,71,.9)}
+.lab{position:absolute;right:172px;top:690px;padding:10px 26px;background:rgba(14,9,22,.94);box-shadow:inset 8px 0 0 #ffb347,0 8px 24px rgba(0,0,0,.5);color:#ffd38a;font-size:38px;font-weight:700;white-space:nowrap}
+.arw{position:absolute;left:1636px;top:760px;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:24px solid #ffb347}</style><div class="lab">${esc(text)}</div><div class="arw"></div><div class="box"></div>`;
     case "note":
       // 図の下の一行（シーン2の最後）。図の箱（〜720px）と字幕（930px〜）の間に置く
       return `<style>${DOT_CSS}${base}body{display:flex;justify-content:center;align-items:flex-start}div{margin-top:772px;padding:10px 30px;background:rgba(14,9,22,.86);box-shadow:inset 6px 0 0 #ffb347;color:#ffd38a;font-family:${DOT};font-size:38px;letter-spacing:.04em}</style><div>${esc(text)}</div>`;
@@ -719,7 +725,8 @@ async function main(): Promise<void> {
       screen: `乱用のステージ1の始まり（等倍 ${LIVE4}秒。細菌が右から膀胱へ進み、近づくにつれ名前・効く薬の札が出る。手札から薬を出す）→ 早送り ×${Math.round(k45)}`,
       parts: [clip(ABUSE, s1, s1 + LIVE4), clip(ABUSE, s1 + LIVE4, mid45, k45)],
       overlays: [await ov("speed", "等倍", 0, LIVE4), await speedBadge(k45, LIVE4, DUR4), ...(sup4[0] ? [await ov("top", sup4[0], 0.5, LIVE4)] : [])],
-      cues: [...(sup4[1] ? [{ word: "手札の薬は", len: DUR4, png: await render(page, "top", sup4[1]), kind: "top" as Kind, text: sup4[1] }] : [])],
+      // 「切り札」の補足は、上の帯ではなく手札の MEPM のカードを囲む名札で（声の「ほとんどの細菌に効く」からシーンの終わりまで。2026-11-08）
+      cues: [...(sup4[1] ? [{ word: "ほとんどの細菌に効く", len: DUR4, png: await render(page, "spot", sup4[1]), kind: "spot" as Kind, text: sup4[1] }] : [])],
     });
     // 5 いま → 選択圧（20秒。第7版）：乱用のステージ1の続きを早送り（8秒。切り札を連打）→ 結果1（5秒。いちばん上に原因の一文）
     //   → 紙芝居の1コマ（7秒。「はじめての人へ」の見せ方の段5：細菌の列に薬をかけると効かない細菌だけが残って増える）。
@@ -740,19 +747,22 @@ async function main(): Promise<void> {
       overlays: [await speedBadge(k45, 0, FF5)],
       cues: [...(sup5 ? [{ word: "これが選択圧", len: SEL5, png: await render(page, "top", sup5), kind: "top" as Kind, text: sup5 }] : [])],
     });
-    // 6 2050年（14秒）：推移の表（4.5秒）→ 2050年を早送り（4.5秒）→ 膀胱が破られる（等倍、5秒。シーン0と同じ場面）。
+    // 6 2050年（15秒）：推移の表（4.5秒）→ 2050年を早送り（4.5秒）→ 膀胱が破られる（等倍、6秒。シーン0と同じ場面。負けの結果画面が出て1秒まで。
+    // 2026-11-08 作者の求め「乱用では未来を越えられないことが伝わる負ける場面を少し延ばす」で 5 → 6秒）。
     // 「最初の場面は」に合わせて大きな題「あなたの選択が…」と名前の由来
-    const k6 = (r2 - 5 - s2) / 4.5;
+    const LOSE6 = 6; // 膀胱が破られる場面（等倍。結果画面が出て1秒まで）
+    const DUR6 = 4.5 + 4.5 + LOSE6;
+    const k6 = (r2 - (LOSE6 - 1) - s2) / 4.5;
     const sup6 = script.get(6)?.supplements[0];
     await scene({
       n: 6,
-      dur: 14,
-      screen: `2050年のブリーフィングと耐性率の推移の表（等倍）→ 乱用の2050年（早送り ×${Math.round(k6)}）→ 膀胱が破られる（等倍。シーン0と同じ場面）`,
-      parts: [clip(ABUSE, b2, b2 + 4.5), clip(ABUSE, s2, r2 - 5, k6), clip(ABUSE, r2 - 5, r2)],
+      dur: DUR6,
+      screen: `2050年のブリーフィングと耐性率の推移の表（等倍）→ 乱用の2050年（早送り ×${Math.round(k6)}）→ 膀胱が破られる（等倍。シーン0と同じ場面）→ 負けの結果画面`,
+      parts: [clip(ABUSE, b2, b2 + 4.5), clip(ABUSE, s2, r2 - (LOSE6 - 1), k6), clip(ABUSE, r2 - (LOSE6 - 1), r2 + 1)],
       overlays: [await speedBadge(k6, 4.5, 9)],
       cues: [
-        { word: "動画冒頭の場面は", len: 4.6, png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), kind: "big", text: "あなたの選択が、未来の敵をつくる" },
-        ...(sup6 ? [{ word: "動画冒頭の場面は", len: 4.6, png: await render(page, "top", sup6), kind: "top" as Kind, text: sup6 }] : []),
+        { word: "動画冒頭の場面は", len: 5.6, png: await render(page, "big", "あなたの選択が、未来の敵をつくる"), kind: "big", text: "あなたの選択が、未来の敵をつくる" },
+        ...(sup6 ? [{ word: "動画冒頭の場面は", len: 5.6, png: await render(page, "top", sup6), kind: "top" as Kind, text: sup6 }] : []),
       ],
     });
     // 7 やり直し 適正（25秒。第6版で「いま」の勝利と「2050年」の勝利を分けて見せる。作者の指摘）：
@@ -773,7 +783,7 @@ async function main(): Promise<void> {
     const RES7 = 3; // ステージ1の結果画面（秒）
     const BRF7 = 3; // 2050年の説明（秒）
     const FF7B = 2.5; // 2050年（秒）
-    const WON7 = 1.5; // 守り切った（秒）
+    const WON7 = 2.5; // 守り切った（秒。帯 → 結果画面「2050年も守り切りました」が出て1秒まで。2026-11-08 作者の求めで 1.5 → 2.5秒）
     const CMP7 = 6.5; // 並べ比べ（秒。第5版の評価「読み終わる前に消える」で 5秒に。第6版で 3.6 にしたが、第7版で戻し、第8版で 6.5秒に）
     const k7p = (SWITCH[0] - p1) / PRE7;
     const k7a = (pr1 - SWITCH[1]) / FF7A;
