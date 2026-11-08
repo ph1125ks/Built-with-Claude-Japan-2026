@@ -417,10 +417,15 @@ function voiceFor(n: number, text: string, from: number, anchors: [string, numbe
   for (const ext of ["wav", "m4a", "aiff", "mp3"]) {
     const f = join(REC, "voice", `scene${n}.${ext}`);
     if (existsSync(f)) {
-      // 録音の頭と終わりの無音を切る（声をシーンの頭から from 秒に置き、余りを正しく測るため）
+      // 録音の頭と終わりの無音を切る（声をシーンの頭から from 秒に置き、余りを正しく測るため）。短い物音はまたぐ（leadingSilence）
+      const raw = join(TMP, `rec${n}-raw.wav`);
+      ff(["-i", f, "-ac", "1", "-ar", "48000", raw]);
+      const rev = join(TMP, `rec${n}-rev.wav`);
+      ff(["-i", raw, "-af", "areverse", rev]);
+      const head = leadingSilence(raw);
+      const tail = leadingSilence(rev);
       const out = join(TMP, `rec${n}.wav`);
-      const trim = "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB";
-      ff(["-i", f, "-af", `${trim},areverse,${trim},areverse`, "-ac", "1", "-ar", "48000", out]);
+      ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, out]);
       return { file: out, dur: probe(out), source: "録音" };
     }
   }
@@ -452,14 +457,27 @@ function voiceFor(n: number, text: string, from: number, anchors: [string, numbe
  * 作者の映像（シーン3）の声。映像から音を取り出し、頭の無音（話し始めるまで）を測って切る。
  * 映像も同じだけ切って使う（selfClip の ss に head を足す）ので、声と口の動きがそろう。終わりの無音は録音と同じように切る
  */
+/**
+ * ファイルの頭の無音の長さ（秒）。-45dB より小さい区間を、短い物音（0.2秒未満。録画の始め・終わりに触れた音など）をまたいでつなぎ、頭の 0.35秒までの物音は無音の側に含め、
+ * 話し始めの 0.1秒前までを無音とみなす（2026-11-08：作者の本番の録画で、終わりの物音のせいで無音が切れず、声が4秒長く数えられた）
+ */
+function leadingSilence(file: string): number {
+  const spans = silences(file, "-45dB", 0.1);
+  // 録画の始め・終わりの 0.35秒までの物音（録画ボタンに触れた音など）は無音の側に含める
+  if (!spans.length || spans[0]!.start > 0.35) return 0;
+  let end = spans[0]!.end;
+  for (let i = 1; i < spans.length && spans[i]!.start - end < 0.2; i++) end = spans[i]!.end;
+  return Math.max(0, end - 0.1);
+}
 function selfVoice(n: number, file: string): Voice & { head: number } {
   const raw = join(TMP, `self${n}-raw.wav`);
   ff(["-i", file, "-vn", "-ac", "1", "-ar", "48000", raw]);
-  const lead = silences(raw, "-45dB", 0.05).find((s) => s.start <= 0.05);
-  const head = lead ? Math.max(0, lead.end - 0.05) : 0;
+  const rev = join(TMP, `self${n}-rev.wav`);
+  ff(["-i", raw, "-af", "areverse", rev]);
+  const head = leadingSilence(raw);
+  const tail = leadingSilence(rev);
   const out = join(TMP, `rec${n}.wav`);
-  const trim = "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB";
-  ff(["-ss", String(head), "-i", raw, "-af", `areverse,${trim},areverse`, out]);
+  ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, out]);
   return { file: out, dur: probe(out), source: "録音", head };
 }
 
@@ -549,8 +567,11 @@ async function main(): Promise<void> {
       if (text && voice?.parts) subs = voice.parts.map((p) => ({ start: from + p.start, end: from + p.end, text: p.text }));
       else if (text && voice) subs = alignChunks(chunks(text), voice.dur, silences(voice.file)).map((p) => ({ start: from + p.start, end: from + p.end, text: p.text }));
       const subOvs: Overlay[] = [];
+      // 大きな字（cue）と同じ文の字幕は重ねて出さない（シーン10「いまの一手が、未来をつくる。」が二重に出ていた。2026-11-08）。SRT には残る
+      const cueTexts = new Set((s.cues ?? []).map((c) => c.text));
       // 字幕は、次の字幕まで間が短ければ次が出るまで残す（重ならないように）
       for (const [i, sb] of subs.entries()) {
+        if (cueTexts.has(sb.text)) continue;
         const next = subs[i + 1];
         const end = next ? (next.start - sb.end < 1 ? next.start : sb.end + 0.4) : Math.min(s.dur, sb.end + 0.6);
         subOvs.push(await ov("sub", sb.text, sb.start, end));
@@ -954,7 +975,7 @@ async function main(): Promise<void> {
         screen: "左にスマホの縦画面の枠（実際のタイトル画面の写し）、右に作者が自分を撮った映像（recordings/author/self10.mp4。声もこの映像から）と「使っていく場面」のカード → 大きな字",
         parts: [selfClip(SELF10, ss, DUR10, bg, { ...rect, ...SELF_BOX })],
         overlays: [],
-        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "big", main10), kind: "big", text: main10 }],
+        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "bigLow", main10), kind: "bigLow", text: main10 }],
       });
       built.at(-1)!.overlays.unshift({ kind: "places", text: `使っていく場面：${PLACES.join(" ／ ")}（スマホの縦画面の写しと作者の映像の横）`, start: 0, end: DUR10 });
     } else {
@@ -965,7 +986,7 @@ async function main(): Promise<void> {
         screen: "タイトル画面（後ろのデモが動く。シーン3とは別の場面）と右に使っていく場面 → 大きな字",
         parts: [clip("title", 22, 22 + DUR10)],
         overlays: [{ ...(await ov("places", "使っていく場面", 0.3, toBig10 - 0.1, PLACES)), text: `使っていく場面：${PLACES.join(" ／ ")}` }],
-        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "big", main10), kind: "big", text: main10 }],
+        cues: [{ word: "いまの一手が", len: DUR10 - toBig10, png: await render(page, "bigLow", main10), kind: "bigLow", text: main10 }],
       });
     }
     // 11 エンドカード（4秒）。一般の人への一言（作者の方針。第3版の締めの声から移した）と、学生用の URL の QR
