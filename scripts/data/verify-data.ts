@@ -4,9 +4,20 @@
 //  2. カタログに食い違いがないか（エンジンの読み込み時の検査）
 //  3. すべての菌×薬の組み合わせの扱い（データ・自然耐性・代用・固定・値なし）
 //  4. 監修待ち（review.status が「仮」）の項目の一覧
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { loadGameData, susceptibility } from "../../src/engine/index.ts";
 import { extractJanis, extractPrices, JANIS_OUT, PRICES_OUT, toJson } from "./extract.ts";
+import { ALL_SOURCES, RAW_DIR } from "./sources.ts";
+
+// 元の Excel（data/raw/）は Git に入れていない。クローンしたばかりの環境では、まず取り直してもらう
+const missing = ALL_SOURCES.filter((s) => !existsSync(join(RAW_DIR, s.file)));
+if (missing.length > 0) {
+  console.error(`公開データの元ファイル（${RAW_DIR}/）が見つかりません。元の Excel は Git に入れていないので、先に npm run data:fetch で取り直してください。`);
+  for (const s of missing) console.error(`  - ${join(RAW_DIR, s.file)}（${s.title}）`);
+  process.exit(2);
+}
 
 let problems = 0;
 const ng = (msg: string) => {
