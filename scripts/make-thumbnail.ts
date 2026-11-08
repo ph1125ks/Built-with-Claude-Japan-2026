@@ -57,7 +57,8 @@ if (values.photo && values.photo !== "none" && !existsSync(values.photo)) throw 
 const face = (() => {
   if (!PHOTO) return undefined;
   const out = join(FRAMES, "face.jpg");
-  execFileSync("ffmpeg", ["-y", "-v", "error", "-i", PHOTO, "-vf", "crop=iw*0.72:iw*0.72:iw*0.13:ih*0.04,scale=480:480", "-q:v", "2", out]);
+  // 顔が円の中心より少し左に寄っていたので、切り出しの左端を iw*0.13 → 0.085 に（2026-11-08 作者の指摘）, "-q:v", "2"
+  execFileSync("ffmpeg", ["-y", "-v", "error", "-i", PHOTO, "-vf", "crop=iw*0.72:iw*0.72:iw*0.085:ih*0.05,scale=480:480", "-q:v", "2", out]);
   return `data:image/jpeg;base64,${readFileSync(out).toString("base64")}`;
 })();
 
