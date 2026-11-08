@@ -13,6 +13,10 @@
 
 ![2050年のステージ：自分が残した耐性菌に、手札の薬がはじかれる](docs/media/play-2050.gif)
 
+**目次**：[なぜ作ったか](#なぜ作ったか) ／ [何ができるか](#何ができるか)（学ぶ人・教える人）／ [ハッカソンのあとも使う場面](#ハッカソンのあとも使う場面) ／ [作者の思い](#作者の思い) ／ [Claude の使い方](#claude-の使い方)（任せないこと・スキルの評価）／ [信頼して使えるように](#信頼して使えるように)（出典）／ [審査の観点との対応](#審査の観点との対応) ／ [期間中に作ったもの](#期間中に作ったもの期間前からあるもの) ／ [動かす](#動かす開発する人向け) ／ [ライセンス](#ライセンス) ／ [English summary](#english-summary)
+
+**短い時間で見るなら**：①デモ動画（3分）→ ②[遊ぶ](https://ph1125ks.github.io/Built-with-Claude-Japan-2026/)（ステージ1で切り札 MEPM ばかり使うと、2050年で負けます。もう一度、系統を使い分けると守り切れます）→ ③[再生ページ](https://ph1125ks.github.io/Built-with-Claude-Japan-2026/replay.html)で Claude がステージを設計し、自分でシミュレーションして直す様子 → ④[審査の観点との対応](#審査の観点との対応)。開発の経緯は [docs/](docs/README.md) から。
+
 ## なぜ作ったか
 
 - 対策をとらなければ、2050年に薬剤耐性による死亡は年間1,000万人になり、がんを超えるという試算があります（The Review on Antimicrobial Resistance、2014年。AMR臨床リファレンスセンターも紹介）
@@ -179,3 +183,19 @@ URL で選べるもの：`?stage=`（ステージ。既定は「尿路（全国�
 - フォント：ドット絵の文字は [DotGothic16](https://github.com/fontworks-fonts/DotGothic16)（Fontworks、SIL Open Font License 1.1。npm の `@fontsource/dotgothic16` で同梱）
 - 兵士・細菌・アイコン・膀胱などの絵と、動画の BGM は、すべてこのリポジトリのコードで作っています（外部の画像や音源は使っていません。コードと同じ MIT License）
 - デモ動画に出る作者の写真・映像・声は作者本人のもので、このリポジトリには入れていません（MIT License の対象外）
+
+## English summary
+
+**Sentakuatsu** ("selection pressure" in Japanese) is an educational tower-defense game about antimicrobial stewardship. The way you use antibiotics today decides which bacteria survive and multiply, and in stage 2, set in 2050, you fight the resistant bacteria you yourself left behind. It is a simulation for learning, not a tool for clinical decisions. There is no AI in the student's screen.
+
+- **Play** (browser only, no login; PC, tablet, phone in landscape): https://ph1125ks.github.io/Built-with-Claude-Japan-2026/
+- **Demo video** (3 min, Japanese narration with English subtitles available): https://www.youtube.com/watch?v=kh1P8bZhaeI
+- **Replay of Claude designing a stage** (no API key needed): https://ph1125ks.github.io/Built-with-Claude-Japan-2026/replay.html
+
+**For learners** (pharmacy students, new clinicians): Stage 1 "Now" starts from real national surveillance data (JANIS) on antibiotic susceptibility. Bacteria reveal themselves gradually as they approach, like lab results arriving over days: first Gram stain, then species, then susceptibility. You summon antibiotics as soldiers. Overusing broad-spectrum "trump cards" such as carbapenems wins stage 1 easily, but stage 2 "Future (2050)" starts from the resistance you created, and you lose. Intrinsic resistance, oral bioavailability, dosing intervals, drug shortages and drug prices follow public documents from the Ministry of Health, Labour and Welfare and EUCAST.
+
+**For teachers** (pharmacists, faculty): In "teacher mode", you enter a region, an audience and a learning goal (for example, "let students beat third-generation-cephalosporin-resistant E. coli without carbapenems"). Claude (`claude-opus-5-5`, via the Anthropic TypeScript SDK tool runner) reads that region's public data, drafts a stage, runs it with four bots (appropriate, abusive, random, do-nothing) 60 times each, fixes what misses the pass criteria, re-verifies with other random seeds, and submits. The teacher plays the preview and approves it before students ever see it; approval produces a student URL and QR code. Claude cannot create or change susceptibility numbers; tools only return public data.
+
+**How Claude Code was used**: the author, a hospital antimicrobial-stewardship pharmacist with a PhD, provided the ideas and verified the medical evidence; Claude Code did the rest, asking the author multiple-choice questions on a phone when a decision was needed. Domain knowledge the author alone has is written as a skill (`stage-design`) shared by the development-time Claude Code and the in-game teacher-mode Claude. Read-only subagents audit the medical data against the source tables, run bot simulations to compare balance, and play-test the game in a browser. Hooks block commits containing secrets and run engine tests after edits. A small A/B evaluation (3 runs each, same input) found that the skill removed rule violations and cut time and cost by about 30%. Everything in this repository was built between the kickoff on 2026-11-02 and the deadline on 2026-11-08; the dated development log is in [docs/DEVLOG.md](docs/DEVLOG.md) (Japanese).
+
+Submitted to Built with Claude: Japan 2026 (Theme 1). The author built it as an individual; it is not an official product of their employer. Code is MIT licensed; data derived from public sources follows each source's terms (see the table above).
