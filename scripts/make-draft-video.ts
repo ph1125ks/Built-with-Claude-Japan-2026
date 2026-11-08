@@ -15,7 +15,7 @@
 //   --rate：仮の読み上げの速さ（say -r）。200 で1秒に約5.8字（作者が少し早口で読む速さ。第6版、2026-11-06）。省くと 200
 //   → recordings/draft-video.mp4（1920×1080、30fps、声は AAC）、ナレーションの字幕 recordings/draft-video.srt、
 //     シーンごとの記録 recordings/draft-video.json（絵コンテ表を作る scripts/make-storyboard.ts が読む）
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -70,6 +70,8 @@ interface SceneText {
   main?: string;
   supplements: string[];
   intro: string[];
+  /** 英語の字幕（YouTube の字幕用。ナレーションの区切りと同じ数の行） */
+  en: string[];
   /** シーン10：使っていく場面（「**使っていく場面**」の下の箇条書き） */
   places: string[];
 }
@@ -84,9 +86,11 @@ function readScript(): Map<number, SceneText> {
     const supplements = supLine ? [...supLine.matchAll(/「([^」]+)」/g)].map((m) => m[1]!) : [];
     const introBlock = part.match(/\*\*字幕（作者紹介[^\n]*\n((?:[ \t]+- .+\n)+)/)?.[1];
     const intro = introBlock ? introBlock.split("\n").map((l) => l.replace(/^\s+- /, "").trim()).filter(Boolean) : [];
+    const enBlock = part.match(/\*\*英語字幕\*\*[^\n]*\n((?:[ \t]+- .+\n)+)/)?.[1];
+    const en = enBlock ? enBlock.split("\n").map((l) => l.replace(/^\s+- /, "").trim()).filter(Boolean) : [];
     const placeBlock = part.match(/\*\*使っていく場面\*\*[^\n]*\n((?:[ \t]+- .+\n)+)/)?.[1];
     const places = placeBlock ? placeBlock.split("\n").map((l) => l.replace(/^\s+- /, "").trim()).filter(Boolean) : [];
-    out.set(n, { narration, main, supplements, intro, places });
+    out.set(n, { narration, main, supplements, intro, places, en });
   }
   return out;
 }
@@ -430,8 +434,11 @@ function voiceFor(n: number, text: string, from: number, anchors: [string, numbe
       ff(["-i", raw, "-af", "areverse", rev]);
       const head = leadingSilence(raw);
       const tail = leadingSilence(rev);
-      const out = join(TMP, `rec${n}.wav`);
-      ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, out]);
+      const out = normalizeVoice((() => {
+        const cut = join(TMP, `rec${n}.wav`);
+        ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, cut]);
+        return cut;
+      })());
       return { file: out, dur: probe(out), source: "録音" };
     }
   }
@@ -454,8 +461,9 @@ function voiceFor(n: number, text: string, from: number, anchors: [string, numbe
   const filter =
     files.map((_, i) => `[${i}:a]aresample=48000,apad=pad_dur=${i + 1 < parts.length ? (parts[i + 1]!.start - parts[i]!.end).toFixed(3) : 0}[a${i}]`).join(";") +
     `;${files.map((_, i) => `[a${i}]`).join("")}concat=n=${files.length}:v=0:a=1[out]`;
-  const out = join(TMP, `voice${n}.wav`);
-  ff([...files.flatMap((f) => ["-i", f]), "-filter_complex", filter, "-map", "[out]", "-ac", "1", out]);
+  const joined = join(TMP, `voice${n}.wav`);
+  ff([...files.flatMap((f) => ["-i", f]), "-filter_complex", filter, "-map", "[out]", "-ac", "1", joined]);
+  const out = normalizeVoice(joined);
   return { file: out, dur: probe(out), source: "仮の読み上げ", parts };
 }
 
@@ -482,8 +490,9 @@ function selfVoice(n: number, file: string): Voice & { head: number } {
   ff(["-i", raw, "-af", "areverse", rev]);
   const head = leadingSilence(raw);
   const tail = leadingSilence(rev);
-  const out = join(TMP, `rec${n}.wav`);
-  ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, out]);
+  const cut = join(TMP, `rec${n}.wav`);
+  ff(["-ss", String(head), "-t", String(Math.max(0.5, probe(raw) - head - tail)), "-i", raw, cut]);
+  const out = normalizeVoice(cut);
   return { file: out, dur: probe(out), source: "録音", head };
 }
 
@@ -502,6 +511,26 @@ function chunkStart(voice: Voice, text: string, word: string, from: number): num
   const parts = voice.parts ?? alignChunks(chunks(text), voice.dur, silences(voice.file));
   const p = parts.find((x) => x.text.startsWith(word));
   return p ? Math.round((from + p.start) * 10) / 10 : undefined;
+}
+
+/**
+ * 声の大きさをシーンの間でそろえる（2パスの loudnorm。-16 LUFS・ピーク -1.5 dB）。
+ * 2026-11-08：声の列全体に1パスの loudnorm をかけるだけだと、始まりのシーン1の声が 10 dB ほど小さいまま（フィルタが追いつく前）で、
+ * 録音ごとの音量の差（-31〜-28 LUFS）も残った。声を1本ずつ測ってからそろえる
+ */
+function normalizeVoice(file: string): string {
+  const r = spawnSync("ffmpeg", ["-hide_banner", "-nostats", "-i", file, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"], { encoding: "utf8" });
+  // 1パス目の結果は stderr の JSON（そのあとに size= などの行が続くので、input_i から始まる塊を取る）
+  const m = r.stderr.match(/\{\s*"input_i"[\s\S]*?\}/);
+  if (!m) {
+    console.warn(`⚠ 声の大きさを測れなかった：${file}`);
+    return file;
+  }
+  const j = JSON.parse(m[0]) as Record<string, string>;
+  if (!isFinite(Number(j.input_i))) return file; // 無音
+  const out = file.replace(/\.wav$/, "-norm.wav");
+  ff(["-i", file, "-af", `loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=${j.input_i}:measured_TP=${j.input_tp}:measured_LRA=${j.input_lra}:measured_thresh=${j.input_thresh}:offset=${j.target_offset}`, "-ar", "48000", out]); // 録音の声はピークが大きい（-8 dBTP 前後）ので linear=true だと -16 に届かない。2パスの測定値つきの dynamic で
+  return out;
 }
 
 /** シーンの長さちょうどの音声（声を from 秒から置く。声がなければ無音） */
@@ -1030,10 +1059,10 @@ async function main(): Promise<void> {
   if (bgm) {
     // 声の大きさをそろえてから、BGM を声の下に小さく重ねる。声が出ている間は、さらに下げる（サイドチェーンのコンプレッサー）
     const mix =
-      `[1:a]aresample=48000,loudnorm=I=-16:TP=-1.5:LRA=11,asplit=2[v1][v2];` +
+      `[1:a]aresample=48000,asplit=2[v1][v2];` +
       `[2:a]aresample=48000,aformat=channel_layouts=stereo,volume=${BGM_DB}dB[b];` +
       `[b][v2]sidechaincompress=threshold=0.02:ratio=4:attack=20:release=400[bd];` +
-      `[v1][bd]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.89[out]`;
+      `[v1][bd]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.85[out]`;
     ff(["-i", join(TMP, "all.mp4"), "-i", join(TMP, "all.wav"), "-i", bgm, "-filter_complex", mix, "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest", out]);
   } else ff(["-i", join(TMP, "all.mp4"), "-i", join(TMP, "all.wav"), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "-shortest", out]);
 
@@ -1047,12 +1076,32 @@ async function main(): Promise<void> {
   let k = 0;
   const srt: string[] = [];
   const report = [];
+  // 英語の字幕（YouTube の字幕用。焼き込まない。2026-11-08 作者の判断）：台本の「英語字幕」の行を、日本語の字幕の区切りと同じ時刻で出す。
+  // 画面の字のうち、英語の視聴者に要る3つ（シーン0の大きな字幕、シーン6の大きな題、エンドカードの一言と注意）も足す
+  const srtEn: string[] = [];
+  let kEn = 0;
+  const EN_EXTRA: Record<number, [number, number, string][]> = {
+    0: [[3.0, 6.5, "The antibiotics don't work. It was supposed to be an easy win."]],
+    6: [[10.4, 13.4, "Your choices create tomorrow's enemies."]],
+    11: [[0.3, 3.8, "Why use antibiotics properly? Knowing this also helps people who receive antibiotics understand them. Play in your browser: ph1125ks.github.io/Built-with-Claude-Japan-2026 (educational simulation; not for clinical decisions)"]],
+  };
   for (const b of built) {
     for (const s of b.subs) srt.push(`${++k}\n${ts(offset + s.start)} --> ${ts(offset + s.end)}\n${s.text}\n`);
+    const en = script.get(b.n)?.en ?? [];
+    if (b.subs.length && en.length) {
+      if (en.length === b.subs.length) {
+        b.subs.forEach((s, i) => srtEn.push(`${++kEn}\n${ts(offset + s.start)} --> ${ts(offset + s.end)}\n${en[i]}\n`));
+      } else {
+        warnings.push(`シーン${b.n}：英語字幕の行数（${en.length}）が字幕の区切り（${b.subs.length}）と違うので、1つにまとめた`);
+        srtEn.push(`${++kEn}\n${ts(offset + b.subs[0]!.start)} --> ${ts(offset + b.subs.at(-1)!.end)}\n${en.join(" ")}\n`);
+      }
+    } else if (b.subs.length) warnings.push(`シーン${b.n}：英語字幕がない（DEMO.md に「**英語字幕**」の行を足す）`);
+    for (const [a, z, text] of EN_EXTRA[b.n] ?? []) srtEn.push(`${++kEn}\n${ts(offset + a)} --> ${ts(offset + Math.min(z, b.dur))}\n${text}\n`);
     report.push({ n: b.n, start: offset, dur: b.dur, screen: b.screen, narration: b.narration, voice: b.voice, subs: b.subs, overlays: b.overlays });
     offset += b.dur;
   }
   writeFileSync(join(REC, `${OUT_BASE}.srt`), srt.join("\n"));
+  writeFileSync(join(REC, `${OUT_BASE}.en.srt`), srtEn.join("\n"));
   if (offset > 180) warnings.push(`全体が ${offset} 秒で、3分を超えている`);
   else if (offset > 178) warnings.push(`全体が ${offset} 秒で、3分まで ${(180 - offset).toFixed(1)} 秒しかない（録音が長いと超える。DEMO.md「尺が超えたときに削る順」）`);
   // 提出版に仮の声が混ざらないように：録音のないシーンを名指しで知らせる（2026-11-07、オフィスアワーの助言「仮の声が残らないか」）
@@ -1060,7 +1109,7 @@ async function main(): Promise<void> {
   if (tts.length) warnings.push(`仮の読み上げのシーン：${tts.join("・")}（提出版は作者の録音にする。recordings/voice/scene{n}.m4a を置いて書き出し直す）`);
   // シーンごとの記録（絵コンテ表の元）
   writeFileSync(join(REC, `${OUT_BASE}.json`), JSON.stringify({ made: new Date().toISOString(), total: offset, voice: values.voice, warnings, scenes: report }, null, 2));
-  console.log(`→ ${out}（${offset} 秒）と ${OUT_BASE}.srt・${OUT_BASE}.json${SELF ? `。シーン3は作者の映像 ${SELF}` : ""}`);
+  console.log(`→ ${out}（${offset} 秒）と ${OUT_BASE}.srt・${OUT_BASE}.en.srt・${OUT_BASE}.json${SELF ? `。シーン3は作者の映像 ${SELF}` : ""}`);
   for (const w of warnings) console.warn(`⚠ ${w}`);
 }
 
